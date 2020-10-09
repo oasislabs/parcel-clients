@@ -1,10 +1,12 @@
+import { Opaque } from 'type-fest';
+
 import { Client } from './client';
 import { ConsentId } from './consent';
 import { Constraints } from './filter';
 import { IdentityId } from './identity';
 import { Model, PODModel, ResourceId } from './model';
 
-export type GrantId = ResourceId & { readonly __tag: unique symbol };
+export type GrantId = Opaque<ResourceId>;
 
 export type PODGrant = PODModel & {
     granter: ResourceId;

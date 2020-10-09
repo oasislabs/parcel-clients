@@ -1,9 +1,11 @@
+import { Opaque, RequireAtLeastOne } from 'type-fest';
+
 import { Client } from './client';
 import { Constraints } from './filter';
 import { IdentityId } from './identity';
-import { AtLeastOne, Model, PODModel, ResourceId } from './model';
+import { Model, PODModel, ResourceId } from './model';
 
-export type ConsentId = ResourceId & { readonly __tag: unique symbol };
+export type ConsentId = Opaque<ResourceId>;
 
 export type PODConsent = PODModel & ConsentCreateParams;
 
@@ -60,7 +62,7 @@ export type GranterRef = 'initiator' | 'requester';
  */
 export type GranteeRef = 'initiator' | 'requester' | 'everyone' | IdentityId;
 
-export type ConsentUpdateParams = AtLeastOne<{
+export type ConsentUpdateParams = RequireAtLeastOne<{
     granted: ConsentId[];
     revoked: ConsentId[];
 }>;

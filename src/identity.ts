@@ -1,8 +1,10 @@
-import { Client } from './client';
-import { AtLeastOne, Model, PODModel, ResourceId, containsUpdate } from './model';
-import { ClientJWK } from './token';
+import { Opaque, RequireAtLeastOne } from 'type-fest';
 
-export type IdentityId = ResourceId & { readonly __tag: unique symbol };
+import { Client } from './client';
+import { Model, PODModel, ResourceId, containsUpdate } from './model';
+import { OidcTokenClaims, PublicJWK } from './token';
+
+export type IdentityId = Opaque<ResourceId>;
 
 export type PODIdentity = PODModel & IdentityCreateParams;
 
@@ -89,19 +91,11 @@ export class IdentityImpl implements Identity {
     }
 }
 
-export type IdentityUpdateParams = AtLeastOne<{
+export type IdentityUpdateParams = RequireAtLeastOne<{
     /** The new authentication verification parameters. */
     idp: IdentityProvider;
 }>;
 
 export type IdentityProvider = OidcTokenClaims & {
-    signingKey: ClientJWK;
-};
-
-export type OidcTokenClaims = {
-    /** The token's subject. */
-    sub: string;
-
-    /** The token's issuer. */
-    iss: string;
+    publicKey: PublicJWK;
 };

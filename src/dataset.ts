@@ -1,27 +1,17 @@
-import type { WriteStream } from 'fs';
+import { WriteStream } from 'fs';
 
-import axios from 'axios';
-import type { CancelTokenSource } from 'axios';
+import axios, { CancelTokenSource } from 'axios';
 import EventEmitter from 'eventemitter3';
 import FormData from 'form-data';
-import type { Writable } from 'readable-stream';
-import { Readable } from 'readable-stream';
+import { Readable, Writable } from 'readable-stream';
+import { JsonObject, Opaque, RequireAtLeastOne } from 'type-fest';
 
-import type { AppId } from './app';
+import { AppId } from './app';
 import { Client } from './client';
 import { IdentityId } from './identity';
-import {
-    AtLeastOne,
-    Model,
-    Page,
-    PageParams,
-    POD,
-    PODModel,
-    ResourceId,
-    containsUpdate,
-} from './model';
+import { Model, Page, PageParams, PODModel, ResourceId, containsUpdate } from './model';
 
-export type DatasetId = ResourceId & { readonly __tag: unique symbol };
+export type DatasetId = Opaque<ResourceId>;
 
 export type PODDataset = PODModel & {
     id: ResourceId;
@@ -30,7 +20,7 @@ export type PODDataset = PODModel & {
     metadata?: DatasetMetadata;
 };
 
-type DatasetMetadata = { [key: string]: POD; tags?: string[] };
+type DatasetMetadata = JsonObject & { tags?: string[] };
 
 export type DatasetUploadParams = {
     /** The initial owner of the Dataset. Leave unset to default to you, the creator. */
@@ -169,14 +159,14 @@ export class DatasetImpl implements Dataset {
     }
 }
 
-export type DatasetUpdateParams = AtLeastOne<{
+export type DatasetUpdateParams = RequireAtLeastOne<{
     /** The ID of the new owner's Identity. */
     owner: IdentityId;
     /**
      * Mappings that will be merged into the existing metadata.
      * A value of `null` represents delete.
      */
-    metadata: { [key: string]: POD };
+    metadata: JsonObject;
 }>;
 
 export type Storable = Uint8Array | Readable;
@@ -261,10 +251,10 @@ export class Download extends Readable {
     }
 
     public _read(): void {
-        const errHandler = (err: any) => this.destroy(err);
+        const errorHandler = (error: any) => this.destroy(error);
         this.downloadResponse
             .then((dl: Readable) => {
-                dl.on('error', errHandler)
+                dl.on('error', errorHandler)
                     .on('end', () => this.push(null))
                     .on('readable', () => {
                         let data;
@@ -273,7 +263,7 @@ export class Download extends Readable {
                         }
                     });
             })
-            .catch(errHandler);
+            .catch(errorHandler);
     }
 
     /** Convenience method for piping to a sink and waiting for writing to finish. */

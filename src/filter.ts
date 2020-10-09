@@ -1,6 +1,7 @@
+import { Primitive } from 'type-fest';
+
 import { DatasetId } from './dataset';
 import { IdentityId } from './identity';
-import { POD } from './model';
 
 export namespace Constraints {
     export type And = {
@@ -31,26 +32,26 @@ export type Constraints =
     | Constraints.DatasetTags;
 
 export namespace Comparison {
-    export type In<T = POD> = {
+    export type In<T = Primitive> = {
         $in: T[];
     };
 
-    export type Eq<T = POD> = {
+    export type Eq<T = Primitive> = {
         $eq: T;
     };
 
-    export type Not<T = POD> = {
+    export type Not<T = Primitive> = {
         $not: Comparison<T>;
     };
 }
 type Comparison<T> = Comparison.In<T> | Comparison.Eq<T> | Comparison.Not<T>;
 
 export namespace ArrayOp {
-    export type Any<T = POD> = {
+    export type Any<T = Primitive> = {
         $any: Comparison<T>;
     };
 
-    export type All<T = POD> = {
+    export type All<T = Primitive> = {
         $all: T[];
     };
 }

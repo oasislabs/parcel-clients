@@ -1,24 +1,32 @@
-// Import { Buffer } from 'buffer';
-// import { randomBytes } from 'tweetnacl';
-// import crypto from 'crypto';
-// import jwkToPem from 'jwk-to-pem';
-// import jwt from 'jsonwebtoken';
-//
-// export const PARCEL_AUD = 'https://api.oasislabs.com/parcel';
+import axios, { AxiosResponse } from 'axios';
+import { KEYUTIL, KJUR } from 'jsrsasign';
+import { Except, JsonObject } from 'type-fest';
 
-/**
- * A `TokenProvider` hands out OAuth access tokens.
- */
-export interface TokenProvider {
-    /**
-     * Returns a valid Bearer token to be presented to the Parcel gateway.
-     */
-    getToken: () => Promise<string>;
+export abstract class TokenProvider {
+    /** Returns a valid Bearer token to be presented to the Parcel gateway. */
+    public abstract getToken(): Promise<string>;
 }
 
-/**
- * A `TokenProvider` that always returns the same, initially provided token
- */
+/** A `TokenProvider` hands out OIDC access tokens. */
+export abstract class ExpiringTokenProvider implements TokenProvider {
+    protected token?: Token;
+
+    public static isTokenProvider(thing: any): thing is TokenProvider {
+        return thing && typeof thing.getToken === 'function';
+    }
+
+    /** Returns a valid Bearer token to be presented to the Parcel gateway. */
+    public async getToken(): Promise<string> {
+        if (this.token === undefined || this.token.isExpired())
+            this.token = await this.renewToken();
+        return this.token.toString();
+    }
+
+    /** Returns a renewed `Token`. */
+    protected abstract renewToken(): Promise<Token>;
+}
+
+/** A `TokenProvider` that always returns the same, initially provided token. */
 export class StaticTokenProvider implements TokenProvider {
     public constructor(private readonly token: string) {}
 
@@ -27,253 +35,256 @@ export class StaticTokenProvider implements TokenProvider {
     }
 }
 
-// Export enum TokenScope {
-//     Api = 'parcel.temp_api',
-//     Ipfs = 'parcel.temp_ipfs',
-//     GCP = 'https://www.googleapis.com/auth/devstorage.read_write',
-// }
-//
-// /**
-//  * A renewing token provider obtains a new access token when the current one has expired.
-//  */
-// /* Note: we could use the openid-client NPM package, but it's massive
-//  * overkill for what we want, which is simply `fetch`ing the /token endpoint.
-//  */
-// export class RenewingTokenProvider implements TokenProvider {
-//     private currentToken: Token = new Token('', 0);
-//
-//     private constructor(
-//         private tokenEndpoint: string,
-//         private makeRefreshRequestParams: () => any,
-//         private handleRefreshResponse: (
-//             response: Promise<Response>,
-//         ) => Promise<Token> = Token.fromResponse,
-//     ) {}
-//
-//     /**
-//      * Returns a new `RenewingTokenProvider` that obtains new access tokens to
-//      * https://api.oasislabs.com/parcel by presenting a client assertion to `tokenEndpoint`.
-//      * The client assertion token is signed using your API access token; you will need to
-//      * also provide your `clientId` and signing JWK.
-//      */
-//     public static fromJWK({
-//         clientId,
-//         privateKey,
-//         tokenEndpoint,
-//         scopes,
-//         expiresIn = '1h',
-//     }: {
-//         clientId: string;
-//         privateKey: string;
-//         tokenEndpoint: string;
-//         scopes: TokenScope[];
-//         expiresIn?: string;
-//     }): RenewingTokenProvider {
-//         const privateJwk = JSON.parse(privateKey);
-//         if (privateJwk.kty !== 'EC') {
-//             throw new Error('Private key should be an ECDSA key.');
-//         }
-//         if (!privateJwk.kid) {
-//             privateJwk.kid = getKeyThumbprint(privateJwk);
-//         }
-//         const makeRefreshRequestParams = () => {
-//             const clientAssertion = jwt.sign({}, jwkToPem(privateJwk, { private: true }), {
-//                 subject: clientId,
-//                 issuer: clientId,
-//                 keyid: privateJwk.kid,
-//                 algorithm: 'ES256',
-//                 audience: tokenEndpoint,
-//                 expiresIn: expiresIn,
-//                 jwtid: Buffer.from(randomBytes(8)).toString('base64'),
-//             });
-//             /* eslint-disable @typescript-eslint/camelcase */
-//             return {
-//                 grant_type: 'client_credentials',
-//                 scope: scopes.join(' '),
-//                 audience: PARCEL_AUD,
-//                 client_assertion_type: 'urn:ietf:params:oauth:client-assertion-type:jwt-bearer',
-//                 client_assertion: clientAssertion,
-//             };
-//             /* eslint-enable @typescript-eslint/camelcase */
-//         };
-//         return new RenewingTokenProvider(tokenEndpoint, makeRefreshRequestParams);
-//     }
-//
-//     /**
-//      * Returns a new `RenewingTokenProvider` that obtains new access tokens to
-//      * https://api.oasislabs.com/parcel by presenting a client assertion to `tokenEndpoint`.
-//      * The client assertion token is signed using your API access token; you will need to
-//      * also provide your `clientId` and client secret in PEM format.
-//      */
-//     public static fromPrivatePEM({
-//         clientId,
-//         clientSecret,
-//         tokenEndpoint,
-//         scopes,
-//         expiresIn = '1h',
-//     }: {
-//         clientId: string;
-//         clientSecret: string;
-//         tokenEndpoint: string;
-//         scopes: TokenScope[];
-//         expiresIn?: string;
-//     }): RenewingTokenProvider {
-//         const makeRefreshRequestParams = () => {
-//             const payload = {
-//                 iss: clientId,
-//                 scope: scopes.join(' '),
-//                 aud: tokenEndpoint,
-//             };
-//             const clientAssertion = jwt.sign(payload, clientSecret, {
-//                 algorithm: 'RS256',
-//                 expiresIn: expiresIn,
-//             });
-//             /* eslint-disable @typescript-eslint/camelcase */
-//             return {
-//                 grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
-//                 assertion: clientAssertion,
-//             };
-//             /* eslint-enable @typescript-eslint/camelcase */
-//         };
-//         return new RenewingTokenProvider(tokenEndpoint, makeRefreshRequestParams);
-//     }
-//
-//     /**
-//      * Returns a new `RenewingTokenProvider` that obtains new access tokens
-//      * by presenting a non-expired refresh token.
-//      */
-//     public static fromRefreshToken({
-//         refreshToken,
-//         tokenEndpoint,
-//     }: {
-//         refreshToken: string;
-//         tokenEndpoint: string;
-//     }): RenewingTokenProvider {
-//         /* eslint-disable @typescript-eslint/camelcase */
-//         const makeRefreshRequestParams = () => {
-//             return {
-//                 grant_type: 'refresh_token',
-//                 refresh_token: refreshToken,
-//             };
-//         };
-//         const handleRefreshResponse = async (resP: Promise<Response>) => {
-//             const requestTime = Date.now();
-//             const res = await resP.then(checkResponseStatus);
-//             const body = await res.json();
-//             refreshToken = body.refresh_token;
-//             return Token.fromResponseBody(body, requestTime);
-//         };
-//         /* eslint-enable @typescript-eslint/camelcase */
-//         return new RenewingTokenProvider(
-//             tokenEndpoint,
-//             makeRefreshRequestParams,
-//             handleRefreshResponse,
-//         );
-//     }
-//
-//     public async getToken(): Promise<string> {
-//         if (this.currentToken.isExpired()) {
-//             this.currentToken = await this.refreshToken();
-//         }
-//         return this.currentToken.token;
-//     }
-//
-//     private async refreshToken(): Promise<Token> {
-//         const params = this.makeRefreshRequestParams();
-//
-//         const form = new URLSearchParams();
-//         Object.keys(params).forEach((key) => {
-//             form.append(key, params[key]);
-//         });
-//
-//         return this.handleRefreshResponse(
-//             fetch(this.tokenEndpoint, {
-//                 method: 'POST',
-//                 body: form,
-//             }),
-//         );
-//     }
-// }
-//
-// class Token {
-//     public constructor(readonly token: string, readonly expiry: number) {}
-//
-//     public static async fromResponse(resP: Promise<Response>): Promise<Token> {
-//         const res = await resP.then(checkResponseStatus);
-//         return Token.fromResponseBody(await res.json(), Date.now());
-//     }
-//
-//     public static fromResponseBody(
-//         /* eslint-disable @typescript-eslint/camelcase */
-//         {
-//             access_token: accessToken,
-//             expires_in: expiresIn,
-//         }: { access_token: string; expires_in: number },
-//         /* eslint-enable @typescript-eslint/camelcase */
-//         requestTime: number,
-//     ): Token {
-//         return new Token(accessToken, requestTime + expiresIn * 1000);
-//     }
-//
-//     public isExpired(): boolean {
-//         return this.expiry <= Date.now();
-//     }
-// }
-//
-// function checkResponseStatus(res: Response): Response {
-//     if (!res.ok) {
-//         throw new Error(`auth token fetch failed with status ${res.status}`);
-//     }
-//     return res;
-// }
-//
-// function getKeyThumbprint(jwk: jwkToPem.EC): string {
-//     const json = JSON.stringify(
-//         {
-//             crv: jwk.crv,
-//             kty: jwk.kty,
-//             x: jwk.x,
-//             y: jwk.y,
-//         },
-//         // Keys should be stringified in an alphabetical order.
-//         ['crv', 'kty', 'x', 'y'],
-//     );
-//     const digest = crypto.createHash('sha256').update(json).digest();
-//     // base64url encoding.
-//     return digest.toString('base64').replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
-// }
+export type RenewingTokenProviderParams = {
+    clientId: string;
 
-export type ES256JWK = {
+    privateKey: PrivateJWK;
+
+    /**
+     * The identity provider's OAuth token retrieval endpoint.
+     * If left undefined, the access token will be self-signed with the `clientId`
+     * as the issuer.
+     */
+    tokenEndpoint: string;
+
+    /**
+     * A list of scopes that will be requested from the identity provider, which
+     * may be different from the scopes that the identity provider actually returns.
+     */
+    scopes: string[];
+};
+
+/** A `TokenProvider` that obtains a new token by re-authenticating to the issuer. */
+export class RenewingTokenProvider extends ExpiringTokenProvider {
+    private readonly clientId: string;
+    private readonly tokenEndpoint: string;
+    private readonly scopes: string[];
+    private readonly privateKey: string; // PKCS8-encoded
+    private readonly keyId: string;
+
+    private readonly clientAssertionLifetime = 1 * 60 * 60; // 1 hour
+
+    public constructor({
+        clientId,
+        privateKey: privateJWK,
+        scopes,
+        tokenEndpoint,
+    }: RenewingTokenProviderParams) {
+        super();
+
+        const { privateKey, keyId } = jwkToPem(privateJWK);
+        this.privateKey = privateKey;
+        this.keyId = keyId;
+
+        this.clientId = clientId;
+        this.tokenEndpoint = tokenEndpoint;
+        this.scopes = scopes;
+    }
+
+    protected async renewToken(): Promise<Token> {
+        const clientAssertion = makeJWT({
+            privateKey: this.privateKey,
+            keyId: this.keyId,
+            payload: {
+                sub: this.clientId,
+                iss: this.clientId,
+                aud: this.tokenEndpoint,
+                jti: KJUR.crypto.Util.getRandomHexOfNbytes(8),
+            },
+            lifetime: this.clientAssertionLifetime,
+        });
+
+        const authParams = new URLSearchParams();
+        authParams.append('grant_type', 'client_credentials');
+        authParams.append('client_assertion', clientAssertion);
+        authParams.append(
+            'client_assertion_type',
+            'urn:ietf:params:oauth:client-assertion-type:jwt-bearer',
+        );
+        authParams.append('scope', this.scopes.join(' '));
+
+        return Token.fromResponse(axios.post(this.tokenEndpoint, authParams));
+    }
+}
+
+export type RefreshingTokenProviderParams = {
+    refreshToken: string;
+    tokenEndpoint: string;
+};
+
+/** A `TokenProvider` that obtains a new token using a refresh token. */
+export class RefreshingTokenProvider extends ExpiringTokenProvider {
+    private refreshToken: string;
+    private readonly tokenEndpoint: string;
+
+    public constructor({ refreshToken, tokenEndpoint }: RefreshingTokenProviderParams) {
+        super();
+        this.refreshToken = refreshToken;
+        this.tokenEndpoint = tokenEndpoint;
+    }
+
+    protected async renewToken(): Promise<Token> {
+        const refreshParams = new URLSearchParams();
+        refreshParams.append('grant_type', 'refresh_token');
+        refreshParams.append('refresh_token', this.refreshToken);
+
+        return Token.fromResponse(
+            axios.post(this.tokenEndpoint, refreshParams).then((refreshResponse) => {
+                this.refreshToken = refreshResponse.data.refresh_token;
+                return refreshResponse;
+            }),
+        );
+    }
+}
+
+export type SelfIssuedTokenProviderParams = {
+    /** The `sub` and `iss` claims of the provided access token. */
+    identity: string;
+
+    /** A list of scopes that will be added as claims.  */
+    scopes: string[];
+
+    privateKey: PrivateJWK;
+
+    /**
+     * Duration for which the issued token is valid, in seconds.
+     * Defaults to one hour;
+     */
+    tokenLifetime?: number;
+};
+
+/** A `TokenProvider` that self-signs an access token. */
+export class SelfIssuedTokenProvider extends ExpiringTokenProvider {
+    private readonly identity: string;
+    private readonly scopes: string[];
+    private readonly privateKey: string;
+    private readonly keyId: string;
+    private readonly tokenLifetime: number;
+
+    public constructor({
+        identity,
+        privateKey: privateJWK,
+        scopes,
+        tokenLifetime,
+    }: SelfIssuedTokenProviderParams) {
+        super();
+
+        const { privateKey, keyId } = jwkToPem(privateJWK);
+        this.privateKey = privateKey;
+        this.keyId = keyId;
+
+        this.identity = identity;
+        this.scopes = scopes;
+        this.tokenLifetime = tokenLifetime ?? 1 * 60 * 60 /* one hour */;
+    }
+
+    protected async renewToken(): Promise<Token> {
+        const expiry = Date.now() / 1000 + this.tokenLifetime;
+        const token = makeJWT({
+            privateKey: this.privateKey,
+            keyId: this.keyId,
+            payload: {
+                sub: this.identity,
+                iss: this.identity,
+                aud: 'parcel-runtime',
+                scope: this.scopes,
+            },
+            lifetime: this.tokenLifetime,
+        });
+        return new Token(token, expiry);
+    }
+}
+
+class Token {
+    public constructor(private readonly token: string, private readonly expiry: number) {}
+
+    public static async fromResponse(response: Promise<AxiosResponse>): Promise<Token> {
+        const requestTime = Date.now();
+        const body = (await response).data;
+        return new Token(body.access_token, requestTime + body.expires_in * 1000);
+    }
+
+    public isExpired(): boolean {
+        return this.expiry <= Date.now();
+    }
+
+    public toString(): string {
+        return this.token;
+    }
+}
+
+type BaseJWK = {
+    kty: string;
+    alg: string;
+    use?: 'sig';
+    kid?: string;
+};
+
+export type PrivateES256JWK = BaseJWK & {
     kty: 'EC';
     alg: 'ES256';
     crv: 'P-256';
     x: string;
     y: string;
     d: string;
-    use?: 'sig';
-    kid?: string;
+};
+export type PublicES256JWK = Except<PrivateES256JWK, 'd'>;
+
+export type PublicJWK = PublicES256JWK;
+export type PrivateJWK = PrivateES256JWK;
+
+export type OidcTokenClaims = {
+    /** The token's subject. */
+    sub: string;
+
+    /** The token's issuer. */
+    iss: string;
 };
 
-export type RS256JWK = {
-    kty: 'RSA';
-    alg: 'RS256';
-    d: string;
-    e?: 'AQAB';
-    p: string;
-    q: string;
-    dp: string;
-    dq: string;
-    qi: string;
-    use?: 'sig';
-    kid?: string;
+export type ClientCredentials = OidcTokenClaims & {
+    privateKey: PrivateJWK;
 };
 
-export type HS256JWK = {
-    kty: 'oct';
-    alg: 'HS256';
-    k: string;
-    use?: 'sig';
-    kid?: string;
-};
+/** Returns the PKCS8-encoded private key and the JWK"s key id. */
+function jwkToPem(jwk: PrivateJWK): { privateKey: string; keyId: string } {
+    if (jwk.kty !== 'EC' || jwk.alg !== 'ES256') {
+        throw new Error(
+            `Unsupported private key. Expected \`alg: 'ES256'\` but was \`${jwk.alg}\` }`,
+        );
+    }
 
-export type ClientJWK = ES256JWK | RS256JWK | HS256JWK;
+    const kjurJWK = JSON.parse(JSON.stringify(jwk));
+    const keyId = jwk.kid ?? KJUR.jws.JWS.getJWKthumbprint(kjurJWK);
+    kjurJWK.crv = 'secp256r1'; // KJUR's preferred name for name for P-256
+    const privateKey = (KEYUTIL.getPEM(KEYUTIL.getKey(kjurJWK), 'PKCS8PRV') as unknown) as string; // The type definitions are wrong: they say `void` but it's actually `string`.
+    return {
+        privateKey,
+        keyId,
+    };
+}
+
+function makeJWT({
+    privateKey,
+    keyId,
+    payload,
+    lifetime,
+}: {
+    /** PKCS8 (PEM)-encoded private key */
+    privateKey: string;
+    keyId: string;
+    payload: JsonObject;
+    /** The token's lifetime in seconds. */
+    lifetime: number;
+}): string {
+    const header = {
+        alg: 'ES256',
+        typ: 'JWT',
+        kid: keyId,
+    };
+
+    const now = Math.floor(Date.now() / 1000);
+    payload.iat = now;
+    payload.exp = now + lifetime;
+
+    return KJUR.jws.JWS.sign(null, header, payload, privateKey);
+}

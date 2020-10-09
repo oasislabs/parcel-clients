@@ -1,3 +1,5 @@
+import { Opaque, RequireAtLeastOne } from 'type-fest';
+
 import { Client } from './client';
 import {
     Consent,
@@ -8,9 +10,9 @@ import {
     PODConsent,
 } from './consent';
 import { IdentityId } from './identity';
-import { AtLeastOne, Model, Page, PageParams, PODModel, ResourceId, containsUpdate } from './model';
+import { Model, Page, PageParams, PODModel, ResourceId, containsUpdate } from './model';
 
-export type AppId = ResourceId & { readonly __tag: unique symbol };
+export type AppId = Opaque<ResourceId>;
 
 export type PODApp = PODModel & {
     acceptanceText?: string;
@@ -327,7 +329,7 @@ export class AppImpl implements App {
     }
 }
 
-export type AppUpdateParams = AtLeastOne<{
+export type AppUpdateParams = RequireAtLeastOne<{
     /**
      * Whether this app is active and visible to users. This is a one-shot flag
      * that cannot be reset. The app must be deleted to remove it from publication.

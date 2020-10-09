@@ -5,6 +5,7 @@ import Ajv from 'ajv';
 import nock from 'nock';
 import { paramCase } from 'param-case';
 import { Writable } from 'readable-stream';
+import { JsonObject } from 'type-fest';
 import * as uuid from 'uuid';
 
 import { AppId, AppUpdateParams, PODApp } from '../src/app';
@@ -12,8 +13,8 @@ import { ConsentId, PODConsent } from '../src/consent';
 import { DatasetId, PODDataset } from '../src/dataset';
 import { GrantId, PODGrant } from '../src/grant';
 import { IdentityId, PODIdentity } from '../src/identity';
-import { ClientJWK, Parcel, ParcelApi } from '../src';
-import { Page, POD, PODModel } from '../src/model';
+import { PrivateJWK, Parcel, ParcelApi } from '../src';
+import { Page, PODModel } from '../src/model';
 
 const API_BASE_URL = 'https://api.oasislabs.com/parcel/v1';
 function nockIt(testName: string, test: (scope: nock.Scope) => Promise<void>): void {
@@ -32,19 +33,19 @@ function nockIt(testName: string, test: (scope: nock.Scope) => Promise<void>): v
     });
 }
 
-function clone<T = POD>(object: T): T {
+function clone<T = JsonObject>(object: T): T {
     return JSON.parse(JSON.stringify(object));
 }
 
 declare global {
     namespace jest {
         interface Matchers<R> {
-            toMatchSchema: (schema: string | Record<string, unknown>) => CustomMatcherResult;
+            toMatchSchema: (schema: string | JsonObject) => CustomMatcherResult;
         }
     }
 }
 
-const API_KEY: ClientJWK = {
+const API_KEY: PrivateJWK = {
     kty: 'EC',
     d: '0fI_f6qv9MPkzvDged2YYEgYz9q1zTcHoNJl_vhLyeM',
     use: 'sig',
@@ -84,7 +85,7 @@ describe('Parcel', () => {
         expect.extend({
             toMatchSchema(
                 received: any,
-                schema: string | Record<string, unknown>,
+                schema: string | JsonObject,
             ): { message: () => string; pass: boolean } {
                 let validator: Ajv.ValidateFunction;
                 if (typeof schema === 'string') {
@@ -120,7 +121,7 @@ describe('Parcel', () => {
 
     type HttpVerb = 'GET' | 'POST' | 'PATCH' | 'DELETE';
 
-    function getRequestSchema(method: HttpVerb, endpoint: string): Record<string, unknown> {
+    function getRequestSchema(method: HttpVerb, endpoint: string): JsonObject {
         const schema =
             openapiSchema.paths[endpoint][method.toLowerCase()].requestBody.content[
                 'application/json'
@@ -154,7 +155,7 @@ describe('Parcel', () => {
 
     beforeEach(() => {
         /* eslint-disable-next-line new-cap */
-        parcel = Parcel(API_TOKEN); // TODO: use API_KEY
+        parcel = Parcel(API_TOKEN);
     });
 
     function createPodModel(): PODModel {
@@ -175,7 +176,7 @@ describe('Parcel', () => {
             idp: {
                 sub: 'subject',
                 iss: 'auth.oasislabs.com',
-                signingKey: API_KEY,
+                publicKey: API_KEY,
             },
         };
         expect(podIdentity).toMatchSchema('Identity');
@@ -272,12 +273,12 @@ describe('Parcel', () => {
                 expect(fixtureIdentity).toMatchSchema(
                     getResponseSchema('POST', '/identities', 201),
                 );
-                const createParameters = {
+                const createParams = {
                     idp: fixtureIdentity.idp,
                 };
-                expect(createParameters).toMatchSchema(getRequestSchema('POST', '/identities'));
-                scope.post('/identities', createParameters).reply(201, fixtureIdentity);
-                const identity = await parcel.createIdentity(createParameters);
+                expect(createParams).toMatchSchema(getRequestSchema('POST', '/identities'));
+                scope.post('/identities', createParams).reply(201, fixtureIdentity);
+                const identity = await parcel.createIdentity(createParams);
                 expect(identity).toMatchObject(fixtureIdentity);
             });
 
@@ -587,13 +588,13 @@ describe('Parcel', () => {
 
         nockIt('create', async (scope) => {
             expect(fixtureGrant).toMatchSchema(getResponseSchema('POST', '/grants', 201));
-            const createParameters = {
+            const createParams = {
                 grantee: createIdentityId(),
                 filter: fixtureGrant.filter,
             };
-            expect(createParameters).toMatchSchema(getRequestSchema('POST', '/grants'));
-            scope.post('/grants', createParameters).reply(201, fixtureGrant);
-            const grant = await parcel.createGrant(createParameters);
+            expect(createParams).toMatchSchema(getRequestSchema('POST', '/grants'));
+            scope.post('/grants', createParams).reply(201, fixtureGrant);
+            const grant = await parcel.createGrant(createParams);
             expect(grant).toMatchObject(fixtureGrant);
         });
 
@@ -633,15 +634,15 @@ describe('Parcel', () => {
 
         nockIt('create', async (scope) => {
             expect(fixtureApp).toMatchSchema(getResponseSchema('POST', '/apps', 201));
-            const createParameters = JSON.parse(JSON.stringify(fixtureApp));
-            createParameters.idp = {
+            const createParams = JSON.parse(JSON.stringify(fixtureApp));
+            createParams.idp = {
                 sub: 'app',
                 iss: 'auth.oasislabs.com',
-                signingKey: API_KEY,
+                publicKey: API_KEY,
             };
-            expect(createParameters).toMatchSchema(getRequestSchema('POST', '/apps'));
-            scope.post('/apps', createParameters).reply(201, fixtureApp);
-            const app = await parcel.createApp(createParameters);
+            expect(createParams).toMatchSchema(getRequestSchema('POST', '/apps'));
+            scope.post('/apps', createParams).reply(201, fixtureApp);
+            const app = await parcel.createApp(createParams);
             expect(app).toMatchObject(fixtureApp);
         });
 

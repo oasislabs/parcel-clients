@@ -1,5 +1,4 @@
-import axios from 'axios';
-import type { AxiosInstance } from 'axios';
+import axios, { AxiosInstance } from 'axios';
 
 import { Consent, ConsentCreateParams, ConsentId, ConsentUpdateParams } from './consent';
 import { App, AppCreateParams, AppId, AppImpl, AppUpdateParams, ListAppsFilter } from './app';
@@ -25,10 +24,15 @@ import {
 } from './identity';
 import { Page, PageParams } from './model';
 import {
-    ClientJWK,
-    ES256JWK,
-    HS256JWK,
-    RS256JWK,
+    ClientCredentials,
+    PrivateJWK,
+    PublicJWK,
+    RefreshingTokenProvider,
+    RefreshingTokenProviderParams,
+    RenewingTokenProvider,
+    RenewingTokenProviderParams,
+    SelfIssuedTokenProvider,
+    SelfIssuedTokenProviderParams,
     StaticTokenProvider,
     TokenProvider,
 } from './token';
@@ -38,7 +42,7 @@ export {
     AppCreateParams,
     AppId,
     AppUpdateParams,
-    ClientJWK,
+    ClientCredentials,
     Consent,
     ConsentCreateParams,
     ConsentId,
@@ -47,33 +51,44 @@ export {
     DatasetId,
     DatasetUpdateParams,
     DatasetUploadParams,
-    ES256JWK,
     Grant,
     GrantCreateParams,
     GrantId,
-    HS256JWK,
     Identity,
     IdentityCreateParams,
     IdentityId,
     IdentityUpdateParams,
     Page,
     PageParams,
-    RS256JWK,
+    PrivateJWK,
+    PublicJWK,
+    RefreshingTokenProviderParams,
+    RenewingTokenProviderParams,
+    SelfIssuedTokenProviderParams,
     Storable,
 };
 
 export function Parcel(
-    tokenSource: string | ClientJWK | TokenProvider,
+    tokenSource:
+        | string
+        | RenewingTokenProviderParams
+        | RefreshingTokenProviderParams
+        | SelfIssuedTokenProviderParams,
     config?: ParcelConfig,
 ): ParcelApi {
     let tokenProvider: TokenProvider;
+    const hasProperty = (property: string) =>
+        Object.prototype.hasOwnProperty.call(tokenSource, property);
     if (typeof tokenSource === 'string') {
         tokenProvider = new StaticTokenProvider(tokenSource);
-    } else if ((tokenSource as any).getToken) {
-        tokenProvider = tokenSource as TokenProvider;
+    } else if (hasProperty('identity')) {
+        tokenProvider = new SelfIssuedTokenProvider(tokenSource as SelfIssuedTokenProviderParams);
+    } else if (hasProperty('refreshToken')) {
+        tokenProvider = new RefreshingTokenProvider(tokenSource as RefreshingTokenProviderParams);
+    } else if (hasProperty('clientId')) {
+        tokenProvider = new RenewingTokenProvider(tokenSource as RenewingTokenProviderParams);
     } else {
-        throw new Error('unimplemented');
-        // TokenProvider = new RenewingTokenProvider(tokenSource);
+        throw new Error(`unrecognized \`tokenSource\`: ${JSON.stringify(tokenSource)}`);
     }
 
     return new ParcelClient(

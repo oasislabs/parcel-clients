@@ -1,11 +1,9 @@
-import type { AxiosInstance, AxiosRequestConfig } from 'axios';
-import type FormData from 'form-data';
+import { AxiosInstance, AxiosRequestConfig } from 'axios';
+import FormData from 'form-data';
 import { paramCase } from 'param-case';
+import { JsonObject } from 'type-fest';
 
-import type { POD } from './model';
-import type { TokenProvider } from './token';
-
-type Params = { [key: string]: POD };
+import { TokenProvider } from './token';
 
 export class Client {
     public constructor(
@@ -21,21 +19,21 @@ export class Client {
 
     public async get<T>(
         endpoint: string,
-        parameters: Params = {},
+        parameters: JsonObject = {},
         axiosConfig?: AxiosRequestConfig,
     ): Promise<T> {
-        const kebabCaseParameters: { [key: string]: POD } = {};
+        const kebabCaseParams: JsonObject = {};
         for (const [k, v] of Object.entries(parameters)) {
-            kebabCaseParameters[paramCase(k)] = v;
+            kebabCaseParams[paramCase(k)] = v;
         }
 
         return this.axios
-            .get(endpoint, Object.assign({ params: kebabCaseParameters }, axiosConfig))
+            .get(endpoint, Object.assign({ params: kebabCaseParams }, axiosConfig))
             .then((r) => r.data);
     }
 
     /** Convenience method for POSTing and expecting a 201 response */
-    public async create<T>(endpoint: string, data: Params): Promise<T> {
+    public async create<T>(endpoint: string, data: JsonObject): Promise<T> {
         return this.post(endpoint, data, {
             validateStatus: (s) => s === 201,
         });
@@ -43,13 +41,13 @@ export class Client {
 
     public async post<T>(
         endpoint: string,
-        data: Params | FormData,
+        data: JsonObject | FormData,
         axiosConfig?: AxiosRequestConfig,
     ): Promise<T> {
         return this.axios.post(endpoint, data, axiosConfig).then((r) => r.data);
     }
 
-    public async patch<T>(endpoint: string, parameters: Params): Promise<T> {
+    public async patch<T>(endpoint: string, parameters: JsonObject): Promise<T> {
         return this.axios.patch(endpoint, parameters).then((r) => r.data);
     }
 

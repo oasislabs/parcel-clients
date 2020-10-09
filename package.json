@@ -35,6 +35,8 @@
     "devDependencies": {
         "@apidevtools/swagger-parser": "^10.0.2",
         "@types/jest": "^26.0.9",
+        "@types/jsonwebtoken": "^8.5.0",
+        "@types/jsrsasign": "^8.0.5",
         "@types/node": "^14.0.20",
         "@types/openapi-sampler": "^1.0.0",
         "@types/uuid": "^8.3.0",
@@ -45,6 +47,7 @@
         "nock": "^13.0.4",
         "openapi-types": "^7.0.1",
         "ts-jest": "^26.1.4",
+        "type-fest": "^0.17.0",
         "typedoc": "^0.18.0",
         "typescript": "^3.9.7",
         "uuid": "^8.3.0",
@@ -55,6 +58,7 @@
         "axios": "^0.19.2",
         "eventemitter3": "^4.0.4",
         "form-data": "^3.0.0",
+        "jsrsasign": "^10.0.0",
         "param-case": "^3.0.3",
         "readable-stream": "^3.6.0"
     }
