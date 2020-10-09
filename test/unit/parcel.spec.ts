@@ -8,13 +8,13 @@ import { Writable } from 'readable-stream';
 import { JsonObject } from 'type-fest';
 import * as uuid from 'uuid';
 
-import { AppId, AppUpdateParams, PODApp } from '../src/app';
-import { ConsentId, PODConsent } from '../src/consent';
-import { DatasetId, PODDataset } from '../src/dataset';
-import { GrantId, PODGrant } from '../src/grant';
-import { IdentityId, PODIdentity } from '../src/identity';
-import { PrivateJWK, Parcel, ParcelApi } from '../src';
-import { Page, PODModel } from '../src/model';
+import Parcel from '@oasislabs/parcel';
+import { AppId, AppUpdateParams, PODApp } from '@oasislabs/parcel/app';
+import { ConsentId, PODConsent } from '@oasislabs/parcel/consent';
+import { DatasetId, PODDataset } from '@oasislabs/parcel/dataset';
+import { GrantId, PODGrant } from '@oasislabs/parcel/grant';
+import { IdentityId, PODIdentity } from '@oasislabs/parcel/identity';
+import { Page, PODModel } from '@oasislabs/parcel/model';
 
 const API_BASE_URL = 'https://api.oasislabs.com/parcel/v1';
 function nockIt(testName: string, test: (scope: nock.Scope) => Promise<void>): void {
@@ -45,7 +45,7 @@ declare global {
     }
 }
 
-const API_KEY: PrivateJWK = {
+const API_KEY = {
     kty: 'EC',
     d: '0fI_f6qv9MPkzvDged2YYEgYz9q1zTcHoNJl_vhLyeM',
     use: 'sig',
@@ -54,7 +54,7 @@ const API_KEY: PrivateJWK = {
     x: 'C4GWlEeWvEQLtyvwndZzaHcKEfuZSZrQ2jikoH55EHU',
     y: 'xNSJVFo7gewNmv-7aKZUkZdjn0fVi25XQi1pxYGZpWU',
     alg: 'ES256',
-};
+} as const;
 
 const API_TOKEN =
     'eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJwYXJjZWwiLCJpc3MiOiJhdXRoLm9hc2lzbGFicy5jb20ifQ.foQOs-KXhOP6Vlwfs1sYqW1whbG-QW29Ex4Xa_mNNXaT4T2xtCwghhYGurkVUYSlo4cRxoaQYKo_foC2KysaDQ';
@@ -63,7 +63,7 @@ describe('Parcel', () => {
     let openapiSchema: any;
     let ajv: Ajv.Ajv;
 
-    let parcel: ParcelApi;
+    let parcel: Parcel;
 
     beforeAll(async () => {
         const repoRoot = execSync('git rev-parse --show-toplevel').toString().trim();
@@ -74,6 +74,7 @@ describe('Parcel', () => {
                 timestamp: (t: any) => typeof t === 'number' && t >= 0 && t <= 18446744073709552000,
                 'RGB hex': /^#[\da-f]{6}$/i,
                 binary: (b: any) => Buffer.isBuffer(b) || b.constructor.name === 'Uint8Array',
+                int32: Number.isInteger,
             },
         });
         Object.entries(openapiSchema.components.schemas).forEach(
@@ -122,13 +123,41 @@ describe('Parcel', () => {
     type HttpVerb = 'GET' | 'POST' | 'PATCH' | 'DELETE';
 
     function getRequestSchema(method: HttpVerb, endpoint: string): JsonObject {
-        const schema =
+        let schema =
             openapiSchema.paths[endpoint][method.toLowerCase()].requestBody.content[
                 'application/json'
             ].schema;
+        if (schema.allOf) schema = mergeAllOf(schema.allOf);
+        schema.additionalProperties = false;
         ajv.validateSchema(schema);
         expect(ajv.errors).toBeNull();
         return schema;
+    }
+
+    function getQueryParametersSchema(method: HttpVerb, endpoint: string): JsonObject {
+        const params = openapiSchema.paths[endpoint][method.toLowerCase()].parameters.filter(
+            (p: { in: string }) => p.in === 'query',
+        );
+        if (params.length > 1)
+            return mergeAllOf(params.map((p: { schema: JsonObject }) => p.schema));
+        return params[0].schema;
+    }
+
+    type Schema = { type: 'object'; required: string[]; properties: JsonObject; allOf?: Schema[] };
+    function mergeAllOf(allOfs: Schema[]): Schema {
+        const mergedRequires: Set<string> = new Set();
+        const mergedProperties: JsonObject = {};
+        for (let schema of allOfs) {
+            if (schema.allOf) schema = mergeAllOf(schema.allOf);
+            for (const required of schema.required ?? []) mergedRequires.add(required);
+            Object.assign(mergedProperties, schema.properties);
+        }
+
+        return {
+            type: 'object',
+            required: [...mergedRequires.values()],
+            properties: mergedProperties,
+        };
     }
 
     function getResponseSchema(
@@ -138,24 +167,26 @@ describe('Parcel', () => {
         contentType?: string,
     ): any {
         const responses = openapiSchema.paths[endpoint][method.toLowerCase()].responses[statusCode];
-        if (!responses.content) {
-            return undefined;
-        }
+        if (!responses.content) return undefined;
 
-        const schema = responses.content[contentType ?? 'application/json'].schema;
+        let schema = responses.content[contentType ?? 'application/json'].schema;
+
         if (schema.type === 'string' && schema.format === 'binary') {
             schema.type = 'object'; // Workaround for JSON schema not having binary
             delete schema.format;
         }
 
+        if (schema.allOf) schema = mergeAllOf(schema.allOf);
+        schema.additionalProperties = false;
         ajv.validateSchema(schema);
         expect(ajv.errors).toBeNull();
         return schema;
     }
 
     beforeEach(() => {
-        /* eslint-disable-next-line new-cap */
-        parcel = Parcel(API_TOKEN);
+        parcel = new Parcel(API_TOKEN, {
+            apiUrl: API_BASE_URL,
+        });
     });
 
     function createPodModel(): PODModel {
@@ -426,9 +457,6 @@ describe('Parcel', () => {
 
         describe('download', () => {
             nockIt('by id', async (scope) => {
-                expect(fixtureDataset).toMatchSchema(
-                    getResponseSchema('GET', '/datasets/{id}/download', 200, '*/*'),
-                );
                 scope.get(`/datasets/${fixtureDataset.id}/download`).reply(200, fixtureData);
                 const download = parcel.downloadDataset(fixtureDataset.id as DatasetId);
                 const downloadCollector = new DownloadCollector();
@@ -452,14 +480,14 @@ describe('Parcel', () => {
                 scope.get(`/datasets/${fixtureDataset.id}/download`).reply(404);
                 const download = parcel.downloadDataset(fixtureDataset.id as DatasetId);
                 const downloadCollector = new DownloadCollector();
-                await expect(download.pipeTo(downloadCollector)).rejects.toThrow();
+                await expect(download.pipeTo(downloadCollector)).rejects.toThrow('404');
             });
 
             nockIt('write error', async (scope) => {
                 scope.get(`/datasets/${fixtureDataset.id}/download`).reply(200, fixtureData);
                 const download = parcel.downloadDataset(fixtureDataset.id as DatasetId);
                 const downloadCollector = new DownloadCollector({ error: new Error('whoops') });
-                await expect(download.pipeTo(downloadCollector)).rejects.toThrow();
+                await expect(download.pipeTo(downloadCollector)).rejects.toThrow('whoops');
             });
         });
 
@@ -490,10 +518,14 @@ describe('Parcel', () => {
                 );
 
                 const filterWithPagination = {
-                    ownedBy: fixtureResultsPage.results[0].owner as IdentityId,
+                    owner: fixtureResultsPage.results[0].owner as IdentityId,
+                    creator: fixtureResultsPage.results[0].creator as IdentityId,
                     pageSize: 2,
-                    pageToken: uuid.v4(),
+                    nextPageToken: uuid.v4(),
                 };
+                expect(filterWithPagination).toMatchSchema(
+                    getQueryParametersSchema('GET', '/datasets'),
+                );
                 scope
                     .get('/datasets')
                     .query(
@@ -633,15 +665,24 @@ describe('Parcel', () => {
         });
 
         nockIt('create', async (scope) => {
-            expect(fixtureApp).toMatchSchema(getResponseSchema('POST', '/apps', 201));
-            const createParams = JSON.parse(JSON.stringify(fixtureApp));
-            createParams.idp = {
-                sub: 'app',
-                iss: 'auth.oasislabs.com',
-                publicKey: API_KEY,
+            const createParams: any /* AppCreateParams & PODApp */ = {
+                ...clone(fixtureApp),
+                consents: [createPodConsent({ optional: true })],
+                idp: {
+                    sub: 'app',
+                    iss: 'auth.oasislabs.com',
+                    publicKey: API_KEY,
+                },
             };
+            delete createParams.id;
+            delete createParams.createTimestamp;
+            delete createParams.creator;
+            delete createParams.participants;
+            delete createParams.published;
+
             expect(createParams).toMatchSchema(getRequestSchema('POST', '/apps'));
             scope.post('/apps', createParams).reply(201, fixtureApp);
+            expect(fixtureApp).toMatchSchema(getResponseSchema('POST', '/apps', 201));
             const app = await parcel.createApp(createParams);
             expect(app).toMatchObject(fixtureApp);
         });
@@ -681,8 +722,11 @@ describe('Parcel', () => {
                     creator: createIdentityId(),
                     requesterParticipation: 'invited' as const,
                     pageSize: 2,
-                    pageToken: uuid.v4(),
+                    nextPageToken: uuid.v4(),
                 };
+                expect(filterWithPagination).toMatchSchema(
+                    getQueryParametersSchema('GET', '/apps'),
+                );
                 scope
                     .get('/apps')
                     .query(

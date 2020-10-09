@@ -1,12 +1,16 @@
 {
     "include": ["src"],
     "compilerOptions": {
+        "baseUrl": ".",
         "declaration": true,
         "esModuleInterop": true,
         "lib": ["esnext", "es6", "dom"],
         "module": "commonjs",
         "moduleResolution": "node",
         "outDir": "lib/",
+        "paths": {
+            "@oasislabs/parcel*": ["src*", "src/index"]
+        },
         "sourceMap": true,
         "strict": true,
         "target": "es6"

@@ -1,13 +1,11 @@
-import { WriteStream } from 'fs';
-
 import axios, { CancelTokenSource } from 'axios';
 import EventEmitter from 'eventemitter3';
 import FormData from 'form-data';
-import { Readable, Writable } from 'readable-stream';
+import { Readable } from 'readable-stream';
 import { JsonObject, Opaque, RequireAtLeastOne } from 'type-fest';
 
 import { AppId } from './app';
-import { Client } from './client';
+import { Client, Download } from './client';
 import { IdentityId } from './identity';
 import { Model, Page, PageParams, PODModel, ResourceId, containsUpdate } from './model';
 
@@ -116,11 +114,7 @@ export class DatasetImpl implements Dataset {
     }
 
     public static download(client: Client, id: DatasetId): Download {
-        return new Download(
-            client.get<Readable>(DatasetImpl.endpointForId(id) + '/download', undefined, {
-                responseType: 'stream',
-            }),
-        );
+        return client.download(DatasetImpl.endpointForId(id) + '/download');
     }
 
     public static async update(
@@ -169,9 +163,13 @@ export type DatasetUpdateParams = RequireAtLeastOne<{
     metadata: JsonObject;
 }>;
 
-export type Storable = Uint8Array | Readable;
+export type Storable = Uint8Array | Readable | Blob;
 
-export type ListDatasetsFilter = { ownedBy: IdentityId } | { sharedWith: IdentityId };
+export type ListDatasetsFilter = Partial<{
+    owner: IdentityId;
+    creator: IdentityId;
+    sharedWith: IdentityId;
+}>;
 
 /**
  * An `Upload` is the result of calling `parcel.uploadDataset`.
@@ -204,7 +202,7 @@ export class Upload extends EventEmitter {
         });
         client
             .post<PODDataset>(DATASETS_EP, form, {
-                headers: form.getHeaders(),
+                headers: form.getHeaders ? /* node */ form.getHeaders() : undefined,
                 cancelToken: this.cancelToken.token,
                 onUploadProgress: this.emit.bind(this, 'progress'),
                 validateStatus: (s) => s === 201 /* Created */,
@@ -233,43 +231,6 @@ export class Upload extends EventEmitter {
         return new Promise((resolve, reject) => {
             this.on('finish', resolve);
             this.on('error', reject);
-        });
-    }
-}
-
-export class Download extends Readable {
-    constructor(private readonly downloadResponse: Promise<Readable>) {
-        super();
-    }
-
-    /** Aborts the download. */
-    public abort(): void {
-        this.destroy();
-        this.downloadResponse.then(Readable.prototype.destroy.call).catch(() => {
-            /* The client doesn't care about the response, so we can ignore the error. */
-        });
-    }
-
-    public _read(): void {
-        const errorHandler = (error: any) => this.destroy(error);
-        this.downloadResponse
-            .then((dl: Readable) => {
-                dl.on('error', errorHandler)
-                    .on('end', () => this.push(null))
-                    .on('readable', () => {
-                        let data;
-                        while ((data = dl.read())) {
-                            this.push(data);
-                        }
-                    });
-            })
-            .catch(errorHandler);
-    }
-
-    /** Convenience method for piping to a sink and waiting for writing to finish. */
-    public async pipeTo(sink: Writable | WriteStream): Promise<void> {
-        return new Promise((resolve, reject) => {
-            this.on('error', reject).pipe(sink).on('finish', resolve).on('error', reject);
         });
     }
 }

@@ -1,4 +1,4 @@
-import { containsUpdate } from '../src/model';
+import { containsUpdate } from '@oasislabs/parcel/model';
 
 describe('containsUpdate', () => {
     it('false', () => {

@@ -3,9 +3,23 @@ import { KEYUTIL, KJUR } from 'jsrsasign';
 import { Except, JsonObject } from 'type-fest';
 
 export abstract class TokenProvider {
+    public static fromSource(source: TokenSource): TokenProvider {
+        if (typeof source === 'string') return new StaticTokenProvider(source);
+        if ('principal' in source) return new SelfIssuedTokenProvider(source);
+        if ('refreshToken' in source) return new RefreshingTokenProvider(source);
+        if ('clientId' in source) return new RenewingTokenProvider(source);
+        throw new Error(`unrecognized \`tokenSource\`: ${JSON.stringify(source)}`);
+    }
+
     /** Returns a valid Bearer token to be presented to the Parcel gateway. */
     public abstract getToken(): Promise<string>;
 }
+
+export type TokenSource =
+    | string
+    | RenewingTokenProviderParams
+    | RefreshingTokenProviderParams
+    | SelfIssuedTokenProviderParams;
 
 /** A `TokenProvider` hands out OIDC access tokens. */
 export abstract class ExpiringTokenProvider implements TokenProvider {
@@ -139,12 +153,16 @@ export class RefreshingTokenProvider extends ExpiringTokenProvider {
 
 export type SelfIssuedTokenProviderParams = {
     /** The `sub` and `iss` claims of the provided access token. */
-    identity: string;
+    principal: string;
 
-    /** A list of scopes that will be added as claims.  */
-    scopes: string[];
-
+    /** The private key that will be used to sign the access token. */
     privateKey: PrivateJWK;
+
+    /**
+     * A list of scopes that will be added as claims.
+     * The default is all scopes.
+     */
+    scopes?: string[];
 
     /**
      * Duration for which the issued token is valid, in seconds.
@@ -155,14 +173,14 @@ export type SelfIssuedTokenProviderParams = {
 
 /** A `TokenProvider` that self-signs an access token. */
 export class SelfIssuedTokenProvider extends ExpiringTokenProvider {
-    private readonly identity: string;
-    private readonly scopes: string[];
+    private readonly principal: string;
     private readonly privateKey: string;
     private readonly keyId: string;
+    private readonly scopes: string[];
     private readonly tokenLifetime: number;
 
     public constructor({
-        identity,
+        principal,
         privateKey: privateJWK,
         scopes,
         tokenLifetime,
@@ -173,8 +191,8 @@ export class SelfIssuedTokenProvider extends ExpiringTokenProvider {
         this.privateKey = privateKey;
         this.keyId = keyId;
 
-        this.identity = identity;
-        this.scopes = scopes;
+        this.principal = principal;
+        this.scopes = scopes ?? ['parcel.*'];
         this.tokenLifetime = tokenLifetime ?? 1 * 60 * 60 /* one hour */;
     }
 
@@ -184,8 +202,8 @@ export class SelfIssuedTokenProvider extends ExpiringTokenProvider {
             privateKey: this.privateKey,
             keyId: this.keyId,
             payload: {
-                sub: this.identity,
-                iss: this.identity,
+                sub: this.principal,
+                iss: this.principal,
                 aud: 'parcel-runtime',
                 scope: this.scopes,
             },

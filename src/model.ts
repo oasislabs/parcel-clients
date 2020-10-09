@@ -21,8 +21,8 @@ export type Page<T = JsonValue> = {
 };
 
 export type PageParams = {
-    pageSize?: number;
-    pageToken?: string;
+    pageSize: number;
+    nextPageToken: string;
 };
 
 /**

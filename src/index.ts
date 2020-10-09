@@ -1,15 +1,12 @@
-import axios, { AxiosInstance } from 'axios';
-
 import { Consent, ConsentCreateParams, ConsentId, ConsentUpdateParams } from './consent';
 import { App, AppCreateParams, AppId, AppImpl, AppUpdateParams, ListAppsFilter } from './app';
-import { Client } from './client';
+import { Client, Config as ClientConfig, Download } from './client';
 import {
     Dataset,
     DatasetId,
     DatasetImpl,
     DatasetUpdateParams,
     DatasetUploadParams,
-    Download,
     ListDatasetsFilter,
     Storable,
     Upload,
@@ -23,19 +20,7 @@ import {
     IdentityUpdateParams,
 } from './identity';
 import { Page, PageParams } from './model';
-import {
-    ClientCredentials,
-    PrivateJWK,
-    PublicJWK,
-    RefreshingTokenProvider,
-    RefreshingTokenProviderParams,
-    RenewingTokenProvider,
-    RenewingTokenProviderParams,
-    SelfIssuedTokenProvider,
-    SelfIssuedTokenProviderParams,
-    StaticTokenProvider,
-    TokenProvider,
-} from './token';
+import { ClientCredentials, PrivateJWK, PublicJWK, TokenProvider, TokenSource } from './token';
 
 export {
     App,
@@ -62,180 +47,25 @@ export {
     PageParams,
     PrivateJWK,
     PublicJWK,
-    RefreshingTokenProviderParams,
-    RenewingTokenProviderParams,
-    SelfIssuedTokenProviderParams,
     Storable,
+    TokenSource,
 };
 
-export function Parcel(
-    tokenSource:
-        | string
-        | RenewingTokenProviderParams
-        | RefreshingTokenProviderParams
-        | SelfIssuedTokenProviderParams,
-    config?: ParcelConfig,
-): ParcelApi {
-    let tokenProvider: TokenProvider;
-    const hasProperty = (property: string) =>
-        Object.prototype.hasOwnProperty.call(tokenSource, property);
-    if (typeof tokenSource === 'string') {
-        tokenProvider = new StaticTokenProvider(tokenSource);
-    } else if (hasProperty('identity')) {
-        tokenProvider = new SelfIssuedTokenProvider(tokenSource as SelfIssuedTokenProviderParams);
-    } else if (hasProperty('refreshToken')) {
-        tokenProvider = new RefreshingTokenProvider(tokenSource as RefreshingTokenProviderParams);
-    } else if (hasProperty('clientId')) {
-        tokenProvider = new RenewingTokenProvider(tokenSource as RenewingTokenProviderParams);
-    } else {
-        throw new Error(`unrecognized \`tokenSource\`: ${JSON.stringify(tokenSource)}`);
+export default class Parcel {
+    private currentIdentity?: Identity;
+    private readonly client: Client;
+
+    public constructor(tokenSource: TokenSource, config?: Config) {
+        const tokenProvider = TokenProvider.fromSource(tokenSource);
+        this.client = new Client(tokenProvider, {
+            apiUrl: config?.apiUrl,
+            httpClient: config?.httpClient,
+        });
     }
 
-    return new ParcelClient(
-        new Client(
-            config?.httpClient ??
-                axios.create({
-                    baseURL: config?.apiUrl ?? 'https://api.oasislabs.com/parcel/v1',
-                }),
-            tokenProvider,
-        ),
-    );
-}
-
-export interface ParcelApi {
-    /**
-     * You can call this method, but you'll need to call `Parcel` with the
-     * new Identity's token to do anything.
-     */
-    createIdentity: (params: IdentityCreateParams) => Promise<Identity>;
-
-    // GetIdentity: (tokenOrId: string | IdentityId) => Promise<Identity>;
-    // ^ prefer to use `Parcel(token)`
-
-    /**
-     * @returns the Identtity for the token provided when constructing this client.
-     */
-    getCurrentIdentity: () => Promise<Identity>;
-
-    /**
-     * @returns the connected Identity that was updated in-place.
-     */
-    updateCurrentIdentity: (update: IdentityUpdateParams) => Promise<Identity>;
-
-    /**
-     * Deletes the connected Identity.
-     */
-    deleteCurrentIdentity: () => Promise<void>;
-
-    /**
-     * Uploads a dataset to the gateway. The data is encrypted before being stored
-     * in the blob store; the key is entrusted to the runtime.
-     * Data is uploaded as a stream; if the upload fails, please try again.
-     * @returns a reference to the uploaded dataset.
-     */
-    uploadDataset: (data: Storable, params?: DatasetUploadParams) => Upload;
-
-    /**
-     * Returns the reference to a previously uploaded dataset.
-     * This method only returns the public information (and not any private data).
-     * Use `parcel.downloadDataset` to download the data.
-     */
-    getDataset: (id: DatasetId) => Promise<Dataset>;
-
-    listDatasets: (filter?: ListDatasetsFilter & PageParams) => Promise<Page<Dataset>>;
-
-    /**
-     * Downloads a decrypted dataset if the requester (i.e. current Identity) has permission.
-     * @returns a stream that yields the plaintext data.
-     * @throws ParcelError
-     */
-    downloadDataset: (id: DatasetId) => Download;
-
-    /**
-     * Updates the  App` with the provided ID in-place.
-     * @returns the updated `Dataset`.
-     * @throws ParcelError
-     */
-    updateDataset: (id: DatasetId, update: DatasetUpdateParams) => Promise<Dataset>;
-
-    /**
-     * Deletes the dataset including the data and the on-chain reference.
-     * @throws ParcelError
-     */
-    deleteDataset: (id: DatasetId) => Promise<void>;
-
-    /**
-     * Creates a new `App`.
-     * @throws ParcelError
-     */
-    createApp: (params: AppCreateParams) => Promise<App>;
-
-    /**
-     * Returns the existing `App` with the requested id.
-     * @throws ParcelError
-     */
-    getApp: (id: AppId) => Promise<App>;
-
-    /**
-     * Returns a paginated list of `App`s that satisfy the provided filter.
-     * @throws ParcelError
-     */
-    listApps: (filter?: ListAppsFilter & PageParams) => Promise<Page<App>>;
-
-    /**
-     * Updates the  App` with the provided ID in-place.
-     * @returns the updated App.
-     * @throws ParcelError
-     */
-    updateApp: (id: AppId, update: AppUpdateParams) => Promise<App>;
-
-    /**
-     * Authorized the App, granting all required Consents and provided optional ones.
-     * @throws ParcelError
-     */
-    authorizeApp: (id: AppId, optionalConsents?: ConsentId[]) => Promise<void>;
-
-    /**
-     * Updates the consents that the connected identity has authorized to the specified app.
-     * @throws ParcelError
-     */
-    updateAppConsent: (id: AppId, update: ConsentUpdateParams) => Promise<void>;
-
-    /**
-     * A convenience method for `updateAppConsent` that removes all consents.
-     * @throws ParcelError
-     */
-    deauthorizeApp: (id: AppId) => Promise<void>;
-
-    /**
-     * Deletes the `App`, revoking any Grants made by consenting Identities.
-     * @throws ParcelError
-     */
-    deleteApp: (id: AppId) => Promise<void>;
-
-    /**
-     * Creates a grant from the connected identity to another.
-     * @throws ParcelError
-     */
-    createGrant: (params: GrantCreateParams) => Promise<Grant>;
-
-    /**
-     * Returns the existing `Grant` with the requested id.
-     * @throws ParcelError
-     */
-    getGrant: (id: GrantId) => Promise<Grant>;
-
-    /**
-     * Deletes the specified `Grant`, revoking its granting ability.
-     * @throws ParcelError
-     */
-    deleteGrant: (id: GrantId) => Promise<void>;
-}
-
-class ParcelClient implements ParcelApi {
-    private currentIdentity?: Identity;
-
-    public constructor(private readonly client: Client) {}
+    public get apiUrl() {
+        return this.client.apiUrl;
+    }
 
     public async createIdentity(parameters: IdentityCreateParams): Promise<Identity> {
         return IdentityImpl.create(this.client, parameters);
@@ -327,8 +157,4 @@ class ParcelClient implements ParcelApi {
     }
 }
 
-export interface ParcelConfig {
-    apiUrl?: string;
-
-    httpClient?: AxiosInstance;
-}
+export type Config = ClientConfig;

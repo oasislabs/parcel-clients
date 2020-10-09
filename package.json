@@ -1,5 +1,5 @@
 {
-    "name": "@oasislabs/parcel-client",
+    "name": "@oasislabs/parcel",
     "version": "0.1.0",
     "license": "Apache-2.0",
     "author": "Oasis Labs <feedback@oasislabs.com>",
@@ -9,11 +9,13 @@
         "build": "tsc -b",
         "lint": "xo",
         "test": "jest",
-        "coverage": "jest --coverage",
+        "test:cy": "start-test 'parcel serve test/cypress/fixtures/index.html -p 4444' 4444 'cypress run'",
+        "coverage": "jest --coverage && yarn test:cy",
         "doc": "typedoc",
         "prepublishOnly": "yarn build"
     },
     "jest": {
+        "coverageDirectory": "coverage/jest",
         "coveragePathIgnorePatterns": [
             "test/*"
         ],
@@ -26,14 +28,24 @@
             "js",
             "ts"
         ],
-        "transform": {
-            "\\.ts$": "ts-jest"
+        "moduleNameMapper": {
+            "^@oasislabs/parcel$": "<rootDir>/src/index",
+            "^@oasislabs/parcel(.*)$": "<rootDir>/src$1"
         },
         "testEnvironment": "node",
-        "testRegex": ".*\\.spec\\.ts$"
+        "testRegex": ".*\\.spec\\.ts$",
+        "transform": {
+            "\\.ts$": "ts-jest"
+        }
+    },
+    "nyc": {
+        "report-dir": "./coverage/cypress",
+        "reporter": ["lcov", "text"]
     },
     "devDependencies": {
         "@apidevtools/swagger-parser": "^10.0.2",
+        "@babel/core": "^7.11.6",
+        "@cypress/code-coverage": "^3.8.1",
         "@types/jest": "^26.0.9",
         "@types/jsonwebtoken": "^8.5.0",
         "@types/jsrsasign": "^8.0.5",
@@ -41,13 +53,17 @@
         "@types/openapi-sampler": "^1.0.0",
         "@types/uuid": "^8.3.0",
         "ajv": "^6.12.5",
+        "babel-plugin-istanbul": "^6.0.0",
+        "cypress": "^5.3.0",
+        "eslint-plugin-cypress": "^2.11.2",
         "jest": "^26.2.2",
         "jsonwebtoken": "^8.5.1",
         "jwk-to-pem": "^2.0.4",
         "nock": "^13.0.4",
         "openapi-types": "^7.0.1",
+        "parcel-bundler": "^1.12.4",
+        "start-server-and-test": "^1.11.5",
         "ts-jest": "^26.1.4",
-        "type-fest": "^0.17.0",
         "typedoc": "^0.18.0",
         "typescript": "^3.9.7",
         "uuid": "^8.3.0",
@@ -60,6 +76,8 @@
         "form-data": "^3.0.0",
         "jsrsasign": "^10.0.0",
         "param-case": "^3.0.3",
-        "readable-stream": "^3.6.0"
-    }
+        "readable-stream": "^3.6.0",
+        "type-fest": "^0.17.0"
+    },
+    "browserslist": ">2%"
 }

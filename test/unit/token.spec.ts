@@ -8,7 +8,7 @@ import {
     RenewingTokenProvider,
     SelfIssuedTokenProvider,
     StaticTokenProvider,
-} from '../src/token';
+} from '@oasislabs/parcel/token';
 
 const privateJwk: PrivateJWK = {
     // A random jwk from https://mkjwk.org/.
@@ -153,7 +153,7 @@ describe('Re(new|fresh)ingTokenProvider', () => {
 
 describe('SelfIssuedTokenProvider', () => {
     const defaultParams = {
-        identity: 'sovereign',
+        principal: 'sovereign',
         privateKey: privateJwk,
         scopes: ['all', 'of', 'them'],
     };
@@ -164,8 +164,8 @@ describe('SelfIssuedTokenProvider', () => {
         const { payload, header } = jwt.verify(token, jwkPem as any, {
             complete: true,
             algorithms: ['ES256'],
-            issuer: defaultParams.identity,
-            subject: defaultParams.identity,
+            issuer: defaultParams.principal,
+            subject: defaultParams.principal,
             audience: 'parcel-runtime',
         }) as any;
         expect(header.kid).toBeDefined();
