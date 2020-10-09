@@ -1,0 +1,14 @@
+{
+    "include": ["src"],
+    "compilerOptions": {
+        "declaration": true,
+        "esModuleInterop": true,
+        "lib": ["esnext", "es6", "dom"],
+        "module": "commonjs",
+        "moduleResolution": "node",
+        "outDir": "lib/",
+        "sourceMap": true,
+        "strict": true,
+        "target": "es6"
+    }
+}
