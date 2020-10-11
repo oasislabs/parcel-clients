@@ -1,4 +1,4 @@
-import * as uuid from 'uuid';
+const { context, cy } = globalThis;
 
 const API_URL = 'https://api.oasislabs.local/v1';
 
@@ -13,7 +13,7 @@ context('Download', () => {
     });
 
     it('roundtrip', () => {
-        const mockDatasetId = uuid.v4();
+        const mockDatasetId = 'fad69589-b76c-4cf0-856a-8a05fbda90c2';
         const mockData = Buffer.alloc(12).fill(34);
 
         const downloadUrl = `${API_URL}/datasets/${mockDatasetId}/download`;

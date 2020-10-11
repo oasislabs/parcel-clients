@@ -1,6 +1,5 @@
 module.exports = {
     envs: ['node', 'browser', 'jest'],
-    extends: ['plugin:cypress/recommended'],
     plugins: ['@typescript-eslint'],
     prettier: true,
     rules: {

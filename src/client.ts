@@ -82,9 +82,12 @@ export class Client {
     }
 
     public download(endpoint: string): Download {
+        /* istanbul ignore if */
         return 'fetch' in globalThis ? this.downloadBrowser(endpoint) : this.downloadNode(endpoint);
     }
 
+    /* istanbul ignore next */
+    // This is tested using Cypress, which produces bogus line numbers.
     private downloadBrowser(endpoint: string): Download {
         const abortController = new AbortController();
         const res = this.getHeaders().then(async (headers) => {
