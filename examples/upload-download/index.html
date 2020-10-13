@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Parcel Upload/Download Example</title>
+        <link rel="stylesheet" type="text/css" href="index.css" />
+        <script defer type="application/javascript" src="index.ts"></script>
+    </head>
+    <body pre-auth>
+        <div id="modal-overlay"></div>
+        <div class="modal" id="api-creds-modal">
+            <h1>API Credentials</h1>
+            <form action="javascript:setApiCredentials()">
+                <span class="aside">API key (as JSON) or access token</span>
+                <textarea id="api-creds" name="api-creds" rows="13" cols="61" required></textarea>
+                <input type="submit" value="Set API Credentials" />
+                <span id="setup-error" class="error"></span>
+            </form>
+        </div>
+        <header>
+            <h1>Upload &amp; Download Datasets!</h1>
+        </header>
+        <main>
+            <section>
+                <form action="javascript:uploadDataset()">
+                    <h2>Upload dataset</h2>
+                    <input type="file" id="dataset-picker" name="dataset-picker" required />
+                    <input type="submit" value="Upload" />
+                </form>
+            </section>
+            <section>
+                <h2>Uploaded datasets</h2>
+                <button onclick="javascript:listUploadedDatasets()">Refresh</button>
+                <ul id="uploaded-datasets">
+                    <li>Loading...</li>
+                </ul>
+            </section>
+        </main>
+    </body>
+</html>

@@ -116,6 +116,7 @@ export class Client {
             },
             destroy(error, cb) {
                 abortController.abort();
+                void res.then((res) => res.body?.cancel());
                 cb(error);
             },
         });
@@ -161,7 +162,24 @@ export class Client {
  */
 export class Download extends Readable {
     /** Convenience method for piping to a sink and waiting for writing to finish. */
-    public async pipeTo(sink: Writable | WriteStream): Promise<void> {
+    public async pipeTo(sink: Writable | WriteStream | WritableStream): Promise<void> {
+        /* istanbul ignore if */ // This is tested using Cypress.
+        if ('getWriter' in sink) {
+            const writer = sink.getWriter();
+            return new Promise((resolve, reject) => {
+                this.on('error', reject)
+                    .on('data', (chunk) => {
+                        void writer.ready.then(async () => writer.write(chunk)).catch(reject);
+                    })
+                    .on('end', () => {
+                        writer.ready
+                            .then(async () => writer.close())
+                            .then(resolve)
+                            .catch(reject);
+                    });
+            });
+        }
+
         return new Promise((resolve, reject) => {
             this.on('error', reject).pipe(sink).on('finish', resolve).on('error', reject);
         });

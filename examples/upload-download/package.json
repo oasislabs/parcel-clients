@@ -1,0 +1,33 @@
+{
+  "private": true,
+  "name": "@oasislabs/parcel-upload-download-example",
+  "version": "0.1.0",
+  "description": "Example of uploading and downloading datasets using the Parcel SDK.",
+  "repository": "https://github.com/oasislabs/parcel-runtime",
+  "author": "Oasis Labs <feedback@oasislabs.com>",
+  "license": "Apache-2",
+  "scripts": {
+    "lint": "yarn --cwd ../../ xo",
+    "serve": "parcel watch index.html",
+    "build": "parcel build index.html",
+    "clean": "rm -rf .cache dist"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.11.6",
+    "@types/streamsaver": "^2.0.0",
+    "autoprefixer": "^9.2.0",
+    "parcel-bundler": "^1.12.4",
+    "postcss-nested": "^4.2.3",
+    "postcss-reporter": "^6.0.1",
+    "stylelint": "^13.7.2",
+    "stylelint-config-standard": "^20.0.0"
+  },
+  "dependencies": {
+    "streamsaver": "^2.0.4",
+    "web-streams-polyfill": "^3.0.0"
+  },
+  "alias": {
+    "@oasislabs/parcel": "../../"
+  },
+  "browserslist": ">2%"
+}
