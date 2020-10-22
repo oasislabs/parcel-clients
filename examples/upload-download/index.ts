@@ -8,15 +8,15 @@ streamSaver.WritableStream = WritableStream;
 
 if (module.hot) module.hot.accept();
 
-const $ = (selector: string) => {
-    const element = document.querySelector(selector);
+const $ = <T extends Element = Element>(selector: string) => {
+    const element = document.querySelector<T>(selector);
     if (!element) throw new Error(`\`${selector}\` did not match any elements`);
     return element;
 };
 
-const apiCreds = $('#api-creds');
+const apiCreds: HTMLTextAreaElement = $('#api-creds');
 const setupErrorSpan = $('#setup-error');
-const datasetPicker = $('#dataset-picker');
+const datasetPicker: HTMLInputElement = $('#dataset-picker');
 const datasetsList = $('#uploaded-datasets');
 
 apiCreds.value = JSON.stringify(fixtureJWK, null, 4);
