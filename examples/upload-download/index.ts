@@ -1,6 +1,15 @@
 /// <reference types="@types/parcel-env" />
 
-import Parcel from '@oasislabs/parcel';
+declare global {
+    interface Window {
+        setApiCredentials: () => Promise<void>;
+        uploadDataset: () => Promise<void>;
+        downloadDataset: (id: string) => Promise<void>;
+        listUploadedDatasets: () => Promise<void>;
+    }
+}
+
+import Parcel, { DatasetId } from '@oasislabs/parcel';
 import streamSaver from 'streamsaver';
 import { WritableStream } from 'web-streams-polyfill/ponyfill/es2018';
 
@@ -52,7 +61,7 @@ window.uploadDataset = async function () {
 };
 
 window.downloadDataset = async function (id: string) {
-    const download = parcel.downloadDataset(id);
+    const download = parcel.downloadDataset(id as DatasetId);
     const saver = streamSaver.createWriteStream(`dataset-${id}`);
     await download.pipeTo(saver);
 };
