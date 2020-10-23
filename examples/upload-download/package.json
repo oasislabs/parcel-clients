@@ -14,6 +14,7 @@
   },
   "devDependencies": {
     "@babel/core": "^7.11.6",
+    "@types/parcel-env": "^0.0.0",
     "@types/streamsaver": "^2.0.0",
     "autoprefixer": "^9.2.0",
     "parcel-bundler": "^1.12.4",

@@ -1,3 +1,5 @@
+/// <reference types="@types/parcel-env" />
+
 import Parcel from '@oasislabs/parcel';
 import streamSaver from 'streamsaver';
 import { WritableStream } from 'web-streams-polyfill/ponyfill/es2018';
