@@ -9,7 +9,7 @@
   "scripts": {
     "lint": "yarn --cwd ../../ xo",
     "serve": "parcel watch index.html",
-    "build": "parcel build index.html",
+    "build": "tsc --noEmit && parcel build index.html",
     "clean": "rm -rf .cache dist"
   },
   "devDependencies": {
