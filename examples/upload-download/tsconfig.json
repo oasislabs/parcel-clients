@@ -3,6 +3,7 @@
     "include": ["."],
     "compilerOptions": {
         "noEmit": true,
-        "resolveJsonModule": true
+        "resolveJsonModule": true,
+        "skipLibCheck": true
     }
 }
