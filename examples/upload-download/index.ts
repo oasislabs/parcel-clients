@@ -44,7 +44,7 @@ window.setApiCredentials = async function () {
 };
 
 window.uploadDataset = async function () {
-    const datasetFile = datasetPicker.files[0];
+    const datasetFile = datasetPicker.files![0];
     const dataset = await parcel.uploadDataset(datasetFile).finished;
     addDatasetToList(dataset.id);
 };
