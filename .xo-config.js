@@ -1,5 +1,5 @@
 module.exports = {
-    envs: ['node', 'browser', 'jest'],
+    envs: ['node', 'browser'],
     plugins: ['@typescript-eslint'],
     prettier: true,
     rules: {
@@ -14,4 +14,10 @@ module.exports = {
         ],
     },
     space: 4,
+    overrides: [
+        {
+            files: 'test/unit/**/*',
+            envs: ['jest'],
+        },
+    ]
 };
