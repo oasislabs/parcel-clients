@@ -30,7 +30,7 @@
         ],
         "moduleNameMapper": {
             "^@oasislabs/parcel$": "<rootDir>/src/index",
-            "^@oasislabs/parcel(.*)$": "<rootDir>/src$1"
+            "^@oasislabs/parcel/(.*)$": "<rootDir>/src/$1"
         },
         "testEnvironment": "node",
         "testRegex": ".*\\.spec\\.ts$",

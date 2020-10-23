@@ -9,7 +9,8 @@
         "moduleResolution": "node",
         "outDir": "lib/",
         "paths": {
-            "@oasislabs/parcel*": ["src*", "src/index"]
+            "@oasislabs/parcel": ["src/index"],
+            "@oasislabs/parcel/*": ["src/*"]
         },
         "sourceMap": true,
         "strict": true,
