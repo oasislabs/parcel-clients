@@ -46,7 +46,7 @@ window.setApiCredentials = async function () {
         });
         await parcel.getCurrentIdentity();
         document.body.removeAttribute('pre-auth');
-        window.listUploadedDatasets();
+        void window.listUploadedDatasets();
     } catch (error) {
         console.error(error);
         setupErrorSpan.textContent = error.toString();
