@@ -16,8 +16,8 @@ module.exports = {
     space: 4,
     overrides: [
         {
-            files: 'test/unit/**/*',
+            files: 'test/**',
             envs: ['jest'],
         },
-    ]
+    ],
 };
