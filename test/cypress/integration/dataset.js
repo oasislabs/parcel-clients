@@ -1,5 +1,6 @@
-const { context, cy } = globalThis;
+/// <reference path="../fixtures/types.d.ts" />
 
+// @ts-check
 const API_URL = 'https://api.oasislabs.local/v1';
 
 const CORS_HEADERS = {
@@ -13,7 +14,9 @@ context('Download', () => {
     });
 
     it('roundtrip', () => {
-        const mockDatasetId = 'fad69589-b76c-4cf0-856a-8a05fbda90c2';
+        const mockDatasetId =
+            /** @type { import('../../../src').DatasetId } */
+            ('fad69589-b76c-4cf0-856a-8a05fbda90c2');
         const mockData = Buffer.alloc(12).fill(34);
 
         const downloadUrl = `${API_URL}/datasets/${mockDatasetId}/download`;

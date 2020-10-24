@@ -16,8 +16,13 @@ module.exports = {
     space: 4,
     overrides: [
         {
-            files: 'test/**',
+            files: 'test/unit/**/*',
             envs: ['jest'],
+        },
+        {
+            files: 'test/cypress/**/*',
+            plugins: ['cypress'],
+            envs: ['cypress/globals'],
         },
     ],
 };

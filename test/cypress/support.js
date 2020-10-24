@@ -1,1 +1,2 @@
-import _ from '@cypress/code-coverage/support';
+// eslint-disable-next-line import/no-unassigned-import
+import '@cypress/code-coverage/support';
