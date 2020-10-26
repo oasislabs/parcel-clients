@@ -20,10 +20,10 @@ export type Page<T = JsonValue> = {
     nextPageToken: string;
 };
 
-export type PageParams = {
+export type PageParams = Partial<{
     pageSize: number;
     nextPageToken: string;
-};
+}>;
 
 /**
  * Returns whether the provided updateParams contains values that will cause the server to update
