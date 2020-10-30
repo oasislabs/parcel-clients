@@ -7,7 +7,8 @@
     "types": "lib/index.d.ts",
     "scripts": {
         "build": "tsc -b",
-        "lint": "xo",
+        "lint": "xo --fix",
+        "lint-no-fix": "xo",
         "test": "jest",
         "test:cy": "start-test 'parcel serve test/cypress/fixtures/index.html -p 4444' 4444 'cypress run'",
         "coverage": "jest --coverage && yarn test:cy",
