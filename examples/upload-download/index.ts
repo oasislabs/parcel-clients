@@ -9,7 +9,7 @@ declare global {
     }
 }
 
-import Parcel, { DatasetId } from '@oasislabs/parcel';
+import Parcel, { DatasetId } from '../../src';
 import streamSaver from 'streamsaver';
 import { WritableStream } from 'web-streams-polyfill/ponyfill/es2018';
 
@@ -28,6 +28,7 @@ const $ = <T extends Element = Element>(selector: string) => {
 const apiCreds: HTMLTextAreaElement = $('#api-creds');
 const setupErrorSpan = $('#setup-error');
 const datasetPicker: HTMLInputElement = $('#dataset-picker');
+const datasetName: HTMLInputElement = $('#dataset-name');
 const datasetsList = $('#uploaded-datasets');
 
 apiCreds.value = JSON.stringify(fixtureJWK, null, 4);
@@ -42,7 +43,7 @@ window.setApiCredentials = async function () {
 
     try {
         parcel = new Parcel(tokenSource, {
-            apiUrl: 'http://localhost:2020/v1',
+            apiUrl: 'http://localhost:4242/v1',
         });
         await parcel.getCurrentIdentity();
         document.body.removeAttribute('pre-auth');
@@ -56,8 +57,10 @@ window.setApiCredentials = async function () {
 
 window.uploadDataset = async function () {
     const datasetFile = datasetPicker.files![0];
-    const dataset = await parcel.uploadDataset(datasetFile).finished;
-    addDatasetToList(dataset.id);
+    const dataset = await parcel.uploadDataset(datasetFile, {
+        metadata: { name: datasetName.value },
+    }).finished;
+    addDatasetToList(dataset.id, dataset.metadata?.name as string | undefined);
 };
 
 window.downloadDataset = async function (id: string) {
@@ -75,15 +78,15 @@ window.listUploadedDatasets = async function () {
     ).results;
 
     while (datasetsList.lastChild) datasetsList.lastChild.remove();
-    uploadedDatasets.forEach((d) => addDatasetToList(d.id));
+    uploadedDatasets.forEach((d) => addDatasetToList(d.id, d.metadata?.name as string | undefined));
 };
 
-function addDatasetToList(id: string) {
+function addDatasetToList(id: string, name?: string) {
     const datasetItem = document.createElement('li');
     const datasetLink = document.createElement('a');
 
     datasetLink.href = `javascript:downloadDataset('${id}')`;
-    datasetLink.textContent = id;
+    datasetLink.textContent = `${name ?? 'Untitled'} (${id})`;
 
     datasetItem.append(datasetLink);
     datasetsList.append(datasetItem);

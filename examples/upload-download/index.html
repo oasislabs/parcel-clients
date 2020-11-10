@@ -25,7 +25,21 @@
             <section>
                 <form action="javascript:uploadDataset()">
                     <h2>Upload dataset</h2>
-                    <input type="file" id="dataset-picker" name="dataset-picker" required />
+                    <label>
+                        Dataset:
+                        <input type="file" id="dataset-picker" name="dataset-picker" required />
+                    </label>
+                    <br/>
+                    <label>
+                        Name:
+                        <input
+                            type="text"
+                            id="dataset-name"
+                            placeholder="Name"
+                            name="dataset-picker"
+                            required
+                        />
+                    </label>
                     <input type="submit" value="Upload" />
                 </form>
             </section>

@@ -163,7 +163,7 @@ export type DatasetUpdateParams = RequireAtLeastOne<{
     metadata: JsonObject;
 }>;
 
-export type Storable = Uint8Array | Readable | Blob;
+export type Storable = Uint8Array | Readable | Blob | string;
 
 export type ListDatasetsFilter = Partial<{
     owner: IdentityId;
@@ -188,18 +188,33 @@ export class Upload extends EventEmitter {
         super();
         this.cancelToken = axios.CancelToken.source();
         const form = new FormData();
+
+        const appendPart = (name: string, data: Storable, contentType: string, length?: number) => {
+            if (typeof Blob === 'undefined') {
+                // If Blob isn't present, we're likely in Node and should use the `form-data` API.
+                form.append(name, data, {
+                    contentType,
+                    knownLength: length,
+                });
+            } else {
+                // If `Blob` eixsts, we're probably in the browser and will pefer to use it.
+                if (typeof data === 'string' || data instanceof Uint8Array) {
+                    data = new Blob([data], { type: contentType });
+                } else if (data instanceof Readable) {
+                    throw new TypeError('uploaded data must be a `Blob` or `Uint8Array`');
+                }
+
+                form.append(name, data);
+            }
+        };
+
         if (parameters) {
             const parametersString = JSON.stringify(parameters);
-            form.append('metadata', parametersString, {
-                contentType: 'application/json',
-                knownLength: parametersString.length,
-            });
+            appendPart('metadata', parametersString, 'application/json', parametersString.length);
         }
 
-        form.append('data', data, {
-            contentType: 'application/octet-stream',
-            knownLength: (data as any).length,
-        });
+        appendPart('data', data, 'application/octet-stream', (data as any).length);
+
         client
             .post<PODDataset>(DATASETS_EP, form, {
                 headers: form.getHeaders ? /* node */ form.getHeaders() : undefined,

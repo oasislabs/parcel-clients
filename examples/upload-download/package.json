@@ -24,7 +24,7 @@
     "stylelint-config-standard": "^20.0.0"
   },
   "dependencies": {
-    "streamsaver": "^2.0.4",
+    "streamsaver": "^2.0.5",
     "web-streams-polyfill": "^3.0.0"
   },
   "alias": {
