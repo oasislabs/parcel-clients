@@ -3,7 +3,7 @@
   "name": "@oasislabs/parcel-upload-download-example",
   "version": "0.1.0",
   "description": "Example of uploading and downloading datasets using the Parcel SDK.",
-  "repository": "https://github.com/oasislabs/parcel-runtime",
+  "repository": "https://github.com/oasislabs/parcel",
   "author": "Oasis Labs <feedback@oasislabs.com>",
   "license": "Apache-2",
   "scripts": {
