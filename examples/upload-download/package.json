@@ -8,7 +8,7 @@
   "license": "Apache-2",
   "scripts": {
     "lint": "yarn --cwd ../../ xo",
-    "serve": "parcel watch index.html",
+    "serve": "parcel index.html",
     "build": "tsc --noEmit && parcel build index.html",
     "clean": "rm -rf .cache dist"
   },
