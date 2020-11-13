@@ -5,16 +5,16 @@ import Ajv from 'ajv';
 import nock from 'nock';
 import { paramCase } from 'param-case';
 import { Writable } from 'readable-stream';
-import { JsonObject } from 'type-fest';
+import type { JsonObject } from 'type-fest';
 import * as uuid from 'uuid';
 
 import Parcel from '@oasislabs/parcel';
-import { AppId, AppUpdateParams, PODApp } from '@oasislabs/parcel/app';
-import { ConsentId, PODConsent } from '@oasislabs/parcel/consent';
-import { DatasetId, PODDataset } from '@oasislabs/parcel/dataset';
-import { GrantId, PODGrant } from '@oasislabs/parcel/grant';
-import { IdentityId, PODIdentity } from '@oasislabs/parcel/identity';
-import { Page, PODModel } from '@oasislabs/parcel/model';
+import type { AppId, AppUpdateParams, PODApp } from '@oasislabs/parcel/app';
+import type { ConsentId, PODConsent } from '@oasislabs/parcel/consent';
+import type { DatasetId, PODDataset } from '@oasislabs/parcel/dataset';
+import type { GrantId, PODGrant } from '@oasislabs/parcel/grant';
+import type { IdentityId, PODIdentity } from '@oasislabs/parcel/identity';
+import type { Page, PODModel } from '@oasislabs/parcel/model';
 
 const API_BASE_URL = 'https://api.oasislabs.com/parcel/v1';
 function nockIt(testName: string, test: (scope: nock.Scope) => Promise<void>): void {

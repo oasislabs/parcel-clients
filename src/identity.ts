@@ -1,8 +1,9 @@
-import { Opaque, RequireAtLeastOne } from 'type-fest';
+import type { Opaque, RequireAtLeastOne } from 'type-fest';
 
-import { Client } from './client';
-import { Model, PODModel, ResourceId, containsUpdate } from './model';
-import { OidcTokenClaims, PublicJWK } from './token';
+import type { Client } from './client';
+import { containsUpdate } from './model';
+import type { Model, PODModel, ResourceId } from './model';
+import type { OidcTokenClaims, PublicJWK } from './token';
 
 export type IdentityId = Opaque<ResourceId>;
 

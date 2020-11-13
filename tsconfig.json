@@ -4,6 +4,7 @@
         "baseUrl": ".",
         "declaration": true,
         "esModuleInterop": true,
+        "importsNotUsedAsValues": "error",
         "lib": ["esnext", "es6", "dom"],
         "module": "commonjs",
         "moduleResolution": "node",

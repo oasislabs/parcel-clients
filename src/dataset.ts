@@ -2,12 +2,13 @@ import axios, { CancelTokenSource } from 'axios';
 import EventEmitter from 'eventemitter3';
 import FormData from 'form-data';
 import { Readable } from 'readable-stream';
-import { JsonObject, Opaque, RequireAtLeastOne } from 'type-fest';
+import type { JsonObject, Opaque, RequireAtLeastOne } from 'type-fest';
 
-import { AppId } from './app';
-import { Client, Download } from './client';
-import { IdentityId } from './identity';
-import { Model, Page, PageParams, PODModel, ResourceId, containsUpdate } from './model';
+import type { AppId } from './app';
+import type { Client, Download } from './client';
+import type { IdentityId } from './identity';
+import { containsUpdate } from './model';
+import type { Model, Page, PageParams, PODModel, ResourceId } from './model';
 
 export type DatasetId = Opaque<ResourceId>;
 

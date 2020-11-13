@@ -1,12 +1,12 @@
-import { WriteStream } from 'fs';
+import type { WriteStream } from 'fs';
 
 import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
-import FormData from 'form-data';
+import type FormData from 'form-data';
 import { PassThrough, Readable, Writable } from 'readable-stream';
 import { paramCase } from 'param-case';
-import { JsonObject } from 'type-fest';
+import type { JsonObject } from 'type-fest';
 
-import { TokenProvider } from './token';
+import type { TokenProvider } from './token';
 
 const DEFAULT_API_URL = 'https://api.oasislabs.com/parcel/v1';
 

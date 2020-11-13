@@ -1,16 +1,17 @@
-import { Opaque, RequireAtLeastOne } from 'type-fest';
+import type { Opaque, RequireAtLeastOne } from 'type-fest';
 
-import { Client } from './client';
-import {
+import type { Client } from './client';
+import { ConsentImpl } from './consent';
+import type {
     Consent,
     ConsentCreateParams,
     ConsentId,
-    ConsentImpl,
     ConsentUpdateParams,
     PODConsent,
 } from './consent';
-import { IdentityId, IdentityProvider } from './identity';
-import { Model, Page, PageParams, PODModel, ResourceId, containsUpdate } from './model';
+import type { IdentityId, IdentityProvider } from './identity';
+import { containsUpdate } from './model';
+import type { Model, Page, PageParams, PODModel, ResourceId } from './model';
 
 export type AppId = Opaque<ResourceId>;
 

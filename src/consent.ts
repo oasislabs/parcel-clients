@@ -1,9 +1,9 @@
-import { Opaque, RequireAtLeastOne } from 'type-fest';
+import type { Opaque, RequireAtLeastOne } from 'type-fest';
 
-import { Client } from './client';
-import { Constraints } from './filter';
-import { IdentityId } from './identity';
-import { Model, PODModel, ResourceId } from './model';
+import type { Client } from './client';
+import type { Constraints } from './filter';
+import type { IdentityId } from './identity';
+import type { Model, PODModel, ResourceId } from './model';
 
 export type ConsentId = Opaque<ResourceId>;
 

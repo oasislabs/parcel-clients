@@ -3,12 +3,12 @@ import { KEYUTIL } from 'jsrsasign';
 import nock from 'nock';
 
 import {
-    PrivateJWK,
     RefreshingTokenProvider,
     RenewingTokenProvider,
     SelfIssuedTokenProvider,
     StaticTokenProvider,
 } from '@oasislabs/parcel/token';
+import type { PrivateJWK } from '@oasislabs/parcel/token';
 
 const privateJwk: PrivateJWK = {
     // A random jwk from https://mkjwk.org/.

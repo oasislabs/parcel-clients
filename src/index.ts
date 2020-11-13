@@ -1,5 +1,6 @@
-import { Consent, ConsentCreateParams, ConsentId, ConsentUpdateParams } from './consent';
-import { App, AppCreateParams, AppId, AppImpl, AppUpdateParams, ListAppsFilter } from './app';
+import type { Consent, ConsentCreateParams, ConsentId, ConsentUpdateParams } from './consent';
+import { AppImpl } from './app';
+import type { App, AppCreateParams, AppId, AppUpdateParams, ListAppsFilter } from './app';
 import { Client, Config as ClientConfig, Download } from './client';
 import {
     Dataset,
@@ -19,8 +20,9 @@ import {
     IdentityImpl,
     IdentityUpdateParams,
 } from './identity';
-import { Page, PageParams } from './model';
-import { ClientCredentials, PrivateJWK, PublicJWK, TokenProvider, TokenSource } from './token';
+import type { Page, PageParams } from './model';
+import { TokenProvider } from './token';
+import type { ClientCredentials, PrivateJWK, PublicJWK, TokenSource } from './token';
 
 export {
     App,

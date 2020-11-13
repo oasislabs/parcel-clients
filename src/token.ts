@@ -1,6 +1,6 @@
 import axios, { AxiosResponse } from 'axios';
 import { KEYUTIL, KJUR } from 'jsrsasign';
-import { Except, JsonObject } from 'type-fest';
+import type { Except, JsonObject } from 'type-fest';
 
 export abstract class TokenProvider {
     public static fromSource(source: TokenSource): TokenProvider {
