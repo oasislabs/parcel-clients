@@ -97,29 +97,35 @@ export class Client {
                 signal: abortController.signal,
             });
         });
-        const dl = new Download({
-            read() {
-                res.then(async (res) => {
-                    if (!res.body) return this.push(null);
+        const reader = res.then((res) => {
+            if (!res.body) return null;
+            return res.body.getReader();
+        });
+        const dl = new (class extends Download {
+            public _read(): void {
+                reader
+                    .then(async (rdr) => {
+                        if (!rdr) return this.push(null);
 
-                    const rdr = res.body.getReader();
-                    let chunk;
-                    do {
-                        // eslint-disable-next-line no-await-in-loop
-                        chunk = await rdr.read(); // Loop iterations are not independent.
-                        if (!chunk.value) continue;
-                        if (!this.push(chunk.value)) break;
-                    } while (!chunk.done);
+                        let chunk;
+                        do {
+                            // eslint-disable-next-line no-await-in-loop
+                            chunk = await rdr.read(); // Loop iterations are not independent.
+                            if (!chunk.value) continue;
+                            if (!this.push(chunk.value)) break;
+                        } while (!chunk.done);
 
-                    if (chunk.done) this.push(null);
-                }).catch((error) => this.destroy(error));
-            },
-            destroy(error, cb) {
+                        if (chunk.done) this.push(null);
+                    })
+                    .catch((error: any) => this.destroy(error));
+            }
+
+            public _destroy(error: Error, cb: (error?: Error) => void): void {
                 abortController.abort();
                 void res.then((res) => res.body?.cancel());
                 cb(error);
-            },
-        });
+            }
+        })();
         res.catch((error) => dl.destroy(error));
         return dl;
     }

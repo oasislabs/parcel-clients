@@ -17,7 +17,7 @@ context('Download', () => {
         const mockDatasetId =
             /** @type { import('../../../src').DatasetId } */
             ('fad69589-b76c-4cf0-856a-8a05fbda90c2');
-        const mockData = Buffer.alloc(12).fill(34);
+        const mockData = Buffer.alloc(1024 * 1024 * 2).fill(34);
 
         const downloadUrl = `${API_URL}/datasets/${mockDatasetId}/download`;
         cy.route2('OPTIONS', downloadUrl, {
