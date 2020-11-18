@@ -2,7 +2,7 @@ import axios, { CancelTokenSource } from 'axios';
 import EventEmitter from 'eventemitter3';
 import FormData from 'form-data';
 import { Readable } from 'readable-stream';
-import type { JsonObject, Opaque, RequireAtLeastOne } from 'type-fest';
+import type { JsonObject, Opaque, RequireAtLeastOne, RequireExactlyOne } from 'type-fest';
 
 import type { AppId } from './app';
 import type { Client, Download } from './client';
@@ -102,7 +102,18 @@ export class DatasetImpl implements Dataset {
         client: Client,
         filter?: ListDatasetsFilter & PageParams,
     ): Promise<Page<Dataset>> {
-        const podPage = await client.get<Page<PODDataset>>(DATASETS_EP, filter);
+        let tagsFilter;
+        if (filter?.tags) {
+            const tagsSpec = filter.tags;
+            const prefix = Array.isArray(tagsSpec) || tagsSpec.all ? 'all' : 'any';
+            const tags = Array.isArray(tagsSpec) ? tagsSpec : tagsSpec.all ?? tagsSpec.any;
+            tagsFilter = `${prefix}:${tags.join(',')}`;
+        }
+
+        const podPage = await client.get<Page<PODDataset>>(DATASETS_EP, {
+            ...filter,
+            tags: tagsFilter,
+        });
         const results = podPage.results.map((podDataset) => new DatasetImpl(client, podDataset));
         return {
             results,
@@ -167,9 +178,15 @@ export type DatasetUpdateParams = RequireAtLeastOne<{
 export type Storable = Uint8Array | Readable | Blob | string;
 
 export type ListDatasetsFilter = Partial<{
-    owner: IdentityId;
     creator: IdentityId;
+    owner: IdentityId;
     sharedWith: IdentityId;
+    tags:
+        | string[]
+        | RequireExactlyOne<{
+              any: string[];
+              all: string[];
+          }>;
 }>;
 
 /**

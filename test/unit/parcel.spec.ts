@@ -520,6 +520,7 @@ describe('Parcel', () => {
                 const filterWithPagination = {
                     owner: fixtureResultsPage.results[0].owner as IdentityId,
                     creator: fixtureResultsPage.results[0].creator as IdentityId,
+                    tags: 'all:tag1,tag2',
                     pageSize: 2,
                     nextPageToken: uuid.v4(),
                 };
@@ -535,7 +536,10 @@ describe('Parcel', () => {
                     )
                     .reply(200, fixtureResultsPage);
 
-                const { results, nextPageToken } = await parcel.listDatasets(filterWithPagination);
+                const { results, nextPageToken } = await parcel.listDatasets({
+                    ...filterWithPagination,
+                    tags: { all: ['tag1', 'tag2'] },
+                });
                 expect(results).toHaveLength(numberResults);
                 results.forEach((r, i) => expect(r).toMatchObject(fixtureResultsPage.results[i]));
                 expect(nextPageToken).toEqual(fixtureResultsPage.nextPageToken);
