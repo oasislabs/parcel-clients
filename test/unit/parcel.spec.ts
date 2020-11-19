@@ -346,14 +346,19 @@ describe('Parcel', () => {
         });
 
         describe('update', () => {
-            nockIt('current', async (scope) => {
+            nockIt('by id', async (scope) => {
                 const updatedIdentity = Object.assign(clone(fixtureIdentity), {
                     idp: createPodIdentity().idp,
                 });
                 const update = { idp: updatedIdentity.idp };
-                expect(update).toMatchSchema(getRequestSchema('PATCH', '/identities/me'));
-                scope.patch('/identities/me', update).reply(200, updatedIdentity);
-                const updated = await parcel.updateCurrentIdentity(update);
+                expect(update).toMatchSchema(getRequestSchema('PATCH', '/identities/{id}'));
+                scope
+                    .patch(`/identities/${fixtureIdentity.id}`, update)
+                    .reply(200, updatedIdentity);
+                const updated = await parcel.updateIdentity(
+                    fixtureIdentity.id as IdentityId,
+                    update,
+                );
                 expect(updated).toMatchObject(updatedIdentity);
             });
 
@@ -364,7 +369,7 @@ describe('Parcel', () => {
 
                 scope.get('/identities/me').reply(200, fixtureIdentity);
                 scope
-                    .patch('/identities/me', { idp: updatedIdentity.idp })
+                    .patch(`/identities/${fixtureIdentity.id}`, { idp: updatedIdentity.idp })
                     .reply(200, updatedIdentity);
 
                 const identity = await parcel.getCurrentIdentity();
@@ -373,17 +378,20 @@ describe('Parcel', () => {
             });
         });
 
-        nockIt('delete current', async (scope) => {
-            expect(getResponseSchema('DELETE', '/identities/me', 204)).toBeUndefined();
-            scope.delete('/identities/me').reply(204);
-            expect(await parcel.deleteCurrentIdentity()).toBeUndefined();
-        });
+        describe('delete', () => {
+            nockIt('by id', async (scope) => {
+                scope.delete(`/identities/${fixtureIdentity.id}`).reply(204);
+                expect(
+                    await parcel.deleteIdentity(fixtureIdentity.id as IdentityId),
+                ).toBeUndefined();
+            });
 
-        nockIt('delete', async (scope) => {
-            scope.get('/identities/me').reply(200, fixtureIdentity);
-            scope.delete('/identities/me').reply(204);
-            const identity = await parcel.getCurrentIdentity();
-            expect(await identity.delete()).toBeUndefined();
+            nockIt('retrieved', async (scope) => {
+                scope.get('/identities/me').reply(200, fixtureIdentity);
+                scope.delete(`/identities/${fixtureIdentity.id}`).reply(204);
+                const identity = await parcel.getCurrentIdentity();
+                expect(await identity.delete()).toBeUndefined();
+            });
         });
     });
 

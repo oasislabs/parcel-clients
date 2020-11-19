@@ -81,13 +81,13 @@ export default class Parcel {
         return this.currentIdentity;
     }
 
-    public async updateCurrentIdentity(update: IdentityUpdateParams): Promise<Identity> {
-        this.currentIdentity = await IdentityImpl.updateCurrent(this.client, update);
+    public async updateIdentity(id: IdentityId, update: IdentityUpdateParams): Promise<Identity> {
+        this.currentIdentity = await IdentityImpl.update(this.client, id, update);
         return this.currentIdentity;
     }
 
-    public async deleteCurrentIdentity(): Promise<void> {
-        return IdentityImpl.deleteCurrent(this.client);
+    public async deleteIdentity(id: IdentityId): Promise<void> {
+        return IdentityImpl.delete(this.client, id);
     }
 
     public uploadDataset(data: Storable, parameters?: DatasetUploadParams): Upload {

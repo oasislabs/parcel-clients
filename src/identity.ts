@@ -65,30 +65,41 @@ export class IdentityImpl implements Identity {
             .then((podIdentity) => new IdentityImpl(client, podIdentity));
     }
 
-    public static async updateCurrent(
-        client: Client,
-        parameters: IdentityUpdateParams,
-    ): Promise<Identity> {
-        if (!containsUpdate(parameters)) {
-            return IdentityImpl.current(client);
-        }
-
+    public static async get(client: Client, id: IdentityId): Promise<Identity> {
         return client
-            .patch<PODIdentity>(IDENTITIES_ME, parameters)
+            .get<PODIdentity>(IdentityImpl.endpointForId(id))
             .then((podIdentity) => new IdentityImpl(client, podIdentity));
     }
 
-    public static async deleteCurrent(client: Client): Promise<void> {
-        return client.delete(IDENTITIES_ME);
+    public static async update(
+        client: Client,
+        id: IdentityId,
+        parameters: IdentityUpdateParams,
+    ): Promise<Identity> {
+        if (!containsUpdate(parameters)) {
+            return IdentityImpl.get(client, id);
+        }
+
+        return client
+            .patch<PODIdentity>(IdentityImpl.endpointForId(id), parameters)
+            .then((podIdentity) => new IdentityImpl(client, podIdentity));
+    }
+
+    public static async delete(client: Client, id: IdentityId): Promise<void> {
+        return client.delete(IdentityImpl.endpointForId(id));
+    }
+
+    private static endpointForId(id: IdentityId): string {
+        return `${IDENTITIES_EP}/${id}`;
     }
 
     public async update(parameters: IdentityUpdateParams): Promise<Identity> {
-        Object.assign(this, await IdentityImpl.updateCurrent(this.client, parameters));
+        Object.assign(this, await IdentityImpl.update(this.client, this.id, parameters));
         return this;
     }
 
     public async delete(): Promise<void> {
-        return IdentityImpl.deleteCurrent(this.client);
+        return IdentityImpl.delete(this.client, this.id);
     }
 }
 
