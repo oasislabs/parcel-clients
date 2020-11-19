@@ -9,7 +9,7 @@ import type {
     ConsentUpdateParams,
     PODConsent,
 } from './consent';
-import type { IdentityId, IdentityProvider } from './identity';
+import type { IdentityId, IdentityTokenVerifier } from './identity';
 import { containsUpdate } from './model';
 import type { Model, Page, PageParams, PODModel, ResourceId } from './model';
 
@@ -39,7 +39,7 @@ export type PODApp = PODModel & {
 
 export type AppCreateParams = {
     /** The credentials used to authorize clients acting as this app. */
-    idp: IdentityProvider;
+    identityTokenVerifier: IdentityTokenVerifier;
 
     /** The name of the app. */
     name: string;
@@ -396,7 +396,7 @@ export type ListAppsFilter = Partial<{
     creator: IdentityId;
 
     /** Only return Apps for which the requester has the specified participation status. */
-    requesterParticipation: AppParticipation;
+    participation: AppParticipation;
 }>;
 
 export type AppParticipation = 'invited' | 'joined';

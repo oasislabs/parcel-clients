@@ -52,15 +52,15 @@ export type GrantSpec = {
     filter?: Constraints;
 };
 
-/** `initiator` represents the app, `requester` represents the joining identity. */
-export type GranterRef = 'initiator' | 'requester';
+/** `app` represents the app, `participant` represents the joining identity. */
+export type GranterRef = 'app' | 'participant';
 
 /**
  * A `ResourceId` causes the grant to be made to a specific Identity,
- * `initiator` grants to the app, `requester` grants to the joining identity, and
+ * `app` grants to the app, `participant` grants to the joining identity, and
  * `everyone` refers to, well, everyone.
  */
-export type GranteeRef = 'initiator' | 'requester' | 'everyone' | IdentityId;
+export type GranteeRef = 'app' | 'participant' | 'everyone' | IdentityId;
 
 export type ConsentUpdateParams = RequireAtLeastOne<{
     granted: ConsentId[];

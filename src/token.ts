@@ -251,7 +251,7 @@ export type PublicES256JWK = Except<PrivateES256JWK, 'd'>;
 export type PublicJWK = PublicES256JWK;
 export type PrivateJWK = PrivateES256JWK;
 
-export type OidcTokenClaims = {
+export type IdentityTokenClaims = {
     /** The token's subject. */
     sub: string;
 
@@ -259,7 +259,7 @@ export type OidcTokenClaims = {
     iss: string;
 };
 
-export type ClientCredentials = OidcTokenClaims & {
+export type ClientCredentials = IdentityTokenClaims & {
     privateKey: PrivateJWK;
 };
 

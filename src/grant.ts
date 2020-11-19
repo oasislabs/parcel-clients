@@ -17,9 +17,9 @@ export type PODGrant = PODModel & {
 
 export type GrantCreateParams = {
     /**
-     * The Identity to which permission is given. `null` represents everybody.
+     * The singular Identity to which permission is given, or everyone;
      */
-    grantee: IdentityId | null;
+    grantee: IdentityId | 'everyone';
 
     /** A filter that gives permission to only matching Datasets. */
     filter?: Constraints;

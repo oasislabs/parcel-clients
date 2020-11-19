@@ -3,14 +3,14 @@ import type { Opaque, RequireAtLeastOne } from 'type-fest';
 import type { Client } from './client';
 import { containsUpdate } from './model';
 import type { Model, PODModel, ResourceId } from './model';
-import type { OidcTokenClaims, PublicJWK } from './token';
+import type { IdentityTokenClaims, PublicJWK } from './token';
 
 export type IdentityId = Opaque<ResourceId>;
 
 export type PODIdentity = PODModel & IdentityCreateParams;
 
 export type IdentityCreateParams = {
-    idp: IdentityProvider;
+    tokenVerifier: IdentityTokenVerifier;
 };
 
 export interface Identity extends Model {
@@ -18,7 +18,7 @@ export interface Identity extends Model {
 
     createTimestamp: number;
 
-    idp: IdentityProvider;
+    tokenVerifier: IdentityTokenVerifier;
 
     /**
      * Updates the identity according to the provided `params`.
@@ -40,12 +40,12 @@ const IDENTITIES_ME = `${IDENTITIES_EP}/me`;
 export class IdentityImpl implements Identity {
     public id: IdentityId;
     public createTimestamp: number;
-    public idp: IdentityProvider;
+    public tokenVerifier: IdentityTokenVerifier;
 
     public constructor(private readonly client: Client, pod: PODIdentity) {
         this.id = pod.id as IdentityId;
         this.createTimestamp = pod.createTimestamp;
-        this.idp = pod.idp;
+        this.tokenVerifier = pod.tokenVerifier;
     }
 
     public static async create(
@@ -105,9 +105,9 @@ export class IdentityImpl implements Identity {
 
 export type IdentityUpdateParams = RequireAtLeastOne<{
     /** The new authentication verification parameters. */
-    idp: IdentityProvider;
+    tokenVerifier: IdentityTokenVerifier;
 }>;
 
-export type IdentityProvider = OidcTokenClaims & {
+export type IdentityTokenVerifier = IdentityTokenClaims & {
     publicKey: PublicJWK;
 };

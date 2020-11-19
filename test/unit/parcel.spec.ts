@@ -204,7 +204,7 @@ describe('Parcel', () => {
     function createPodIdentity(): PODIdentity {
         const podIdentity = {
             ...createPodModel(),
-            idp: {
+            tokenVerifier: {
                 sub: 'subject',
                 iss: 'auth.oasislabs.com',
                 publicKey: API_KEY,
@@ -244,11 +244,11 @@ describe('Parcel', () => {
             name: 'test app',
             organization: 'Oasis Labs',
             participants: [],
-            privacyPolicy: 'Your data remains private using the Oasis Network!',
+            privacyPolicy: 'https://friendly.app/privacy',
             published: false,
             rejectionText: '🙁',
             shortDescription: 'shrt dscrptn',
-            termsAndConditions: "you won't do bad things and neither will we.",
+            termsAndConditions: 'https://friendly.app/terms',
             logo: 'data:image/png;base64,SGVsbG8sIFdvcmxkIQ==',
         };
         expect(podApp).toMatchSchema('App');
@@ -272,8 +272,8 @@ describe('Parcel', () => {
             ...createPodModel(),
             grants: [
                 {
-                    granter: 'requester',
-                    grantee: 'initiator',
+                    granter: 'participant',
+                    grantee: 'app',
                     filter: { 'dataset.metadata.tags': { $any: { $eq: 'mock' } } },
                 },
             ],
@@ -305,7 +305,7 @@ describe('Parcel', () => {
                     getResponseSchema('POST', '/identities', 201),
                 );
                 const createParams = {
-                    idp: fixtureIdentity.idp,
+                    tokenVerifier: fixtureIdentity.tokenVerifier,
                 };
                 expect(createParams).toMatchSchema(getRequestSchema('POST', '/identities'));
                 scope.post('/identities', createParams).reply(201, fixtureIdentity);
@@ -319,7 +319,7 @@ describe('Parcel', () => {
                 );
 
                 const expectedRequest = {
-                    idp: fixtureIdentity.idp,
+                    tokenVerifier: fixtureIdentity.tokenVerifier,
                 };
 
                 const existingIdentityEp = `/identities/${fixtureIdentity.id}`;
@@ -348,9 +348,9 @@ describe('Parcel', () => {
         describe('update', () => {
             nockIt('by id', async (scope) => {
                 const updatedIdentity = Object.assign(clone(fixtureIdentity), {
-                    idp: createPodIdentity().idp,
+                    tokenVerifier: createPodIdentity().tokenVerifier,
                 });
-                const update = { idp: updatedIdentity.idp };
+                const update = { tokenVerifier: updatedIdentity.tokenVerifier };
                 expect(update).toMatchSchema(getRequestSchema('PATCH', '/identities/{id}'));
                 scope
                     .patch(`/identities/${fixtureIdentity.id}`, update)
@@ -364,16 +364,18 @@ describe('Parcel', () => {
 
             nockIt('retrieved', async (scope) => {
                 const updatedIdentity = Object.assign(clone(fixtureIdentity), {
-                    idp: createPodIdentity().idp,
+                    tokenVerifier: createPodIdentity().tokenVerifier,
                 });
 
                 scope.get('/identities/me').reply(200, fixtureIdentity);
                 scope
-                    .patch(`/identities/${fixtureIdentity.id}`, { idp: updatedIdentity.idp })
+                    .patch(`/identities/${fixtureIdentity.id}`, {
+                        tokenVerifier: updatedIdentity.tokenVerifier,
+                    })
                     .reply(200, updatedIdentity);
 
                 const identity = await parcel.getCurrentIdentity();
-                await identity.update({ idp: updatedIdentity.idp });
+                await identity.update({ tokenVerifier: updatedIdentity.tokenVerifier });
                 expect(identity).toMatchObject(updatedIdentity);
             });
         });
@@ -680,7 +682,7 @@ describe('Parcel', () => {
             const createParams: any /* AppCreateParams & PODApp */ = {
                 ...clone(fixtureApp),
                 consents: [createPodConsent({ optional: true })],
-                idp: {
+                identityTokenVerifier: {
                     sub: 'app',
                     iss: 'auth.oasislabs.com',
                     publicKey: API_KEY,
@@ -732,7 +734,7 @@ describe('Parcel', () => {
 
                 const filterWithPagination = {
                     creator: createIdentityId(),
-                    requesterParticipation: 'invited' as const,
+                    participation: 'invited' as const,
                     pageSize: 2,
                     nextPageToken: uuid.v4(),
                 };
