@@ -91,11 +91,20 @@ export class Client {
     private downloadBrowser(endpoint: string): Download {
         const abortController = new AbortController();
         const res = this.getHeaders().then(async (headers) => {
-            return fetch(`${this.apiUrl}${endpoint}`, {
+            const res = await fetch(`${this.apiUrl}${endpoint}`, {
                 method: 'GET',
                 headers,
                 signal: abortController.signal,
             });
+
+            if (!res.ok) {
+                const errorMessage: string = (await res.json()).error;
+                const error = new Error(`failed to fetch dataset: ${errorMessage}`);
+                (error as any).response = res;
+                throw error;
+            }
+
+            return res;
         });
         const reader = res.then((res) => {
             if (!res.body) return null;

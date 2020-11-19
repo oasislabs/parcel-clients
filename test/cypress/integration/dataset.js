@@ -40,4 +40,29 @@ context('Download', () => {
             })
             .should('equal', mockData.toString('base64'));
     });
+
+    it('not found', () => {
+        const bogusDatasetId = 'totally-bogus-dataset-id';
+        const downloadUrl = `${API_URL}/datasets/${bogusDatasetId}/download`;
+        cy.route2('OPTIONS', downloadUrl, {
+            headers: CORS_HEADERS,
+        });
+        cy.route2('GET', downloadUrl, (req) => {
+            req.reply(404, { error: 'not found' }, CORS_HEADERS);
+        });
+        cy.window().then(async (window) => {
+            const parcel = new window.Parcel('fake api token', { apiUrl: API_URL });
+            const download = parcel.downloadDataset(bogusDatasetId);
+            return new Promise((resolve, reject) => {
+                download
+                    .on('error', resolve)
+                    .on('data', () => {
+                        reject(new Error('expected rejection but got data'));
+                    })
+                    .on('end', () => {
+                        reject(new Error('expected rejection but got end'));
+                    });
+            });
+        });
+    });
 });
