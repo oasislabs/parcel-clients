@@ -35,6 +35,9 @@ apiCreds.value = JSON.stringify(fixtureJWK, null, 4);
 
 let parcel: Parcel;
 
+// Resets API Credentials modal on hotreload
+document.body.setAttribute('pre-auth', 'pre-auth');
+
 window.setApiCredentials = async function () {
     setupErrorSpan.classList.remove('visible');
 
