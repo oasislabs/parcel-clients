@@ -27,7 +27,7 @@ export type DatasetUploadParams = {
 
     /**
      * Dataset metadata. The well-known value `tags` should be an array of strings if
-     * you want to use it with the `dataset.tags` filter.
+     * you want to use it with the `dataset.metadata.tags` filter.
      */
     metadata?: DatasetMetadata;
 
