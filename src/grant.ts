@@ -48,7 +48,7 @@ const GRANTS_EP = '/grants';
 
 export class GrantImpl implements Grant {
     public id: GrantId;
-    public createTimestamp: number;
+    public createdAt: number;
     public granter: IdentityId;
     public grantee: IdentityId | null;
     public filter?: Constraints;
@@ -56,7 +56,7 @@ export class GrantImpl implements Grant {
 
     private constructor(private readonly client: Client, pod: PODGrant) {
         this.id = pod.id as GrantId;
-        this.createTimestamp = pod.createTimestamp;
+        this.createdAt = pod.createdAt;
         this.granter = pod.granter as IdentityId;
         this.grantee = (pod.grantee as IdentityId) ?? null;
         this.filter = pod.filter;

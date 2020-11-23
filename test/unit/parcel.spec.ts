@@ -192,7 +192,7 @@ describe('Parcel', () => {
     function createPodModel(): PODModel {
         const podModel = {
             id: uuid.v4(),
-            createTimestamp: Math.floor(Date.now() / 1000),
+            createdAt: Math.floor(Date.now() / 1000),
         };
         expect(podModel).toMatchSchema('Model');
         return podModel;
@@ -689,7 +689,7 @@ describe('Parcel', () => {
                 },
             };
             delete createParams.id;
-            delete createParams.createTimestamp;
+            delete createParams.createdAt;
             delete createParams.creator;
             delete createParams.participants;
             delete createParams.published;

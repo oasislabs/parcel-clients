@@ -7,12 +7,12 @@ export interface PODModel {
     id: ResourceId;
 
     /** The number of seconds since the Unix epoch when this model was created */
-    createTimestamp: number;
+    createdAt: number;
 }
 
 export interface Model {
     /** The number of seconds since the Unix epoch when this model was created */
-    createTimestamp: number;
+    createdAt: number;
 }
 
 export type Page<T = JsonValue> = {

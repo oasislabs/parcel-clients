@@ -193,7 +193,7 @@ export class AppImpl implements App {
     public brandingColor?: string;
     public category?: string;
     public consents: Consent[];
-    public createTimestamp: number;
+    public createdAt: number;
     public creator: IdentityId;
     public extendedDescription?: string;
     public homepage: string;
@@ -216,7 +216,7 @@ export class AppImpl implements App {
         this.brandingColor = pod.brandingColor;
         this.category = pod.category;
         this.consents = pod.consents.map((podConsent) => new ConsentImpl(client, podConsent));
-        this.createTimestamp = pod.createTimestamp;
+        this.createdAt = pod.createdAt;
         this.creator = pod.creator as IdentityId;
         this.extendedDescription = pod.extendedDescription;
         this.homepage = pod.homepage;

@@ -16,7 +16,7 @@ export type IdentityCreateParams = {
 export interface Identity extends Model {
     id: IdentityId;
 
-    createTimestamp: number;
+    createdAt: number;
 
     tokenVerifier: IdentityTokenVerifier;
 
@@ -39,12 +39,12 @@ const IDENTITIES_ME = `${IDENTITIES_EP}/me`;
 
 export class IdentityImpl implements Identity {
     public id: IdentityId;
-    public createTimestamp: number;
+    public createdAt: number;
     public tokenVerifier: IdentityTokenVerifier;
 
     public constructor(private readonly client: Client, pod: PODIdentity) {
         this.id = pod.id as IdentityId;
-        this.createTimestamp = pod.createTimestamp;
+        this.createdAt = pod.createdAt;
         this.tokenVerifier = pod.tokenVerifier;
     }
 

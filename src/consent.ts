@@ -29,13 +29,13 @@ export interface Consent extends Model {
 
 export class ConsentImpl implements Consent {
     public id: ConsentId;
-    public createTimestamp: number;
+    public createdAt: number;
     public grants: GrantSpec[];
     public required: boolean;
 
     public constructor(private readonly client: Client, pod: PODConsent) {
         this.id = pod.id as ConsentId;
-        this.createTimestamp = pod.createTimestamp;
+        this.createdAt = pod.createdAt;
         this.grants = pod.grants;
         this.required = pod.required ?? false;
     }

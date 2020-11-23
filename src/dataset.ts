@@ -79,14 +79,14 @@ const DATASETS_EP = '/datasets';
 
 export class DatasetImpl implements Dataset {
     public id: DatasetId;
-    public createTimestamp: number;
+    public createdAt: number;
     public creator: IdentityId;
     public owner: IdentityId;
     public metadata: DatasetMetadata;
 
     public constructor(private readonly client: Client, pod: PODDataset) {
         this.id = pod.id as DatasetId;
-        this.createTimestamp = pod.createTimestamp;
+        this.createdAt = pod.createdAt;
         this.creator = pod.creator as IdentityId;
         this.owner = pod.owner as IdentityId;
         this.metadata = pod.metadata ?? {};
