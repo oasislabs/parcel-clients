@@ -26,6 +26,9 @@ export type GrantCreateParams = {
 };
 
 export interface Grant extends Model {
+    /** The time at which this grant was made. */
+    createdAt: Date;
+
     /** The Identity from which permission is given. */
     granter: IdentityId;
 
@@ -48,7 +51,7 @@ const GRANTS_EP = '/grants';
 
 export class GrantImpl implements Grant {
     public id: GrantId;
-    public createdAt: number;
+    public createdAt: Date;
     public granter: IdentityId;
     public grantee: IdentityId | null;
     public filter?: Constraints;
@@ -56,7 +59,7 @@ export class GrantImpl implements Grant {
 
     private constructor(private readonly client: Client, pod: PODGrant) {
         this.id = pod.id as GrantId;
-        this.createdAt = pod.createdAt;
+        this.createdAt = new Date(pod.createdAt);
         this.granter = pod.granter as IdentityId;
         this.grantee = (pod.grantee as IdentityId) ?? null;
         this.filter = pod.filter;

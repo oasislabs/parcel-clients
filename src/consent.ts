@@ -20,6 +20,9 @@ export type ConsentCreateParams = {
 export interface Consent extends Model {
     id: ConsentId;
 
+    /** The time at which this consent was created. */
+    createdAt: Date;
+
     /** The Grants to make when the App containing this Consent is joined. */
     grants: GrantSpec[];
 
@@ -29,13 +32,13 @@ export interface Consent extends Model {
 
 export class ConsentImpl implements Consent {
     public id: ConsentId;
-    public createdAt: number;
+    public createdAt: Date;
     public grants: GrantSpec[];
     public required: boolean;
 
     public constructor(private readonly client: Client, pod: PODConsent) {
         this.id = pod.id as ConsentId;
-        this.createdAt = pod.createdAt;
+        this.createdAt = new Date(pod.createdAt);
         this.grants = pod.grants;
         this.required = pod.required ?? false;
     }

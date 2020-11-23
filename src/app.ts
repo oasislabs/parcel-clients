@@ -102,6 +102,9 @@ export interface App extends Model {
     /** The App's id */
     id: AppId;
 
+    /** The time at which this app was created. */
+    createdAt: Date;
+
     /** The name of the app. */
     name: string;
 
@@ -193,7 +196,7 @@ export class AppImpl implements App {
     public brandingColor?: string;
     public category?: string;
     public consents: Consent[];
-    public createdAt: number;
+    public createdAt: Date;
     public creator: IdentityId;
     public extendedDescription?: string;
     public homepage: string;
@@ -216,7 +219,7 @@ export class AppImpl implements App {
         this.brandingColor = pod.brandingColor;
         this.category = pod.category;
         this.consents = pod.consents.map((podConsent) => new ConsentImpl(client, podConsent));
-        this.createdAt = pod.createdAt;
+        this.createdAt = new Date(pod.createdAt);
         this.creator = pod.creator as IdentityId;
         this.extendedDescription = pod.extendedDescription;
         this.homepage = pod.homepage;

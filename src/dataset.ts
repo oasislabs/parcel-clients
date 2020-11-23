@@ -46,6 +46,9 @@ export interface Dataset extends Model {
     /** The Identity that created the Dataset. */
     creator: IdentityId;
 
+    /** The time at which this dataset was created. */
+    createdAt: Date;
+
     /** The current owner of the Dataset. */
     owner: IdentityId;
 
@@ -79,14 +82,14 @@ const DATASETS_EP = '/datasets';
 
 export class DatasetImpl implements Dataset {
     public id: DatasetId;
-    public createdAt: number;
+    public createdAt: Date;
     public creator: IdentityId;
     public owner: IdentityId;
     public metadata: DatasetMetadata;
 
     public constructor(private readonly client: Client, pod: PODDataset) {
         this.id = pod.id as DatasetId;
-        this.createdAt = pod.createdAt;
+        this.createdAt = new Date(pod.createdAt);
         this.creator = pod.creator as IdentityId;
         this.owner = pod.owner as IdentityId;
         this.metadata = pod.metadata ?? {};

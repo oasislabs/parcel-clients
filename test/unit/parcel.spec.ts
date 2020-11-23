@@ -41,6 +41,7 @@ declare global {
     namespace jest {
         interface Matchers<R> {
             toMatchSchema: (schema: string | JsonObject) => CustomMatcherResult;
+            toMatchPOD: <T extends PODModel>(pod: T) => CustomMatcherResult;
         }
     }
 }
@@ -117,6 +118,13 @@ describe('Parcel', () => {
                         )}`,
                 };
             },
+            toMatchPOD<T extends PODModel>(
+                received: any,
+                pod: PODModel,
+            ): { message: () => string; pass: boolean } {
+                expect(JSON.parse(JSON.stringify(received))).toMatchObject(pod);
+                return { message: () => '', pass: true };
+            },
         });
     });
 
@@ -192,7 +200,7 @@ describe('Parcel', () => {
     function createPodModel(): PODModel {
         const podModel = {
             id: uuid.v4(),
-            createdAt: Math.floor(Date.now() / 1000),
+            createdAt: new Date().toISOString(),
         };
         expect(podModel).toMatchSchema('Model');
         return podModel;
@@ -310,7 +318,7 @@ describe('Parcel', () => {
                 expect(createParams).toMatchSchema(getRequestSchema('POST', '/identities'));
                 scope.post('/identities', createParams).reply(201, fixtureIdentity);
                 const identity = await parcel.createIdentity(createParams);
-                expect(identity).toMatchObject(fixtureIdentity);
+                expect(identity).toMatchPOD(fixtureIdentity);
             });
 
             nockIt('already exists', async (scope) => {
@@ -329,7 +337,7 @@ describe('Parcel', () => {
                 scope.get(existingIdentityEp).reply(200, fixtureIdentity);
 
                 const identity = await parcel.createIdentity(expectedRequest);
-                expect(identity).toMatchObject(fixtureIdentity);
+                expect(identity).toMatchPOD(fixtureIdentity);
             });
 
             nockIt('bad request', async (scope) => {
@@ -342,7 +350,7 @@ describe('Parcel', () => {
             expect(fixtureIdentity).toMatchSchema(getResponseSchema('GET', '/identities/me', 200));
             scope.get('/identities/me').reply(200, fixtureIdentity);
             const identity = await parcel.getCurrentIdentity();
-            expect(identity).toMatchObject(fixtureIdentity);
+            expect(identity).toMatchPOD(fixtureIdentity);
         });
 
         describe('update', () => {
@@ -359,7 +367,7 @@ describe('Parcel', () => {
                     fixtureIdentity.id as IdentityId,
                     update,
                 );
-                expect(updated).toMatchObject(updatedIdentity);
+                expect(updated).toMatchPOD(updatedIdentity);
             });
 
             nockIt('retrieved', async (scope) => {
@@ -376,7 +384,7 @@ describe('Parcel', () => {
 
                 const identity = await parcel.getCurrentIdentity();
                 await identity.update({ tokenVerifier: updatedIdentity.tokenVerifier });
-                expect(identity).toMatchObject(updatedIdentity);
+                expect(identity).toMatchPOD(updatedIdentity);
             });
         });
 
@@ -440,7 +448,7 @@ describe('Parcel', () => {
                     .matchHeader('content-type', /^multipart\/form-data; boundary=/)
                     .reply(201, fixtureDataset);
                 const dataset = await parcel.uploadDataset(fixtureData).finished;
-                expect(dataset).toMatchObject(fixtureDataset);
+                expect(dataset).toMatchPOD(fixtureDataset);
             });
 
             nockIt('with params', async (scope) => {
@@ -454,7 +462,7 @@ describe('Parcel', () => {
                 const dataset = await parcel.uploadDataset(fixtureData, {
                     metadata: fixtureDataset.metadata!,
                 }).finished;
-                expect(dataset).toMatchObject(fixtureDataset);
+                expect(dataset).toMatchPOD(fixtureDataset);
             });
         });
 
@@ -462,7 +470,7 @@ describe('Parcel', () => {
             expect(fixtureDataset).toMatchSchema(getResponseSchema('GET', '/datasets/{id}', 200));
             scope.get(`/datasets/${fixtureDataset.id}`).reply(200, fixtureDataset);
             const dataset = await parcel.getDataset(fixtureDataset.id as DatasetId);
-            expect(dataset).toMatchObject(fixtureDataset);
+            expect(dataset).toMatchPOD(fixtureDataset);
         });
 
         describe('download', () => {
@@ -516,7 +524,7 @@ describe('Parcel', () => {
 
                 const { results, nextPageToken } = await parcel.listDatasets();
                 expect(results).toHaveLength(numberResults);
-                results.forEach((r, i) => expect(r).toMatchObject(fixtureResultsPage.results[i]));
+                results.forEach((r, i) => expect(r).toMatchPOD(fixtureResultsPage.results[i]));
                 expect(nextPageToken).toEqual(fixtureResultsPage.nextPageToken);
             });
 
@@ -551,7 +559,7 @@ describe('Parcel', () => {
                     tags: { all: ['tag1', 'tag2'] },
                 });
                 expect(results).toHaveLength(numberResults);
-                results.forEach((r, i) => expect(r).toMatchObject(fixtureResultsPage.results[i]));
+                results.forEach((r, i) => expect(r).toMatchPOD(fixtureResultsPage.results[i]));
                 expect(nextPageToken).toEqual(fixtureResultsPage.nextPageToken);
             });
 
@@ -574,7 +582,7 @@ describe('Parcel', () => {
                 const updatedDataset = Object.assign(clone(fixtureDataset), update);
                 scope.patch(`/datasets/${fixtureDataset.id}`, update).reply(200, updatedDataset);
                 const updated = await parcel.updateDataset(fixtureDataset.id as DatasetId, update);
-                expect(updated).toMatchObject(updatedDataset);
+                expect(updated).toMatchPOD(updatedDataset);
             });
 
             nockIt('retrieved', async (scope) => {
@@ -589,7 +597,7 @@ describe('Parcel', () => {
 
                 const dataset = await parcel.getDataset(fixtureDataset.id as DatasetId);
                 await dataset.update(update);
-                expect(dataset).toMatchObject(updatedDataset);
+                expect(dataset).toMatchPOD(updatedDataset);
             });
 
             nockIt('empty params', async (scope) => {
@@ -599,7 +607,7 @@ describe('Parcel', () => {
                     fixtureDataset.id as DatasetId,
                     {} as any,
                 );
-                expect(dataset).toMatchObject(fixtureDataset);
+                expect(dataset).toMatchPOD(fixtureDataset);
             });
         });
 
@@ -641,14 +649,14 @@ describe('Parcel', () => {
             expect(createParams).toMatchSchema(getRequestSchema('POST', '/grants'));
             scope.post('/grants', createParams).reply(201, fixtureGrant);
             const grant = await parcel.createGrant(createParams);
-            expect(grant).toMatchObject(fixtureGrant);
+            expect(grant).toMatchPOD(fixtureGrant);
         });
 
         nockIt('get', async (scope) => {
             expect(fixtureGrant).toMatchSchema(getResponseSchema('GET', '/grants/{id}', 200));
             scope.get(`/grants/${fixtureGrant.id}`).reply(200, JSON.stringify(fixtureGrant));
             const grant = await parcel.getGrant(fixtureGrant.id as GrantId);
-            expect(grant).toMatchObject(fixtureGrant);
+            expect(grant).toMatchPOD(fixtureGrant);
         });
 
         describe('delete', () => {
@@ -698,14 +706,14 @@ describe('Parcel', () => {
             scope.post('/apps', createParams).reply(201, fixtureApp);
             expect(fixtureApp).toMatchSchema(getResponseSchema('POST', '/apps', 201));
             const app = await parcel.createApp(createParams);
-            expect(app).toMatchObject(fixtureApp);
+            expect(app).toMatchPOD(fixtureApp);
         });
 
         nockIt('get', async (scope) => {
             expect(fixtureApp).toMatchSchema(getResponseSchema('GET', '/apps/{id}', 200));
             scope.get(`/apps/${fixtureApp.id}`).reply(200, fixtureApp);
             const app = await parcel.getApp(fixtureApp.id as AppId);
-            expect(app).toMatchObject(fixtureApp);
+            expect(app).toMatchPOD(fixtureApp);
         });
 
         describe('list', () => {
@@ -721,7 +729,7 @@ describe('Parcel', () => {
 
                 const { results, nextPageToken } = await parcel.listApps();
                 expect(results).toHaveLength(numberResults);
-                results.forEach((r, i) => expect(r).toMatchObject(fixtureResultsPage.results[i]));
+                results.forEach((r, i) => expect(r).toMatchPOD(fixtureResultsPage.results[i]));
                 expect(nextPageToken).toEqual(fixtureResultsPage.nextPageToken);
             });
 
@@ -752,7 +760,7 @@ describe('Parcel', () => {
 
                 const { results, nextPageToken } = await parcel.listApps(filterWithPagination);
                 expect(results).toHaveLength(numberResults);
-                results.forEach((r, i) => expect(r).toMatchObject(fixtureResultsPage.results[i]));
+                results.forEach((r, i) => expect(r).toMatchPOD(fixtureResultsPage.results[i]));
                 expect(nextPageToken).toEqual(fixtureResultsPage.nextPageToken);
             });
 
@@ -796,7 +804,7 @@ describe('Parcel', () => {
             nockIt('by id', async (scope) => {
                 scope.patch(`/apps/${fixtureApp.id}`, update).reply(200, updatedApp);
                 const updated = await parcel.updateApp(fixtureApp.id as AppId, update);
-                expect(updated).toMatchObject(updatedApp);
+                expect(updated).toMatchPOD(updatedApp);
             });
 
             nockIt('retrieved', async (scope) => {
@@ -805,14 +813,14 @@ describe('Parcel', () => {
 
                 const app = await parcel.getApp(fixtureApp.id as AppId);
                 await app.update(update);
-                expect(app).toMatchObject(updatedApp);
+                expect(app).toMatchPOD(updatedApp);
             });
 
             nockIt('empty params', async (scope) => {
                 // This test is for JavaScript users who might inadvertently pass in an empty params.
                 scope.get(`/apps/${fixtureApp.id}`).reply(200, fixtureApp);
                 const app = await parcel.updateApp(fixtureApp.id as AppId, {} as any);
-                expect(app).toMatchObject(fixtureApp);
+                expect(app).toMatchPOD(fixtureApp);
             });
         });
 
