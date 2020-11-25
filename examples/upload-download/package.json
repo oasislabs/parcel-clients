@@ -9,6 +9,7 @@
   "scripts": {
     "lint": "yarn --cwd ../../ xo",
     "serve": "parcel serve index.html --port 3453",
+    "serve-dev-portal": "NODE_ENV=development_portal yarn serve",
     "build": "tsc --noEmit && parcel build index.html",
     "clean": "rm -rf .cache dist"
   },

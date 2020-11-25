@@ -46,7 +46,7 @@ window.setApiCredentials = async function () {
 
     try {
         parcel = new Parcel(tokenSource, {
-            apiUrl: 'http://localhost:4242/v1',
+            apiUrl: process.env.API,
         });
         await parcel.getCurrentIdentity();
         document.body.removeAttribute('pre-auth');
