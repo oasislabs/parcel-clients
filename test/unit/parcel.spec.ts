@@ -243,7 +243,9 @@ describe('Parcel', () => {
             brandingColor: '#abcdef',
             category: 'testing',
             consents: [createPodConsent()],
-            creator: createIdentityId(),
+            owner: createIdentityId(),
+            admins: [createIdentityId()],
+            collaborators: [createIdentityId(), createIdentityId()],
             extendedDescription: 'looooong description',
             homepage: 'https://friendly.app',
             invitationText: 'plz give data',
@@ -702,7 +704,9 @@ describe('Parcel', () => {
             };
             delete createParams.id;
             delete createParams.createdAt;
-            delete createParams.creator;
+            delete createParams.owner;
+            delete createParams.collaborators;
+            delete createParams.admins;
             delete createParams.participants;
             delete createParams.published;
 

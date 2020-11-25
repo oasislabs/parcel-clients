@@ -17,24 +17,26 @@ export type AppId = Opaque<ResourceId>;
 
 export type PODApp = PODModel & {
     acceptanceText?: string;
+    admins: ResourceId[];
     brandingColor?: string;
     category?: string;
+    collaborators: ResourceId[];
     consents: PODConsent[];
-    creator: ResourceId;
     extendedDescription?: string;
     homepage: string;
     invitationText?: string;
     inviteOnly: boolean;
     invites?: ResourceId[];
+    logo?: string;
     name: string;
     organization: string;
+    owner: ResourceId;
     participants: ResourceId[];
     privacyPolicy: string;
     published: boolean;
     rejectionText?: string;
     shortDescription: string;
     termsAndConditions: string;
-    logo?: string;
 };
 
 export type AppCreateParams = {
@@ -127,7 +129,7 @@ export interface App extends Model {
     published: boolean;
 
     /** The Identity that created the App. */
-    creator: IdentityId;
+    owner: IdentityId;
 
     /** If `true`, only invited Identities may  the app. */
     inviteOnly: boolean;
@@ -193,34 +195,38 @@ const APPS_EP = '/apps';
 
 export class AppImpl implements App {
     public acceptanceText?: string;
+    public admins: IdentityId[];
     public brandingColor?: string;
     public category?: string;
+    public collaborators: IdentityId[];
     public consents: Consent[];
     public createdAt: Date;
-    public creator: IdentityId;
     public extendedDescription?: string;
     public homepage: string;
     public id: AppId;
-    public invites: IdentityId[];
     public invitationText?: string;
     public inviteOnly: boolean;
+    public invites: IdentityId[];
+    public logo?: string;
     public name: string;
     public organization: string;
+    public owner: IdentityId;
     public participants: IdentityId[];
     public privacyPolicy: string;
     public published: boolean;
     public rejectionText?: string;
     public shortDescription: string;
     public termsAndConditions: string;
-    public logo?: string;
 
     public constructor(private readonly client: Client, pod: PODApp) {
         this.acceptanceText = pod.acceptanceText;
+        this.admins = pod.admins as IdentityId[];
         this.brandingColor = pod.brandingColor;
         this.category = pod.category;
+        this.collaborators = pod.collaborators as IdentityId[];
         this.consents = pod.consents.map((podConsent) => new ConsentImpl(client, podConsent));
         this.createdAt = new Date(pod.createdAt);
-        this.creator = pod.creator as IdentityId;
+        this.owner = pod.owner as IdentityId;
         this.extendedDescription = pod.extendedDescription;
         this.homepage = pod.homepage;
         this.id = pod.id as AppId;

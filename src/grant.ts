@@ -61,7 +61,7 @@ export class GrantImpl implements Grant {
         this.id = pod.id as GrantId;
         this.createdAt = new Date(pod.createdAt);
         this.granter = pod.granter as IdentityId;
-        this.grantee = (pod.grantee as IdentityId) ?? null;
+        this.grantee = (pod.grantee as IdentityId) ?? 'everyone';
         this.filter = pod.filter;
         this.consent = pod.consent as ConsentId;
     }
