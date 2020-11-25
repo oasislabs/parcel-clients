@@ -286,6 +286,10 @@ describe('Parcel', () => {
                 },
             ],
             required: !options?.optional,
+            name: 'Consent Name',
+            description: 'Consent Description',
+            allowText: 'Allow',
+            denyText: 'Deny',
         };
         expect(podConsent).toMatchSchema('Consent');
         return podConsent;

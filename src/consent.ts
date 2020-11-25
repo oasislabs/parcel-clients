@@ -13,8 +13,20 @@ export type ConsentCreateParams = {
     /** The Grants to make when the App containing this Consent is joined. */
     grants: GrantSpec[];
 
+    /** The name of this consent. */
+    name: string;
+
+    /** The description of this consent seen by users when shown in an app. */
+    description: string;
+
     /** Whether this Consent is automatically accepted when joining an App. */
     required?: boolean;
+
+    /** The text seen by users when accepting this consent. */
+    allowText: string;
+
+    /** The text seen by users when denying this consent. */
+    denyText: string;
 };
 
 export interface Consent extends Model {
@@ -26,8 +38,20 @@ export interface Consent extends Model {
     /** The Grants to make when the App containing this Consent is joined. */
     grants: GrantSpec[];
 
+    /** The name of this consent. */
+    name: string;
+
+    /** The description of this consent seen by users when shown in an app. */
+    description: string;
+
     /** Whether this Consent is automatically accepted when joining an App. */
     required: boolean;
+
+    /** The text seen by users when accepting this consent. */
+    allowText: string;
+
+    /** The text seen by users when denying this consent. */
+    denyText: string;
 }
 
 export class ConsentImpl implements Consent {
@@ -35,12 +59,20 @@ export class ConsentImpl implements Consent {
     public createdAt: Date;
     public grants: GrantSpec[];
     public required: boolean;
+    public name: string;
+    public description: string;
+    public allowText: string;
+    public denyText: string;
 
     public constructor(private readonly client: Client, pod: PODConsent) {
         this.id = pod.id as ConsentId;
         this.createdAt = new Date(pod.createdAt);
         this.grants = pod.grants;
         this.required = pod.required ?? false;
+        this.name = pod.name;
+        this.description = pod.description;
+        this.allowText = pod.allowText;
+        this.denyText = pod.denyText;
     }
 }
 
@@ -68,4 +100,8 @@ export type GranteeRef = 'app' | 'participant' | 'everyone' | IdentityId;
 export type ConsentUpdateParams = RequireAtLeastOne<{
     granted: ConsentId[];
     revoked: ConsentId[];
+    name: string;
+    description: string;
+    allowText: string;
+    denyText: string;
 }>;
