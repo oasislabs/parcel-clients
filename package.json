@@ -13,7 +13,7 @@
         "test": "jest",
         "test:cy": "start-test 'parcel serve test/cypress/fixtures/index.html -p 4444' 4444 'cypress run'",
         "coverage": "jest --coverage && yarn test:cy",
-        "doc": "typedoc",
+        "doc": "typedoc --options docs/typedoc.json",
         "prepublishOnly": "yarn build"
     },
     "jest": {

@@ -4,7 +4,7 @@ coverage/
 cypress/screenshots
 cypress/videos
 dist/
-docs/
+docs/typedoc
 lib/
 node_modules/
 *.log
