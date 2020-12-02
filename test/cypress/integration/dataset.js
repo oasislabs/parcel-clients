@@ -56,8 +56,8 @@ context('Download', () => {
             return new Promise((resolve, reject) => {
                 download
                     .on('error', resolve)
-                    .on('data', () => {
-                        reject(new Error('expected rejection but got data'));
+                    .on('data', (data) => {
+                        reject(new Error(`expected rejection but got data: ${data}`));
                     })
                     .on('end', () => {
                         reject(new Error('expected rejection but got end'));

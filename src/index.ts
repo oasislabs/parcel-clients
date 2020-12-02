@@ -1,7 +1,14 @@
-import type { Consent, ConsentCreateParams, ConsentId, ConsentUpdateParams } from './consent';
 import { AppImpl } from './app';
 import type { App, AppCreateParams, AppId, AppUpdateParams, ListAppsFilter } from './app';
-import { Client, Config as ClientConfig, Download } from './client';
+import { ClientImpl } from './client';
+import type {
+    Client,
+    ClientCreateParams,
+    ClientId,
+    ClientUpdateParams,
+    ListClientsFilter,
+} from './client';
+import type { Consent, ConsentCreateParams, ConsentId, ConsentUpdateParams } from './consent';
 import {
     Dataset,
     DatasetId,
@@ -13,6 +20,8 @@ import {
     Upload,
 } from './dataset';
 import { Grant, GrantCreateParams, GrantId, GrantImpl } from './grant';
+import { HttpClient } from './http';
+import type { Config as ClientConfig, Download } from './http';
 import {
     Identity,
     IdentityCreateParams,
@@ -55,11 +64,11 @@ export {
 
 export default class Parcel {
     private currentIdentity?: Identity;
-    private readonly client: Client;
+    private readonly client: HttpClient;
 
     public constructor(tokenSource: TokenSource, config?: Config) {
         const tokenProvider = TokenProvider.fromSource(tokenSource);
-        this.client = new Client(tokenProvider, {
+        this.client = new HttpClient(tokenProvider, {
             apiUrl: config?.apiUrl,
             httpClient: config?.httpClient,
         });
@@ -144,6 +153,33 @@ export default class Parcel {
 
     public async deauthorizeApp(id: AppId): Promise<void> {
         return AppImpl.deauthorize(this.client, id);
+    }
+
+    public async createClient(appId: AppId, parameters: ClientCreateParams): Promise<Client> {
+        return ClientImpl.create(this.client, appId, parameters);
+    }
+
+    public async getClient(appId: AppId, clientId: ClientId): Promise<Client> {
+        return ClientImpl.get(this.client, appId, clientId);
+    }
+
+    public async listClients(
+        appId: AppId,
+        filter?: ListClientsFilter & PageParams,
+    ): Promise<Page<Client>> {
+        return ClientImpl.list(this.client, appId, filter);
+    }
+
+    public async updateClient(
+        appId: AppId,
+        clientId: ClientId,
+        update: ClientUpdateParams,
+    ): Promise<Client> {
+        return ClientImpl.update(this.client, appId, clientId, update);
+    }
+
+    public async deleteClient(appId: AppId, clientId: ClientId): Promise<void> {
+        return ClientImpl.delete(this.client, appId, clientId);
     }
 
     public async createGrant(parameters: GrantCreateParams): Promise<Grant> {

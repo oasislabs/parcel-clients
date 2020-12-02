@@ -1,7 +1,7 @@
 import type { Opaque, RequireAtLeastOne } from 'type-fest';
 
-import type { Client } from './client';
 import type { Constraints } from './filter';
+import type { HttpClient } from './http';
 import type { IdentityId } from './identity';
 import type { Model, PODModel, ResourceId } from './model';
 
@@ -64,7 +64,7 @@ export class ConsentImpl implements Consent {
     public allowText: string;
     public denyText: string;
 
-    public constructor(private readonly client: Client, pod: PODConsent) {
+    public constructor(private readonly client: HttpClient, pod: PODConsent) {
         this.id = pod.id as ConsentId;
         this.createdAt = new Date(pod.createdAt);
         this.grants = pod.grants;

@@ -12,6 +12,7 @@ module.exports = {
             'error',
             { replacements: { cb: false, params: false, req: false, res: false } },
         ],
+        'max-nested-callbacks': 'off',
     },
     space: 4,
     overrides: [

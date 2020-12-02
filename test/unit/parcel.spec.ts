@@ -10,6 +10,7 @@ import * as uuid from 'uuid';
 
 import Parcel from '@oasislabs/parcel';
 import type { AppId, AppUpdateParams, PODApp } from '@oasislabs/parcel/app';
+import type { ClientId, ClientUpdateParams, PODClient } from '@oasislabs/parcel/client';
 import type { ConsentId, PODConsent } from '@oasislabs/parcel/consent';
 import type { DatasetId, PODDataset } from '@oasislabs/parcel/dataset';
 import type { GrantId, PODGrant } from '@oasislabs/parcel/grant';
@@ -263,6 +264,30 @@ describe('Parcel', () => {
         };
         expect(podApp).toMatchSchema('App');
         return podApp;
+    }
+
+    function createPodClient(options?: { appId: AppId; isScript?: boolean }): PODClient {
+        const podClient = {
+            ...createPodModel(),
+            creator: createIdentityId(),
+            appId: options?.appId ?? createPodApp().id,
+            name: 'test client',
+            audience: 'https://friendly.client/audience',
+            redirectUris: options?.isScript ? [] : ['https://friendly.app/redirect'],
+            postLogoutRedirectUris: options?.isScript
+                ? []
+                : ['https://friendly.app/post-logout-redirect'],
+            jsonWebKeys: options?.isScript
+                ? [
+                      `{"use":"sig","kty":"EC","kid":"J07JL44uZsnGWFt87Vqs5HLO7B1RM7zd5XtWJwS7bpw=","crv":"P-256","alg":"ES256","x":"L2uZsV50Qz4N227FeNARVi0IkKdgMKi8TqoBnhYp60s","y":"E7ZbVjSKjBuBSLWARvFZ_lmT_Q-ifUQBB6QriBhhN-w"}`,
+                  ]
+                : [],
+            canHoldSecrets: Boolean(options?.isScript),
+            canActOnBehalfOfUsers: false,
+            isScript: Boolean(options?.isScript),
+        };
+        expect(podClient).toMatchSchema('Client');
+        return podClient;
     }
 
     function createPodGrant(): PODGrant {
@@ -605,16 +630,6 @@ describe('Parcel', () => {
                 await dataset.update(update);
                 expect(dataset).toMatchPOD(updatedDataset);
             });
-
-            nockIt('empty params', async (scope) => {
-                // This test is for JavaScript users who might inadvertently pass in an empty params.
-                scope.get(`/datasets/${fixtureDataset.id}`).reply(200, fixtureDataset);
-                const dataset = await parcel.updateDataset(
-                    fixtureDataset.id as DatasetId,
-                    {} as any,
-                );
-                expect(dataset).toMatchPOD(fixtureDataset);
-            });
         });
 
         describe('delete', () => {
@@ -823,13 +838,6 @@ describe('Parcel', () => {
                 await app.update(update);
                 expect(app).toMatchPOD(updatedApp);
             });
-
-            nockIt('empty params', async (scope) => {
-                // This test is for JavaScript users who might inadvertently pass in an empty params.
-                scope.get(`/apps/${fixtureApp.id}`).reply(200, fixtureApp);
-                const app = await parcel.updateApp(fixtureApp.id as AppId, {} as any);
-                expect(app).toMatchPOD(fixtureApp);
-            });
         });
 
         describe('delete', () => {
@@ -901,6 +909,191 @@ describe('Parcel', () => {
                     scope.delete(`/apps/${fixtureApp.id}/consent`).reply(204);
                     const app = await parcel.getApp(fixtureApp.id as AppId);
                     await app.deauthorize();
+                });
+            });
+        });
+
+        describe('client', () => {
+            let fixtureClient: PODClient;
+
+            beforeEach(() => {
+                fixtureClient = createPodClient({ appId: fixtureApp.id as AppId });
+            });
+
+            nockIt('create', async (scope) => {
+                const createParams: any /* ClientCreateParams & PODClient */ = {
+                    ...clone(fixtureClient),
+                };
+                delete createParams.id;
+                delete createParams.createdAt;
+                delete createParams.creator;
+                delete createParams.appId;
+                delete createParams.canActOnBehalfOfUsers;
+
+                expect(createParams).toMatchSchema(getRequestSchema('POST', '/apps/{id}/clients'));
+                scope
+                    .post(`/apps/${fixtureApp.id}/clients`, createParams)
+                    .reply(201, fixtureClient);
+                expect(fixtureClient).toMatchSchema(
+                    getResponseSchema('POST', '/apps/{id}/clients', 201),
+                );
+                const client = await parcel.createClient(fixtureApp.id as AppId, createParams);
+                expect(client).toMatchPOD(fixtureClient);
+            });
+
+            nockIt('get', async (scope) => {
+                expect(fixtureClient).toMatchSchema(
+                    getResponseSchema('GET', '/apps/{id}/clients/{client_id}', 200),
+                );
+                scope
+                    .get(`/apps/${fixtureApp.id}/clients/${fixtureClient.id}`)
+                    .reply(200, fixtureClient);
+                const client = await parcel.getClient(
+                    fixtureApp.id as AppId,
+                    fixtureClient.id as ClientId,
+                );
+                expect(client).toMatchPOD(fixtureClient);
+            });
+
+            describe('list', () => {
+                nockIt('no filter', async (scope) => {
+                    const numberResults = 3;
+                    const fixtureResultsPage: Page<PODClient> = createResultsPage(
+                        numberResults,
+                        () => createPodClient({ appId: fixtureApp.id as AppId }),
+                    );
+                    expect(fixtureResultsPage).toMatchSchema(
+                        getResponseSchema('GET', '/apps/{id}/clients', 200),
+                    );
+
+                    scope.get(`/apps/${fixtureApp.id}/clients`).reply(200, fixtureResultsPage);
+
+                    const { results, nextPageToken } = await parcel.listClients(
+                        fixtureApp.id as AppId,
+                    );
+                    expect(results).toHaveLength(numberResults);
+                    results.forEach((r, i) => expect(r).toMatchPOD(fixtureResultsPage.results[i]));
+                    expect(nextPageToken).toEqual(fixtureResultsPage.nextPageToken);
+                });
+
+                nockIt('with filter and pagination', async (scope) => {
+                    const numberResults = 1;
+                    const fixtureResultsPage: Page<PODClient> = createResultsPage(
+                        numberResults,
+                        () => createPodClient({ appId: fixtureApp.id as AppId }),
+                    );
+
+                    const filterWithPagination = {
+                        creator: createIdentityId(),
+                        pageSize: 2,
+                        nextPageToken: uuid.v4(),
+                    };
+                    expect(filterWithPagination).toMatchSchema(
+                        getQueryParametersSchema('GET', '/apps/{id}/clients'),
+                    );
+                    scope
+                        .get(`/apps/${fixtureApp.id}/clients`)
+                        .query(
+                            Object.fromEntries(
+                                Object.entries(filterWithPagination).map(([k, v]) => [
+                                    paramCase(k),
+                                    v,
+                                ]),
+                            ),
+                        )
+                        .reply(200, fixtureResultsPage);
+
+                    const { results, nextPageToken } = await parcel.listClients(
+                        fixtureApp.id as AppId,
+                        filterWithPagination,
+                    );
+                    expect(results).toHaveLength(numberResults);
+                    results.forEach((r, i) => expect(r).toMatchPOD(fixtureResultsPage.results[i]));
+                    expect(nextPageToken).toEqual(fixtureResultsPage.nextPageToken);
+                });
+
+                nockIt('no results', async (scope) => {
+                    const fixtureResultsPage: Page<PODClient> = createResultsPage(
+                        0,
+                        createPodClient,
+                    );
+                    scope.get(`/apps/${fixtureApp.id}/clients`).reply(200, fixtureResultsPage);
+                    const { results, nextPageToken } = await parcel.listClients(
+                        fixtureApp.id as AppId,
+                    );
+                    expect(results).toHaveLength(0);
+                    expect(nextPageToken).toEqual(fixtureResultsPage.nextPageToken);
+                });
+            });
+
+            describe('update', () => {
+                let update: ClientUpdateParams;
+                let updatedClient: PODClient;
+
+                beforeEach(() => {
+                    update = {
+                        newRedirectUris: ['https://friendly.app/new-redirect'],
+                        removedPostLogoutRedirectUris: [
+                            'https://friendly.app/post-logout-redirect',
+                        ],
+                    };
+                    updatedClient = clone(fixtureClient);
+                    updatedClient.redirectUris.push('https://friendly.app/new-redirect');
+                    updatedClient.postLogoutRedirectUris = [];
+                });
+
+                nockIt('by id', async (scope) => {
+                    scope
+                        .patch(`/apps/${fixtureApp.id}/clients/${fixtureClient.id}`, update)
+                        .reply(200, updatedClient);
+                    const updated = await parcel.updateClient(
+                        fixtureApp.id as AppId,
+                        fixtureClient.id as ClientId,
+                        update,
+                    );
+                    expect(updated).toMatchPOD(updatedClient);
+                });
+
+                nockIt('retrieved', async (scope) => {
+                    scope
+                        .patch(`/apps/${fixtureApp.id}/clients/${fixtureClient.id}`, update)
+                        .reply(200, updatedClient);
+                    scope
+                        .get(`/apps/${fixtureApp.id}/clients/${fixtureClient.id}`)
+                        .reply(200, fixtureClient);
+
+                    const client = await parcel.getClient(
+                        fixtureApp.id as AppId,
+                        fixtureClient.id as ClientId,
+                    );
+                    await client.update(update);
+                    expect(client).toMatchPOD(updatedClient);
+                });
+            });
+
+            describe('delete', () => {
+                nockIt('by id', async (scope) => {
+                    scope.delete(`/apps/${fixtureApp.id}/clients/${fixtureClient.id}`).reply(204);
+                    await parcel.deleteClient(fixtureApp.id as AppId, fixtureClient.id as ClientId);
+                });
+
+                nockIt('retrieved', async (scope) => {
+                    scope
+                        .get(`/apps/${fixtureApp.id}/clients/${fixtureClient.id}`)
+                        .reply(200, fixtureClient);
+                    scope.delete(`/apps/${fixtureApp.id}/clients/${fixtureClient.id}`).reply(204);
+                    const client = await parcel.getClient(
+                        fixtureApp.id as AppId,
+                        fixtureClient.id as ClientId,
+                    );
+                    await client.delete();
+                });
+
+                nockIt('expect 204', async (scope) => {
+                    scope.delete(`/apps/${fixtureApp.id}/clients/${fixtureClient.id}`).reply(200);
+                    await expect(
+                        parcel.deleteClient(fixtureApp.id as AppId, fixtureClient.id as ClientId),
+                    ).rejects.toThrow();
                 });
             });
         });

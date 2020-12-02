@@ -1,202 +1,214 @@
-import type { WriteStream } from 'fs';
+import type { Opaque, RequireAtLeastOne } from 'type-fest';
 
-import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
-import type FormData from 'form-data';
-import { PassThrough, Readable, Writable } from 'readable-stream';
-import { paramCase } from 'param-case';
-import type { JsonObject } from 'type-fest';
+import type { AppId } from './app';
+import type { HttpClient } from './http';
+import type { IdentityId } from './identity';
+import type { Model, Page, PageParams, PODModel, ResourceId } from './model';
+import type { PublicJWK } from './token';
 
-import type { TokenProvider } from './token';
+export type ClientId = Opaque<ResourceId>;
 
-const DEFAULT_API_URL = 'https://api.oasislabs.com/parcel/v1';
+export type PODClient = PODModel & {
+    creator: ResourceId;
+    appId: ResourceId;
+    name: string;
+    redirectUris: string[];
+    postLogoutRedirectUris: string[];
+    jsonWebKeys: string[];
+    audience: string;
+    canHoldSecrets: boolean;
+    canActOnBehalfOfUsers: boolean;
+    isScript: boolean;
+};
 
-export type Config = Partial<{
-    apiUrl: string;
-    httpClient: AxiosInstance;
-}>;
+export type ClientCreateParams = {
+    /** The name of this client. */
+    name: string;
 
-export class Client {
-    public readonly apiUrl: string;
+    /** The client's set of allowed redirect URIs. */
+    redirectUris: string[];
 
-    private readonly axios: AxiosInstance;
+    /** The client's set of allowed post-logout redirect URIs. */
+    postLogoutRedirectUris: string[];
 
-    public constructor(private readonly tokenProvider: TokenProvider, config?: Config) {
-        this.apiUrl = config?.apiUrl?.replace(/\/$/, '') ?? DEFAULT_API_URL;
-        this.axios =
-            config?.httpClient ??
-            axios.create({
-                baseURL: this.apiUrl,
-            });
+    /** The set of registered (public) JSON web keys for this client. */
+    jsonWebKeys: PublicJWK[];
 
-        this.axios.interceptors.request.use(async (config) => {
-            return {
-                ...config,
-                headers: {
-                    ...(await this.getHeaders()),
-                    ...config.headers,
-                },
-            };
-        });
+    /** The allowed audience for this client. */
+    audience: string;
+
+    /** Whether or not this client can hold secrets. */
+    canHoldSecrets: boolean;
+
+    /** Whether or not this client is a script. */
+    isScript: boolean;
+};
+
+export interface Client extends Model {
+    /** The client's id. */
+    id: ClientId;
+
+    /** The creator of this client. */
+    creator: IdentityId;
+
+    /** The id of this client's parent app. */
+    appId: AppId;
+
+    /** The name of this client. */
+    name: string;
+
+    /** The client's set of allowed redirect URIs. */
+    redirectUris: string[];
+
+    /** The client's set of allowed post-logout redirect URIs. */
+    postLogoutRedirectUris: string[];
+
+    /** The set of registered (public) JSON web keys for this client. */
+    jsonWebKeys: PublicJWK[];
+
+    /** The allowed audience for this client. */
+    audience: string;
+
+    /** Whether or not this client can hold secrets. */
+    canHoldSecrets: boolean;
+
+    /** Whether or not this client can act on behalf of users. */
+    canActOnBehalfOfUsers: boolean;
+
+    /** Whether or not this client is a script. */
+    isScript: boolean;
+
+    /**
+     * Updates the client according to the provided `params`.
+     * @returns the updated `this`
+     * @throws `ParcelError`
+     */
+    update: (params: ClientUpdateParams) => Promise<Client>;
+
+    /**
+     * Deletes the client.
+     * @throws `ParcelError`
+     */
+    delete: () => Promise<void>;
+}
+
+const CLIENTS_EP = '/clients';
+
+export class ClientImpl implements Client {
+    public id: ClientId;
+    public createdAt: Date;
+    public creator: IdentityId;
+    public appId: AppId;
+    public name: string;
+    public redirectUris: string[];
+    public postLogoutRedirectUris: string[];
+    public jsonWebKeys: PublicJWK[];
+    public audience: string;
+    public canHoldSecrets: boolean;
+    public canActOnBehalfOfUsers: boolean;
+    public isScript: boolean;
+
+    public constructor(private readonly client: HttpClient, pod: PODClient) {
+        this.id = pod.id as ClientId;
+        this.createdAt = new Date(pod.createdAt);
+        this.creator = pod.creator as IdentityId;
+        this.appId = pod.appId as AppId;
+        this.name = pod.name;
+        this.redirectUris = pod.redirectUris;
+        this.postLogoutRedirectUris = pod.postLogoutRedirectUris;
+        this.jsonWebKeys = pod.jsonWebKeys.map((k) => JSON.parse(k));
+        this.audience = pod.audience;
+        this.canHoldSecrets = pod.canHoldSecrets;
+        this.canActOnBehalfOfUsers = pod.canActOnBehalfOfUsers;
+        this.isScript = pod.isScript;
     }
 
-    public async get<T>(
-        endpoint: string,
-        parameters: JsonObject = {},
-        axiosConfig?: AxiosRequestConfig,
-    ): Promise<T> {
-        const kebabCaseParams: JsonObject = {};
-        for (const [k, v] of Object.entries(parameters)) {
-            kebabCaseParams[paramCase(k)] = v;
-        }
-
-        return this.axios
-            .get(endpoint, Object.assign({ params: kebabCaseParams }, axiosConfig))
-            .then((r) => r.data);
+    public static async create(
+        client: HttpClient,
+        appId: AppId,
+        parameters: ClientCreateParams,
+    ): Promise<Client> {
+        return client
+            .create<PODClient>(`/apps/${appId}${CLIENTS_EP}`, parameters)
+            .then((podClient) => new ClientImpl(client, podClient));
     }
 
-    /** Convenience method for POSTing and expecting a 201 response */
-    public async create<T>(endpoint: string, data: JsonObject): Promise<T> {
-        return this.post(endpoint, data, {
-            validateStatus: (s) => s === 201,
-        });
+    public static async get(client: HttpClient, appId: AppId, clientId: ClientId): Promise<Client> {
+        return client
+            .get<PODClient>(ClientImpl.endpointForId(appId, clientId))
+            .then((podClient) => new ClientImpl(client, podClient));
     }
 
-    public async post<T>(
-        endpoint: string,
-        data: JsonObject | FormData,
-        axiosConfig?: AxiosRequestConfig,
-    ): Promise<T> {
-        return this.axios.post(endpoint, data, axiosConfig).then((r) => r.data);
-    }
-
-    public async patch<T>(endpoint: string, parameters: JsonObject): Promise<T> {
-        return this.axios.patch(endpoint, parameters).then((r) => r.data);
-    }
-
-    public async delete(endpoint: string): Promise<void> {
-        return this.axios
-            .delete(endpoint, {
-                validateStatus: (s) => s === 204,
-            })
-            .then(() => undefined);
-    }
-
-    public download(endpoint: string): Download {
-        /* istanbul ignore if */
-        return 'fetch' in globalThis ? this.downloadBrowser(endpoint) : this.downloadNode(endpoint);
-    }
-
-    /* istanbul ignore next */
-    // This is tested using Cypress, which produces bogus line numbers.
-    private downloadBrowser(endpoint: string): Download {
-        const abortController = new AbortController();
-        const res = this.getHeaders().then(async (headers) => {
-            const res = await fetch(`${this.apiUrl}${endpoint}`, {
-                method: 'GET',
-                headers,
-                signal: abortController.signal,
-            });
-
-            if (!res.ok) {
-                const errorMessage: string = (await res.json()).error;
-                const error = new Error(`failed to fetch dataset: ${errorMessage}`);
-                (error as any).response = res;
-                throw error;
-            }
-
-            return res;
-        });
-        const reader = res.then((res) => {
-            if (!res.body) return null;
-            return res.body.getReader();
-        });
-        const dl = new (class extends Download {
-            public _read(): void {
-                reader
-                    .then(async (rdr) => {
-                        if (!rdr) return this.push(null);
-
-                        let chunk;
-                        do {
-                            // eslint-disable-next-line no-await-in-loop
-                            chunk = await rdr.read(); // Loop iterations are not independent.
-                            if (!chunk.value) continue;
-                            if (!this.push(chunk.value)) break;
-                        } while (!chunk.done);
-
-                        if (chunk.done) this.push(null);
-                    })
-                    .catch((error: any) => this.destroy(error));
-            }
-
-            public _destroy(error: Error, cb: (error?: Error) => void): void {
-                abortController.abort();
-                void res.then((res) => res.body?.cancel());
-                cb(error);
-            }
-        })();
-        res.catch((error) => dl.destroy(error));
-        return dl;
-    }
-
-    private downloadNode(endpoint: string): Download {
-        const cancelToken = axios.CancelToken.source();
-        const pt: Download = Object.assign(new PassThrough(), {
-            pipeTo: Download.prototype.pipeTo,
-            destroy: (error: any) => {
-                cancelToken.cancel();
-                PassThrough.prototype.destroy.call(pt, error);
-            },
-        });
-        this.axios
-            .get(endpoint, {
-                responseType: 'stream',
-                cancelToken: cancelToken.token,
-            })
-            .then((res) => {
-                res.data?.on('error', (error: Error) => pt.destroy(error)).pipe(pt);
-            })
-            .catch((error: Error) => pt.destroy(error));
-        return pt;
-    }
-
-    private async getHeaders(): Promise<Record<string, string>> {
+    public static async list(
+        client: HttpClient,
+        appId: AppId,
+        filter?: ListClientsFilter & PageParams,
+    ): Promise<Page<Client>> {
+        const podPage = await client.get<Page<PODClient>>(`/apps/${appId}${CLIENTS_EP}`, filter);
+        const results = podPage.results.map((podClient) => new ClientImpl(client, podClient));
         return {
-            authorization: `Bearer ${await this.tokenProvider.getToken()}`,
+            results,
+            nextPageToken: podPage.nextPageToken,
         };
     }
-}
 
-/**
- * A `Download` is the result of calling `parcel.downloadDataset` or `dataset.download()`.
- *
- * The downloaded data can be read using the Node `stream.Readable` interface, or by
- * calling `await downlad.pipeTo(sink)`.
- *
- * The download may be aborted by calling `download.destroy()`, as with any `Readable`.
- */
-export class Download extends Readable {
-    /** Convenience method for piping to a sink and waiting for writing to finish. */
-    public async pipeTo(sink: Writable | WriteStream | WritableStream): Promise<void> {
-        /* istanbul ignore if */ // This is tested using Cypress.
-        if ('getWriter' in sink) {
-            const writer = sink.getWriter();
-            return new Promise((resolve, reject) => {
-                this.on('error', reject)
-                    .on('data', (chunk) => {
-                        void writer.ready.then(async () => writer.write(chunk)).catch(reject);
-                    })
-                    .on('end', () => {
-                        writer.ready
-                            .then(async () => writer.close())
-                            .then(resolve)
-                            .catch(reject);
-                    });
-            });
-        }
+    public static async update(
+        client: HttpClient,
+        appId: AppId,
+        clientId: ClientId,
+        parameters: ClientUpdateParams,
+    ): Promise<Client> {
+        return client
+            .patch<PODClient>(ClientImpl.endpointForId(appId, clientId), parameters)
+            .then((podClient) => new ClientImpl(client, podClient));
+    }
 
-        return new Promise((resolve, reject) => {
-            this.on('error', reject).pipe(sink).on('finish', resolve).on('error', reject);
-        });
+    public static async delete(
+        client: HttpClient,
+        appId: AppId,
+        clientId: ClientId,
+    ): Promise<void> {
+        return client.delete(ClientImpl.endpointForId(appId, clientId));
+    }
+
+    private static endpointForId(appId: AppId, clientId: ClientId): string {
+        return `/apps/${appId}/clients/${clientId}`;
+    }
+
+    public async update(parameters: ClientUpdateParams): Promise<Client> {
+        Object.assign(this, await ClientImpl.update(this.client, this.appId, this.id, parameters));
+        return this;
+    }
+
+    public async delete(): Promise<void> {
+        return this.client.delete(ClientImpl.endpointForId(this.appId, this.id));
     }
 }
+
+export type ClientUpdateParams = RequireAtLeastOne<{
+    /** A list of redirect URIs to add to this client. */
+    newRedirectUris: string[];
+
+    /** A list of redirect URIs to remove from this client. */
+    removedRedirectUris: string[];
+
+    /** A list of post-logout redirect URIs to add to this client. */
+    newPostLogoutRedirectUris: string[];
+
+    /** A list of post-logout redirect URIs to remove from this client. */
+    removedPostLogoutRedirectUris: string[];
+
+    /** A list of JSON web keys to add to this client. */
+    newJsonWebKeys: string[];
+
+    /** A list of JSON web keys to remove from this client. */
+    removedJsonWebKeys: string[];
+}>;
+
+export type ListClientsFilter = Partial<{
+    /** Only return clients created by the provided identity. */
+    creator: IdentityId;
+
+    /** Only return clients for the provided app. */
+    appId: AppId;
+}>;

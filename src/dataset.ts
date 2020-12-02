@@ -5,9 +5,8 @@ import { Readable } from 'readable-stream';
 import type { JsonObject, Opaque, RequireAtLeastOne, RequireExactlyOne } from 'type-fest';
 
 import type { AppId } from './app';
-import type { Client, Download } from './client';
+import type { HttpClient, Download } from './http';
 import type { IdentityId } from './identity';
-import { containsUpdate } from './model';
 import type { Model, Page, PageParams, PODModel, ResourceId } from './model';
 
 export type DatasetId = Opaque<ResourceId>;
@@ -87,7 +86,7 @@ export class DatasetImpl implements Dataset {
     public owner: IdentityId;
     public metadata: DatasetMetadata;
 
-    public constructor(private readonly client: Client, pod: PODDataset) {
+    public constructor(private readonly client: HttpClient, pod: PODDataset) {
         this.id = pod.id as DatasetId;
         this.createdAt = new Date(pod.createdAt);
         this.creator = pod.creator as IdentityId;
@@ -95,14 +94,14 @@ export class DatasetImpl implements Dataset {
         this.metadata = pod.metadata ?? {};
     }
 
-    public static async get(client: Client, id: DatasetId): Promise<Dataset> {
+    public static async get(client: HttpClient, id: DatasetId): Promise<Dataset> {
         return client
             .get<PODDataset>(DatasetImpl.endpointForId(id))
             .then((podDataset) => new DatasetImpl(client, podDataset));
     }
 
     public static async list(
-        client: Client,
+        client: HttpClient,
         filter?: ListDatasetsFilter & PageParams,
     ): Promise<Page<Dataset>> {
         let tagsFilter;
@@ -124,29 +123,29 @@ export class DatasetImpl implements Dataset {
         };
     }
 
-    public static upload(client: Client, data: Storable, parameters?: DatasetUploadParams): Upload {
+    public static upload(
+        client: HttpClient,
+        data: Storable,
+        parameters?: DatasetUploadParams,
+    ): Upload {
         return new Upload(client, data, parameters);
     }
 
-    public static download(client: Client, id: DatasetId): Download {
+    public static download(client: HttpClient, id: DatasetId): Download {
         return client.download(DatasetImpl.endpointForId(id) + '/download');
     }
 
     public static async update(
-        client: Client,
+        client: HttpClient,
         id: DatasetId,
         parameters: DatasetUpdateParams,
     ): Promise<Dataset> {
-        if (!containsUpdate(parameters)) {
-            return DatasetImpl.get(client, id);
-        }
-
         return client
             .patch<PODDataset>(DatasetImpl.endpointForId(id), parameters)
             .then((podDataset) => new DatasetImpl(client, podDataset));
     }
 
-    public static async delete(client: Client, id: DatasetId): Promise<void> {
+    public static async delete(client: HttpClient, id: DatasetId): Promise<void> {
         return client.delete(DatasetImpl.endpointForId(id));
     }
 
@@ -205,7 +204,7 @@ export class Upload extends EventEmitter {
 
     private readonly cancelToken: CancelTokenSource;
 
-    constructor(client: Client, data: Storable, parameters?: DatasetUploadParams) {
+    constructor(client: HttpClient, data: Storable, parameters?: DatasetUploadParams) {
         super();
         this.cancelToken = axios.CancelToken.source();
         const form = new FormData();

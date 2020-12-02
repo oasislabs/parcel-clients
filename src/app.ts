@@ -1,6 +1,5 @@
 import type { Opaque, RequireAtLeastOne } from 'type-fest';
 
-import type { Client } from './client';
 import { ConsentImpl } from './consent';
 import type {
     Consent,
@@ -9,8 +8,8 @@ import type {
     ConsentUpdateParams,
     PODConsent,
 } from './consent';
+import type { HttpClient } from './http';
 import type { IdentityId, IdentityTokenVerifier } from './identity';
-import { containsUpdate } from './model';
 import type { Model, Page, PageParams, PODModel, ResourceId } from './model';
 
 export type AppId = Opaque<ResourceId>;
@@ -128,10 +127,10 @@ export interface App extends Model {
     /** Whether this app has been published. */
     published: boolean;
 
-    /** The Identity that created the App. */
+    /** The Identity that owns the App. */
     owner: IdentityId;
 
-    /** If `true`, only invited Identities may  the app. */
+    /** If `true`, only invited Identities may join the app. */
     inviteOnly: boolean;
 
     /** The consents taken upon joining this App. */
@@ -194,6 +193,7 @@ export interface App extends Model {
 const APPS_EP = '/apps';
 
 export class AppImpl implements App {
+    public id: AppId;
     public acceptanceText?: string;
     public admins: IdentityId[];
     public brandingColor?: string;
@@ -203,7 +203,6 @@ export class AppImpl implements App {
     public createdAt: Date;
     public extendedDescription?: string;
     public homepage: string;
-    public id: AppId;
     public invitationText?: string;
     public inviteOnly: boolean;
     public invites: IdentityId[];
@@ -218,7 +217,8 @@ export class AppImpl implements App {
     public shortDescription: string;
     public termsAndConditions: string;
 
-    public constructor(private readonly client: Client, pod: PODApp) {
+    public constructor(private readonly client: HttpClient, pod: PODApp) {
+        this.id = pod.id as AppId;
         this.acceptanceText = pod.acceptanceText;
         this.admins = pod.admins as IdentityId[];
         this.brandingColor = pod.brandingColor;
@@ -226,38 +226,37 @@ export class AppImpl implements App {
         this.collaborators = pod.collaborators as IdentityId[];
         this.consents = pod.consents.map((podConsent) => new ConsentImpl(client, podConsent));
         this.createdAt = new Date(pod.createdAt);
-        this.owner = pod.owner as IdentityId;
         this.extendedDescription = pod.extendedDescription;
         this.homepage = pod.homepage;
-        this.id = pod.id as AppId;
-        this.invites = pod.invites as IdentityId[];
         this.invitationText = pod.invitationText;
         this.inviteOnly = pod.inviteOnly;
+        this.invites = pod.invites as IdentityId[];
+        this.logo = pod.logo;
         this.name = pod.name;
         this.organization = pod.organization;
+        this.owner = pod.owner as IdentityId;
         this.participants = pod.participants as IdentityId[];
         this.privacyPolicy = pod.privacyPolicy;
         this.published = pod.published;
         this.rejectionText = pod.rejectionText;
         this.shortDescription = pod.shortDescription;
         this.termsAndConditions = pod.termsAndConditions;
-        this.logo = pod.logo;
     }
 
-    public static async create(client: Client, parameters: AppCreateParams): Promise<App> {
+    public static async create(client: HttpClient, parameters: AppCreateParams): Promise<App> {
         return client
             .create<PODApp>(APPS_EP, parameters)
             .then((podApp) => new AppImpl(client, podApp));
     }
 
-    public static async get(client: Client, id: AppId): Promise<App> {
+    public static async get(client: HttpClient, id: AppId): Promise<App> {
         return client
             .get<PODApp>(AppImpl.endpointForId(id))
             .then((podApp) => new AppImpl(client, podApp));
     }
 
     public static async list(
-        client: Client,
+        client: HttpClient,
         filter?: ListAppsFilter & PageParams,
     ): Promise<Page<App>> {
         const podPage = await client.get<Page<PODApp>>(APPS_EP, filter);
@@ -269,25 +268,21 @@ export class AppImpl implements App {
     }
 
     public static async update(
-        client: Client,
+        client: HttpClient,
         id: AppId,
         parameters: AppUpdateParams,
     ): Promise<App> {
-        if (!containsUpdate(parameters)) {
-            return AppImpl.get(client, id);
-        }
-
         return client
             .patch<PODApp>(AppImpl.endpointForId(id), parameters)
             .then((podApp) => new AppImpl(client, podApp));
     }
 
-    public static async delete(client: Client, id: AppId): Promise<void> {
+    public static async delete(client: HttpClient, id: AppId): Promise<void> {
         return client.delete(AppImpl.endpointForId(id));
     }
 
     public static async updateConsent(
-        client: Client,
+        client: HttpClient,
         id: AppId,
         parameters: ConsentUpdateParams,
     ): Promise<void> {
@@ -295,7 +290,7 @@ export class AppImpl implements App {
     }
 
     public static async authorize(
-        client: Client,
+        client: HttpClient,
         id: AppId,
         optionalConsents?: ConsentId[],
     ): Promise<void> {
@@ -304,7 +299,7 @@ export class AppImpl implements App {
         });
     }
 
-    public static async deauthorize(client: Client, id: AppId): Promise<void> {
+    public static async deauthorize(client: HttpClient, id: AppId): Promise<void> {
         await client.delete(AppImpl.consentEndpointForId(id));
     }
 
@@ -330,10 +325,6 @@ export class AppImpl implements App {
     }
 
     public async updateConsent(parameters: ConsentUpdateParams): Promise<void> {
-        if (!containsUpdate(parameters)) {
-            return;
-        }
-
         return AppImpl.updateConsent(this.client, this.id, parameters);
     }
 

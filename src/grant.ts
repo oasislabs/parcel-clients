@@ -1,8 +1,8 @@
 import type { Opaque } from 'type-fest';
 
-import type { Client } from './client';
 import type { ConsentId } from './consent';
 import type { Constraints } from './filter';
+import type { HttpClient } from './http';
 import type { IdentityId } from './identity';
 import type { Model, PODModel, ResourceId } from './model';
 
@@ -57,7 +57,7 @@ export class GrantImpl implements Grant {
     public filter?: Constraints;
     public consent?: ConsentId;
 
-    private constructor(private readonly client: Client, pod: PODGrant) {
+    private constructor(private readonly client: HttpClient, pod: PODGrant) {
         this.id = pod.id as GrantId;
         this.createdAt = new Date(pod.createdAt);
         this.granter = pod.granter as IdentityId;
@@ -66,19 +66,19 @@ export class GrantImpl implements Grant {
         this.consent = pod.consent as ConsentId;
     }
 
-    public static async create(client: Client, parameters: GrantCreateParams): Promise<Grant> {
+    public static async create(client: HttpClient, parameters: GrantCreateParams): Promise<Grant> {
         return client
             .create<PODGrant>(GRANTS_EP, parameters)
             .then((podGrant) => new GrantImpl(client, podGrant));
     }
 
-    public static async get(client: Client, id: GrantId): Promise<Grant> {
+    public static async get(client: HttpClient, id: GrantId): Promise<Grant> {
         return client
             .get<PODGrant>(GrantImpl.endpointForId(id))
             .then((podGrant) => new GrantImpl(client, podGrant));
     }
 
-    public static async delete(client: Client, id: GrantId): Promise<void> {
+    public static async delete(client: HttpClient, id: GrantId): Promise<void> {
         return client.delete(GrantImpl.endpointForId(id));
     }
 

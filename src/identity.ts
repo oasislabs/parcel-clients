@@ -1,7 +1,6 @@
 import type { Opaque, RequireAtLeastOne } from 'type-fest';
 
-import type { Client } from './client';
-import { containsUpdate } from './model';
+import type { HttpClient } from './http';
 import type { Model, PODModel, ResourceId } from './model';
 import type { IdentityTokenClaims, PublicJWK } from './token';
 
@@ -43,14 +42,14 @@ export class IdentityImpl implements Identity {
     public createdAt: Date;
     public tokenVerifier: IdentityTokenVerifier;
 
-    public constructor(private readonly client: Client, pod: PODIdentity) {
+    public constructor(private readonly client: HttpClient, pod: PODIdentity) {
         this.id = pod.id as IdentityId;
         this.createdAt = new Date(pod.createdAt);
         this.tokenVerifier = pod.tokenVerifier;
     }
 
     public static async create(
-        client: Client,
+        client: HttpClient,
         parameters: IdentityCreateParams,
     ): Promise<Identity> {
         return client
@@ -60,33 +59,29 @@ export class IdentityImpl implements Identity {
             .then((podIdentity) => new IdentityImpl(client, podIdentity));
     }
 
-    public static async current(client: Client): Promise<Identity> {
+    public static async current(client: HttpClient): Promise<Identity> {
         return client
             .get<PODIdentity>(IDENTITIES_ME)
             .then((podIdentity) => new IdentityImpl(client, podIdentity));
     }
 
-    public static async get(client: Client, id: IdentityId): Promise<Identity> {
+    public static async get(client: HttpClient, id: IdentityId): Promise<Identity> {
         return client
             .get<PODIdentity>(IdentityImpl.endpointForId(id))
             .then((podIdentity) => new IdentityImpl(client, podIdentity));
     }
 
     public static async update(
-        client: Client,
+        client: HttpClient,
         id: IdentityId,
         parameters: IdentityUpdateParams,
     ): Promise<Identity> {
-        if (!containsUpdate(parameters)) {
-            return IdentityImpl.get(client, id);
-        }
-
         return client
             .patch<PODIdentity>(IdentityImpl.endpointForId(id), parameters)
             .then((podIdentity) => new IdentityImpl(client, podIdentity));
     }
 
-    public static async delete(client: Client, id: IdentityId): Promise<void> {
+    public static async delete(client: HttpClient, id: IdentityId): Promise<void> {
         return client.delete(IdentityImpl.endpointForId(id));
     }
 
