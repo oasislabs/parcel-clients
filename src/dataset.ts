@@ -66,13 +66,11 @@ export interface Dataset extends Model {
     /**
      * Updates the dataset according to the provided `params`.
      * @returns the updated `this`
-     * @throws ParcelError
      */
     update: (params: DatasetUpdateParams) => Promise<Dataset>;
 
     /**
      * Deletes the dataset.
-     * @throws `ParcelError`
      */
     delete: () => Promise<void>;
 }
@@ -138,10 +136,10 @@ export class DatasetImpl implements Dataset {
     public static async update(
         client: HttpClient,
         id: DatasetId,
-        parameters: DatasetUpdateParams,
+        params: DatasetUpdateParams,
     ): Promise<Dataset> {
         return client
-            .patch<PODDataset>(DatasetImpl.endpointForId(id), parameters)
+            .patch<PODDataset>(DatasetImpl.endpointForId(id), params)
             .then((podDataset) => new DatasetImpl(client, podDataset));
     }
 
@@ -157,8 +155,8 @@ export class DatasetImpl implements Dataset {
         return DatasetImpl.download(this.client, this.id);
     }
 
-    public async update(parameters: DatasetUpdateParams): Promise<Dataset> {
-        Object.assign(this, await DatasetImpl.update(this.client, this.id, parameters));
+    public async update(params: DatasetUpdateParams): Promise<Dataset> {
+        Object.assign(this, await DatasetImpl.update(this.client, this.id, params));
         return this;
     }
 
@@ -204,7 +202,7 @@ export class Upload extends EventEmitter {
 
     private readonly cancelToken: CancelTokenSource;
 
-    constructor(client: HttpClient, data: Storable, parameters?: DatasetUploadParams) {
+    constructor(client: HttpClient, data: Storable, params?: DatasetUploadParams) {
         super();
         this.cancelToken = axios.CancelToken.source();
         const form = new FormData();
@@ -228,9 +226,9 @@ export class Upload extends EventEmitter {
             }
         };
 
-        if (parameters) {
-            const parametersString = JSON.stringify(parameters);
-            appendPart('metadata', parametersString, 'application/json', parametersString.length);
+        if (params) {
+            const paramsString = JSON.stringify(params);
+            appendPart('metadata', paramsString, 'application/json', paramsString.length);
         }
 
         appendPart('data', data, 'application/octet-stream', (data as any).length);

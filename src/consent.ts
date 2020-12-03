@@ -1,5 +1,6 @@
-import type { Opaque, RequireAtLeastOne } from 'type-fest';
+import type { Opaque } from 'type-fest';
 
+import type { AppId } from './app';
 import type { Constraints } from './filter';
 import type { HttpClient } from './http';
 import type { IdentityId } from './identity';
@@ -7,7 +8,10 @@ import type { Model, PODModel, ResourceId } from './model';
 
 export type ConsentId = Opaque<ResourceId>;
 
-export type PODConsent = PODModel & ConsentCreateParams;
+export type PODConsent = PODModel &
+    ConsentCreateParams & {
+        appId: ResourceId;
+    };
 
 export type ConsentCreateParams = {
     /** The Grants to make when the App containing this Consent is joined. */
@@ -31,6 +35,8 @@ export type ConsentCreateParams = {
 
 export interface Consent extends Model {
     id: ConsentId;
+
+    appId: AppId;
 
     /** The time at which this consent was created. */
     createdAt: Date;
@@ -56,6 +62,7 @@ export interface Consent extends Model {
 
 export class ConsentImpl implements Consent {
     public id: ConsentId;
+    public appId: AppId;
     public createdAt: Date;
     public grants: GrantSpec[];
     public required: boolean;
@@ -66,6 +73,7 @@ export class ConsentImpl implements Consent {
 
     public constructor(private readonly client: HttpClient, pod: PODConsent) {
         this.id = pod.id as ConsentId;
+        this.appId = pod.appId as AppId;
         this.createdAt = new Date(pod.createdAt);
         this.grants = pod.grants;
         this.required = pod.required ?? false;
@@ -73,6 +81,46 @@ export class ConsentImpl implements Consent {
         this.description = pod.description;
         this.allowText = pod.allowText;
         this.denyText = pod.denyText;
+    }
+
+    // Do not export these statics. Consents should only be modified through the parent `App`
+    // so that the `App` doesn't get out of sync. We focus on the most common case when there's
+    // a single `App` object per App.
+
+    public static async create(
+        client: HttpClient,
+        appId: AppId,
+        params: ConsentCreateParams,
+    ): Promise<Consent> {
+        return client
+            .create<PODConsent>(ConsentImpl.endpointForCollection(appId), params)
+            .then((podConsent) => new ConsentImpl(client, podConsent));
+    }
+
+    public static async get(
+        client: HttpClient,
+        appId: AppId,
+        consentId: ConsentId,
+    ): Promise<Consent> {
+        return client
+            .get<PODConsent>(ConsentImpl.endpointForId(appId, consentId))
+            .then((podConsent) => new ConsentImpl(client, podConsent));
+    }
+
+    public static async delete(
+        client: HttpClient,
+        appId: AppId,
+        consentId: ConsentId,
+    ): Promise<void> {
+        return client.delete(ConsentImpl.endpointForId(appId, consentId));
+    }
+
+    private static endpointForCollection(appId: AppId): string {
+        return `/apps/${appId}/consents`;
+    }
+
+    private static endpointForId(appId: AppId, consentId: ConsentId): string {
+        return `${ConsentImpl.endpointForCollection(appId)}/${consentId}`;
     }
 }
 
@@ -96,12 +144,3 @@ export type GranterRef = 'app' | 'participant';
  * `everyone` refers to, well, everyone.
  */
 export type GranteeRef = 'app' | 'participant' | 'everyone' | IdentityId;
-
-export type ConsentUpdateParams = RequireAtLeastOne<{
-    granted: ConsentId[];
-    revoked: ConsentId[];
-    name: string;
-    description: string;
-    allowText: string;
-    denyText: string;
-}>;

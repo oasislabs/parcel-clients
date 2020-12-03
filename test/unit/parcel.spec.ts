@@ -208,6 +208,7 @@ describe('Parcel', () => {
     }
 
     const createIdentityId: () => IdentityId = () => uuid.v4() as IdentityId;
+    const createAppId: () => AppId = () => uuid.v4() as AppId;
     const createConsentId: () => ConsentId = () => uuid.v4() as ConsentId;
 
     function createPodIdentity(): PODIdentity {
@@ -312,6 +313,7 @@ describe('Parcel', () => {
                     filter: { 'dataset.metadata.tags': { $any: { $eq: 'mock' } } },
                 },
             ],
+            appId: createAppId(),
             required: !options?.optional,
             name: 'Consent Name',
             description: 'Consent Description',
@@ -384,54 +386,139 @@ describe('Parcel', () => {
             expect(identity).toMatchPOD(fixtureIdentity);
         });
 
-        describe('update', () => {
-            nockIt('by id', async (scope) => {
-                const updatedIdentity = Object.assign(clone(fixtureIdentity), {
-                    tokenVerifier: createPodIdentity().tokenVerifier,
-                });
-                const update = { tokenVerifier: updatedIdentity.tokenVerifier };
-                expect(update).toMatchSchema(getRequestSchema('PATCH', '/identities/{id}'));
-                scope
-                    .patch(`/identities/${fixtureIdentity.id}`, update)
-                    .reply(200, updatedIdentity);
-                const updated = await parcel.updateIdentity(
-                    fixtureIdentity.id as IdentityId,
-                    update,
-                );
-                expect(updated).toMatchPOD(updatedIdentity);
+        nockIt('update', async (scope) => {
+            const updatedIdentity = Object.assign(clone(fixtureIdentity), {
+                tokenVerifier: createPodIdentity().tokenVerifier,
             });
 
-            nockIt('retrieved', async (scope) => {
-                const updatedIdentity = Object.assign(clone(fixtureIdentity), {
-                    tokenVerifier: createPodIdentity().tokenVerifier,
-                });
+            scope.get('/identities/me').reply(200, fixtureIdentity);
+            scope
+                .patch(`/identities/${fixtureIdentity.id}`, {
+                    tokenVerifier: updatedIdentity.tokenVerifier,
+                })
+                .reply(200, updatedIdentity);
 
-                scope.get('/identities/me').reply(200, fixtureIdentity);
-                scope
-                    .patch(`/identities/${fixtureIdentity.id}`, {
-                        tokenVerifier: updatedIdentity.tokenVerifier,
-                    })
-                    .reply(200, updatedIdentity);
-
-                const identity = await parcel.getCurrentIdentity();
-                await identity.update({ tokenVerifier: updatedIdentity.tokenVerifier });
-                expect(identity).toMatchPOD(updatedIdentity);
-            });
+            const identity = await parcel.getCurrentIdentity();
+            await identity.update({ tokenVerifier: updatedIdentity.tokenVerifier });
+            expect(identity).toMatchPOD(updatedIdentity);
         });
 
-        describe('delete', () => {
-            nockIt('by id', async (scope) => {
-                scope.delete(`/identities/${fixtureIdentity.id}`).reply(204);
-                expect(
-                    await parcel.deleteIdentity(fixtureIdentity.id as IdentityId),
-                ).toBeUndefined();
+        nockIt('delete', async (scope) => {
+            scope.get('/identities/me').reply(200, fixtureIdentity);
+            scope.delete(`/identities/${fixtureIdentity.id}`).reply(204);
+            const identity = await parcel.getCurrentIdentity();
+            expect(await identity.delete()).toBeUndefined();
+        });
+
+        describe('consents', () => {
+            describe('get', () => {
+                nockIt('granted', async (scope) => {
+                    const fixtureConsent = createPodConsent();
+                    expect(fixtureConsent).toMatchSchema(
+                        getResponseSchema(
+                            'GET',
+                            '/identities/{identity-id}/consents/{consent-id}',
+                            200,
+                        ),
+                    );
+
+                    scope.get(`/identities/me`).reply(200, fixtureIdentity);
+                    scope
+                        .get(`/identities/${fixtureIdentity.id}/consents/${fixtureConsent.id}`)
+                        .reply(200, fixtureConsent);
+
+                    const identity = await parcel.getCurrentIdentity();
+                    const consent = await identity.getGrantedConsent(
+                        fixtureConsent.id as ConsentId,
+                    );
+                    expect(consent).toMatchPOD(fixtureConsent);
+                });
+
+                nockIt('not granted', async (scope) => {
+                    const fixtureConsentId = createConsentId();
+                    scope.get(`/identities/me`).reply(200, fixtureIdentity);
+                    scope
+                        .get(`/identities/${fixtureIdentity.id}/consents/${fixtureConsentId}`)
+                        .reply(404);
+
+                    const identity = await parcel.getCurrentIdentity();
+                    await expect(identity.getGrantedConsent(fixtureConsentId)).rejects.toThrow(
+                        '404',
+                    );
+                });
             });
 
-            nockIt('retrieved', async (scope) => {
-                scope.get('/identities/me').reply(200, fixtureIdentity);
-                scope.delete(`/identities/${fixtureIdentity.id}`).reply(204);
-                const identity = await parcel.getCurrentIdentity();
-                expect(await identity.delete()).toBeUndefined();
+            describe('list', () => {
+                nockIt('no filter', async (scope) => {
+                    const numberResults = 3;
+                    const fixtureResultsPage: Page<PODConsent> = createResultsPage(
+                        numberResults,
+                        createPodConsent,
+                    );
+                    expect(fixtureResultsPage).toMatchSchema(
+                        getResponseSchema('GET', '/identities/{identity-id}/consents', 200),
+                    );
+
+                    scope.get(`/identities/me`).reply(200, fixtureIdentity);
+                    scope
+                        .get(`/identities/${fixtureIdentity.id}/consents`)
+                        .reply(200, fixtureResultsPage);
+
+                    const identity = await parcel.getCurrentIdentity();
+                    const { results, nextPageToken } = await identity.listGrantedConsents();
+                    expect(results).toHaveLength(numberResults);
+                    results.forEach((r, i) => expect(r).toMatchPOD(fixtureResultsPage.results[i]));
+                    expect(nextPageToken).toEqual(fixtureResultsPage.nextPageToken);
+                });
+
+                nockIt('with filter and pagination', async (scope) => {
+                    const numberResults = 1;
+                    const fixtureResultsPage: Page<PODConsent> = createResultsPage(
+                        numberResults,
+                        createPodConsent,
+                    );
+
+                    const filterWithPagination = {
+                        app: fixtureResultsPage.results[0].appId as AppId,
+                        pageSize: 2,
+                        nextPageToken: uuid.v4(),
+                    };
+                    expect(filterWithPagination).toMatchSchema(
+                        getQueryParametersSchema('GET', '/identities/{identity-id}/consents'),
+                    );
+
+                    scope.get(`/identities/me`).reply(200, fixtureIdentity);
+                    scope
+                        .get(`/identities/${fixtureIdentity.id}/consents`)
+                        .query(
+                            Object.fromEntries(
+                                Object.entries(filterWithPagination).map(([k, v]) => [
+                                    paramCase(k),
+                                    v,
+                                ]),
+                            ),
+                        )
+                        .reply(200, fixtureResultsPage);
+
+                    const identity = await parcel.getCurrentIdentity();
+                    const { results, nextPageToken } = await identity.listGrantedConsents(
+                        filterWithPagination,
+                    );
+                    expect(results).toHaveLength(numberResults);
+                    results.forEach((r, i) => expect(r).toMatchPOD(fixtureResultsPage.results[i]));
+                    expect(nextPageToken).toEqual(fixtureResultsPage.nextPageToken);
+                });
+
+                nockIt('no results', async (scope) => {
+                    const fixtureResultsPage: Page<PODDataset> = createResultsPage(
+                        0,
+                        createPodDataset,
+                    );
+                    scope.get('/datasets').reply(200, fixtureResultsPage);
+                    const { results, nextPageToken } = await parcel.listDatasets();
+                    expect(results).toHaveLength(0);
+                    expect(nextPageToken).toEqual(fixtureResultsPage.nextPageToken);
+                });
             });
         });
     });
@@ -498,7 +585,9 @@ describe('Parcel', () => {
         });
 
         nockIt('get', async (scope) => {
-            expect(fixtureDataset).toMatchSchema(getResponseSchema('GET', '/datasets/{id}', 200));
+            expect(fixtureDataset).toMatchSchema(
+                getResponseSchema('GET', '/datasets/{dataset-id}', 200),
+            );
             scope.get(`/datasets/${fixtureDataset.id}`).reply(200, fixtureDataset);
             const dataset = await parcel.getDataset(fixtureDataset.id as DatasetId);
             expect(dataset).toMatchPOD(fixtureDataset);
@@ -609,7 +698,7 @@ describe('Parcel', () => {
                     owner: createIdentityId(),
                     metadata: { hello: 'world', deleteKey: null },
                 };
-                expect(update).toMatchSchema(getRequestSchema('PATCH', '/datasets/{id}'));
+                expect(update).toMatchSchema(getRequestSchema('PATCH', '/datasets/{dataset-id}'));
                 const updatedDataset = Object.assign(clone(fixtureDataset), update);
                 scope.patch(`/datasets/${fixtureDataset.id}`, update).reply(200, updatedDataset);
                 const updated = await parcel.updateDataset(fixtureDataset.id as DatasetId, update);
@@ -674,7 +763,7 @@ describe('Parcel', () => {
         });
 
         nockIt('get', async (scope) => {
-            expect(fixtureGrant).toMatchSchema(getResponseSchema('GET', '/grants/{id}', 200));
+            expect(fixtureGrant).toMatchSchema(getResponseSchema('GET', '/grants/{grant-id}', 200));
             scope.get(`/grants/${fixtureGrant.id}`).reply(200, JSON.stringify(fixtureGrant));
             const grant = await parcel.getGrant(fixtureGrant.id as GrantId);
             expect(grant).toMatchPOD(fixtureGrant);
@@ -733,7 +822,7 @@ describe('Parcel', () => {
         });
 
         nockIt('get', async (scope) => {
-            expect(fixtureApp).toMatchSchema(getResponseSchema('GET', '/apps/{id}', 200));
+            expect(fixtureApp).toMatchSchema(getResponseSchema('GET', '/apps/{app-id}', 200));
             scope.get(`/apps/${fixtureApp.id}`).reply(200, fixtureApp);
             const app = await parcel.getApp(fixtureApp.id as AppId);
             expect(app).toMatchPOD(fixtureApp);
@@ -859,56 +948,65 @@ describe('Parcel', () => {
             });
         });
 
-        describe('consent', () => {
-            describe('authorize', () => {
-                const optionalConsents = [createConsentId(), createConsentId()];
+        describe('consents', () => {
+            let fixtureApp: PODApp;
+            let fixtureConsent: PODConsent;
+            let fixtureConsentsEndpoint: string;
 
-                nockIt('by id', async (scope) => {
-                    scope
-                        .post(`/apps/${fixtureApp.id}/consent`, { consents: optionalConsents })
-                        .reply(200);
-                    await parcel.authorizeApp(fixtureApp.id as AppId, optionalConsents);
-                });
-
-                nockIt('retrieved', async (scope) => {
-                    scope.get(`/apps/${fixtureApp.id}`).reply(200, fixtureApp);
-                    scope
-                        .post(`/apps/${fixtureApp.id}/consent`, { consents: optionalConsents })
-                        .reply(200);
-                    const app = await parcel.getApp(fixtureApp.id as AppId);
-                    await app.authorize(optionalConsents);
-                });
+            beforeEach(() => {
+                fixtureApp = createPodApp();
+                fixtureConsent = fixtureApp.consents[0];
+                fixtureConsentsEndpoint = `/apps/${fixtureApp.id}/consents`;
             });
 
-            describe('update', () => {
-                const granted = [createConsentId(), createConsentId()];
-                const revoked = [createConsentId()];
-                const update = { granted, revoked };
+            nockIt('create', async (scope) => {
+                expect(fixtureConsent).toMatchSchema(
+                    getResponseSchema('POST', '/apps/{app-id}/consents', 201),
+                );
 
-                nockIt('by id', async (scope) => {
-                    scope.patch(`/apps/${fixtureApp.id}/consent`, update).reply(200);
-                    await parcel.updateAppConsent(fixtureApp.id as AppId, update);
-                });
+                const createParams = {
+                    ...fixtureConsent,
+                };
+                delete createParams.id;
+                delete createParams.appId;
+                delete createParams.createdAt;
 
-                nockIt('retrieved', async (scope) => {
-                    scope.get(`/apps/${fixtureApp.id}`).reply(200, fixtureApp);
-                    scope.patch(`/apps/${fixtureApp.id}/consent`, update).reply(200);
-                    const app = await parcel.getApp(fixtureApp.id as AppId);
-                    await app.updateConsent(update);
-                });
+                expect(createParams).toMatchSchema(
+                    getRequestSchema('POST', '/apps/{app-id}/consents'),
+                );
+
+                scope.get(`/apps/${fixtureApp.id}`).reply(200, fixtureApp);
+                scope.post(fixtureConsentsEndpoint).reply(201, fixtureConsent);
+
+                const app = await parcel.getApp(fixtureApp.id as AppId);
+                const consent = await app.createConsent(createParams);
+
+                expect(consent).toMatchPOD(fixtureConsent);
+                expect(app.consents[app.consents.length - 1]).toEqual(consent);
             });
 
-            describe('deauthorize', () => {
-                nockIt('by id', async (scope) => {
-                    scope.delete(`/apps/${fixtureApp.id}/consent`).reply(204);
-                    await parcel.deauthorizeApp(fixtureApp.id as AppId);
+            it('get', () => {
+                expect(fixtureConsent).toMatchSchema(
+                    getResponseSchema('GET', '/apps/{app-id}/consents/{consent-id}', 200),
+                );
+            });
+
+            describe('delete', () => {
+                nockIt('retrieved', async (scope) => {
+                    const consentEp = `${fixtureConsentsEndpoint}/${fixtureConsent.id}`;
+                    scope.get(`/apps/${fixtureApp.id}`).reply(200, fixtureApp);
+                    scope.delete(consentEp).reply(204);
+                    const app = await parcel.getApp(fixtureApp.id as AppId);
+                    await app.deleteConsent(app.consents[0].id);
+                    expect(app.consents).toHaveLength(0);
                 });
 
-                nockIt('retrieved', async (scope) => {
+                nockIt('expect 204', async (scope) => {
+                    const consentEp = `${fixtureConsentsEndpoint}/${fixtureConsent.id}`;
                     scope.get(`/apps/${fixtureApp.id}`).reply(200, fixtureApp);
-                    scope.delete(`/apps/${fixtureApp.id}/consent`).reply(204);
+                    scope.delete(consentEp).reply(200);
                     const app = await parcel.getApp(fixtureApp.id as AppId);
-                    await app.deauthorize();
+                    await expect(app.deleteConsent(app.consents[0].id)).rejects.toThrow();
                 });
             });
         });
@@ -930,12 +1028,14 @@ describe('Parcel', () => {
                 delete createParams.appId;
                 delete createParams.canActOnBehalfOfUsers;
 
-                expect(createParams).toMatchSchema(getRequestSchema('POST', '/apps/{id}/clients'));
+                expect(createParams).toMatchSchema(
+                    getRequestSchema('POST', '/apps/{app-id}/clients'),
+                );
                 scope
                     .post(`/apps/${fixtureApp.id}/clients`, createParams)
                     .reply(201, fixtureClient);
                 expect(fixtureClient).toMatchSchema(
-                    getResponseSchema('POST', '/apps/{id}/clients', 201),
+                    getResponseSchema('POST', '/apps/{app-id}/clients', 201),
                 );
                 const client = await parcel.createClient(fixtureApp.id as AppId, createParams);
                 expect(client).toMatchPOD(fixtureClient);
@@ -943,7 +1043,7 @@ describe('Parcel', () => {
 
             nockIt('get', async (scope) => {
                 expect(fixtureClient).toMatchSchema(
-                    getResponseSchema('GET', '/apps/{id}/clients/{client_id}', 200),
+                    getResponseSchema('GET', '/apps/{app-id}/clients/{client-id}', 200),
                 );
                 scope
                     .get(`/apps/${fixtureApp.id}/clients/${fixtureClient.id}`)
@@ -963,7 +1063,7 @@ describe('Parcel', () => {
                         () => createPodClient({ appId: fixtureApp.id as AppId }),
                     );
                     expect(fixtureResultsPage).toMatchSchema(
-                        getResponseSchema('GET', '/apps/{id}/clients', 200),
+                        getResponseSchema('GET', '/apps/{app-id}/clients', 200),
                     );
 
                     scope.get(`/apps/${fixtureApp.id}/clients`).reply(200, fixtureResultsPage);
@@ -989,7 +1089,7 @@ describe('Parcel', () => {
                         nextPageToken: uuid.v4(),
                     };
                     expect(filterWithPagination).toMatchSchema(
-                        getQueryParametersSchema('GET', '/apps/{id}/clients'),
+                        getQueryParametersSchema('GET', '/apps/{app-id}/clients'),
                     );
                     scope
                         .get(`/apps/${fixtureApp.id}/clients`)

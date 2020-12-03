@@ -8,7 +8,7 @@ import type {
     ClientUpdateParams,
     ListClientsFilter,
 } from './client';
-import type { Consent, ConsentCreateParams, ConsentId, ConsentUpdateParams } from './consent';
+import type { Consent, ConsentCreateParams, ConsentId } from './consent';
 import {
     Dataset,
     DatasetId,
@@ -42,7 +42,6 @@ export {
     Consent,
     ConsentCreateParams,
     ConsentId,
-    ConsentUpdateParams,
     Dataset,
     DatasetId,
     DatasetUpdateParams,
@@ -78,8 +77,8 @@ export default class Parcel {
         return this.client.apiUrl;
     }
 
-    public async createIdentity(parameters: IdentityCreateParams): Promise<Identity> {
-        return IdentityImpl.create(this.client, parameters);
+    public async createIdentity(params: IdentityCreateParams): Promise<Identity> {
+        return IdentityImpl.create(this.client, params);
     }
 
     public async getCurrentIdentity(): Promise<Identity> {
@@ -90,17 +89,8 @@ export default class Parcel {
         return this.currentIdentity;
     }
 
-    public async updateIdentity(id: IdentityId, update: IdentityUpdateParams): Promise<Identity> {
-        this.currentIdentity = await IdentityImpl.update(this.client, id, update);
-        return this.currentIdentity;
-    }
-
-    public async deleteIdentity(id: IdentityId): Promise<void> {
-        return IdentityImpl.delete(this.client, id);
-    }
-
-    public uploadDataset(data: Storable, parameters?: DatasetUploadParams): Upload {
-        return DatasetImpl.upload(this.client, data, parameters);
+    public uploadDataset(data: Storable, params?: DatasetUploadParams): Upload {
+        return DatasetImpl.upload(this.client, data, params);
     }
 
     public async getDataset(id: DatasetId): Promise<Dataset> {
@@ -123,8 +113,8 @@ export default class Parcel {
         return DatasetImpl.delete(this.client, id);
     }
 
-    public async createApp(parameters: AppCreateParams): Promise<App> {
-        return AppImpl.create(this.client, parameters);
+    public async createApp(params: AppCreateParams): Promise<App> {
+        return AppImpl.create(this.client, params);
     }
 
     public async getApp(id: AppId): Promise<App> {
@@ -143,20 +133,12 @@ export default class Parcel {
         return AppImpl.delete(this.client, id);
     }
 
-    public async authorizeApp(id: AppId, optionalConsents?: ConsentId[]): Promise<void> {
-        return AppImpl.authorize(this.client, id, optionalConsents);
-    }
+    // Note: `createConsent` and `deleteConsent` are omitted because if there are any
+    // `App`s floating around, they won't be updated when a user `create`s or `delete`s a
+    // `Consent`, which will surely be confusing.
 
-    public async updateAppConsent(id: AppId, update: ConsentUpdateParams): Promise<void> {
-        return AppImpl.updateConsent(this.client, id, update);
-    }
-
-    public async deauthorizeApp(id: AppId): Promise<void> {
-        return AppImpl.deauthorize(this.client, id);
-    }
-
-    public async createClient(appId: AppId, parameters: ClientCreateParams): Promise<Client> {
-        return ClientImpl.create(this.client, appId, parameters);
+    public async createClient(appId: AppId, params: ClientCreateParams): Promise<Client> {
+        return ClientImpl.create(this.client, appId, params);
     }
 
     public async getClient(appId: AppId, clientId: ClientId): Promise<Client> {
@@ -182,8 +164,8 @@ export default class Parcel {
         return ClientImpl.delete(this.client, appId, clientId);
     }
 
-    public async createGrant(parameters: GrantCreateParams): Promise<Grant> {
-        return GrantImpl.create(this.client, parameters);
+    public async createGrant(params: GrantCreateParams): Promise<Grant> {
+        return GrantImpl.create(this.client, params);
     }
 
     public async getGrant(id: GrantId): Promise<Grant> {

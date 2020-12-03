@@ -42,7 +42,6 @@ export interface Grant extends Model {
 
     /**
      * Revokes the Grant.
-     * @throws `ParcelError`
      */
     delete: () => Promise<void>;
 }
@@ -66,9 +65,9 @@ export class GrantImpl implements Grant {
         this.consent = pod.consent as ConsentId;
     }
 
-    public static async create(client: HttpClient, parameters: GrantCreateParams): Promise<Grant> {
+    public static async create(client: HttpClient, params: GrantCreateParams): Promise<Grant> {
         return client
-            .create<PODGrant>(GRANTS_EP, parameters)
+            .create<PODGrant>(GRANTS_EP, params)
             .then((podGrant) => new GrantImpl(client, podGrant));
     }
 

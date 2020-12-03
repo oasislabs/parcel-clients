@@ -1,13 +1,7 @@
 import type { Opaque, RequireAtLeastOne } from 'type-fest';
 
 import { ConsentImpl } from './consent';
-import type {
-    Consent,
-    ConsentCreateParams,
-    ConsentId,
-    ConsentUpdateParams,
-    PODConsent,
-} from './consent';
+import type { Consent, ConsentCreateParams, ConsentId, PODConsent } from './consent';
 import type { HttpClient } from './http';
 import type { IdentityId, IdentityTokenVerifier } from './identity';
 import type { Model, Page, PageParams, PODModel, ResourceId } from './model';
@@ -164,28 +158,25 @@ export interface App extends Model {
     participants: IdentityId[];
 
     /**
-     * Authorizes this App and applies the required consents, as well as any
-     * optional ones.
-     */
-    authorize: (optionalConsents?: ConsentId[]) => Promise<void>;
-
-    /**
-     * Updates the optional consents made to this App.
-     */
-    updateConsent: (update: ConsentUpdateParams) => Promise<void>;
-
-    deauthorize: () => Promise<void>;
-
-    /**
      * Updates the app according to the provided `params`.
      * @returns the updated `this`
-     * @throws `ParcelError`
      */
     update: (params: AppUpdateParams) => Promise<App>;
 
     /**
+     * Creates a new consent that this app will request from users. The new consent
+     * will be added to `this.consents`.
+     */
+    createConsent: (params: ConsentCreateParams) => Promise<Consent>;
+
+    /**
+     * Deletes a consent from this app, revoking any access made by granting consent.
+     * will be removed from `this.consents`.
+     */
+    deleteConsent: (id: ConsentId) => Promise<void>;
+
+    /**
      * Deletes the app.
-     * @throws `ParcelError`
      */
     delete: () => Promise<void>;
 }
@@ -243,10 +234,8 @@ export class AppImpl implements App {
         this.termsAndConditions = pod.termsAndConditions;
     }
 
-    public static async create(client: HttpClient, parameters: AppCreateParams): Promise<App> {
-        return client
-            .create<PODApp>(APPS_EP, parameters)
-            .then((podApp) => new AppImpl(client, podApp));
+    public static async create(client: HttpClient, params: AppCreateParams): Promise<App> {
+        return client.create<PODApp>(APPS_EP, params).then((podApp) => new AppImpl(client, podApp));
     }
 
     public static async get(client: HttpClient, id: AppId): Promise<App> {
@@ -270,10 +259,10 @@ export class AppImpl implements App {
     public static async update(
         client: HttpClient,
         id: AppId,
-        parameters: AppUpdateParams,
+        params: AppUpdateParams,
     ): Promise<App> {
         return client
-            .patch<PODApp>(AppImpl.endpointForId(id), parameters)
+            .patch<PODApp>(AppImpl.endpointForId(id), params)
             .then((podApp) => new AppImpl(client, podApp));
     }
 
@@ -281,55 +270,41 @@ export class AppImpl implements App {
         return client.delete(AppImpl.endpointForId(id));
     }
 
-    public static async updateConsent(
+    /* This method is private because what will inevitably happen is someone will call
+     * `parcel.getApp` followed by `parcel.createConsent(app.id, params)` and then be confused
+     * when `app.consents` isn't updated. We could use a global to track this, but that feature
+     * adds little ergonomicity.
+     */
+    private static async createConsent(
         client: HttpClient,
-        id: AppId,
-        parameters: ConsentUpdateParams,
-    ): Promise<void> {
-        await client.patch<void>(AppImpl.consentEndpointForId(id), parameters);
-    }
-
-    public static async authorize(
-        client: HttpClient,
-        id: AppId,
-        optionalConsents?: ConsentId[],
-    ): Promise<void> {
-        await client.post<void>(AppImpl.consentEndpointForId(id), {
-            consents: optionalConsents,
-        });
-    }
-
-    public static async deauthorize(client: HttpClient, id: AppId): Promise<void> {
-        await client.delete(AppImpl.consentEndpointForId(id));
+        appId: AppId,
+        params: ConsentCreateParams,
+    ): Promise<Consent> {
+        return ConsentImpl.create(client, appId, params);
     }
 
     private static endpointForId(id: AppId): string {
         return `/apps/${id}`;
     }
 
-    private static consentEndpointForId(id: AppId): string {
-        return `${AppImpl.endpointForId(id)}/consent`;
-    }
-
-    public async update(parameters: AppUpdateParams): Promise<App> {
-        Object.assign(this, await AppImpl.update(this.client, this.id, parameters));
+    public async update(params: AppUpdateParams): Promise<App> {
+        Object.assign(this, await AppImpl.update(this.client, this.id, params));
         return this;
-    }
-
-    public async authorize(optionalConsents?: ConsentId[]): Promise<void> {
-        return AppImpl.authorize(this.client, this.id, optionalConsents);
-    }
-
-    public async deauthorize(): Promise<void> {
-        return AppImpl.deauthorize(this.client, this.id);
-    }
-
-    public async updateConsent(parameters: ConsentUpdateParams): Promise<void> {
-        return AppImpl.updateConsent(this.client, this.id, parameters);
     }
 
     public async delete(): Promise<void> {
         return this.client.delete(AppImpl.endpointForId(this.id));
+    }
+
+    public async createConsent(params: ConsentCreateParams): Promise<Consent> {
+        const consent = await AppImpl.createConsent(this.client, this.id, params);
+        this.consents.push(consent);
+        return consent;
+    }
+
+    public async deleteConsent(consentId: ConsentId): Promise<void> {
+        await ConsentImpl.delete(this.client, this.id, consentId);
+        this.consents = this.consents.filter((c) => c.id !== consentId);
     }
 }
 
