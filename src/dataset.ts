@@ -132,7 +132,7 @@ export class DatasetImpl implements Dataset {
     }
 
     public static download(client: HttpClient, id: DatasetId): Download {
-        return client.download(DatasetImpl.endpointForId(id) + '/download');
+        return client.download(`${DatasetImpl.endpointForId(id)}/download`);
     }
 
     public static async update(
