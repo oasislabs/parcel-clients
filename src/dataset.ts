@@ -66,7 +66,7 @@ export interface Dataset extends Model {
     /**
      * Updates the dataset according to the provided `params`.
      * @returns the updated `this`
-     * @throws ParcelError
+     * @throws `ParcelError`
      */
     update: (params: DatasetUpdateParams) => Promise<Dataset>;
 
@@ -75,6 +75,13 @@ export interface Dataset extends Model {
      * @throws `ParcelError`
      */
     delete: () => Promise<void>;
+
+    /**
+     * Gets the dataset's access history.
+     * @returns a page of access logs
+     * @throws `ParcelError`
+     */
+    history: (filter?: ListAccessLogsFilter) => Promise<Page<AccessLog>>;
 }
 
 const DATASETS_EP = '/datasets';
@@ -135,6 +142,12 @@ export class DatasetImpl implements Dataset {
         return client.download(`${DatasetImpl.endpointForId(id)}/download`);
     }
 
+    public static async history(client: HttpClient, id: DatasetId, filter?: ListAccessLogsFilter & PageParams): Promise<Page<AccessLog>> {
+        return await client.get<Page<AccessLog>>(`${DatasetImpl.endpointForId(id)}/history`, {
+            ...filter,
+        });
+    }
+
     public static async update(
         client: HttpClient,
         id: DatasetId,
@@ -155,6 +168,12 @@ export class DatasetImpl implements Dataset {
 
     public download(): Download {
         return DatasetImpl.download(this.client, this.id);
+    }
+
+    public async history(filter?: ListAccessLogsFilter & PageParams): Promise<Page<AccessLog>> {
+        return await this.client.get<Page<AccessLog>>(`${DatasetImpl.endpointForId(this.id)}/history`, {
+            ...filter,
+        });
     }
 
     public async update(parameters: DatasetUpdateParams): Promise<Dataset> {
@@ -189,6 +208,17 @@ export type ListDatasetsFilter = Partial<{
               any: string[];
               all: string[];
           }>;
+}>;
+
+export type AccessLog = {
+    accessor: IdentityId,
+    timestamp: Date,
+};
+
+export type ListAccessLogsFilter = Partial<{
+    accessor: IdentityId;
+    from: Date;
+    to: Date;
 }>;
 
 /**
