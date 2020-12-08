@@ -13,6 +13,7 @@
             "@oasislabs/parcel": ["src/index"],
             "@oasislabs/parcel/*": ["src/*"]
         },
+        "resolveJsonModule": true,
         "sourceMap": true,
         "strict": true,
         "target": "es6"

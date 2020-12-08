@@ -6,6 +6,7 @@ import { PassThrough, Readable, Writable } from 'readable-stream';
 import { paramCase } from 'param-case';
 import type { JsonObject } from 'type-fest';
 
+import { version as packageVersion, name as packageName } from '../package.json';
 import type { TokenProvider } from './token';
 
 const DEFAULT_API_URL = 'https://api.oasislabs.com/parcel/v1';
@@ -41,11 +42,11 @@ export class HttpClient {
 
     public async get<T>(
         endpoint: string,
-        parameters: JsonObject = {},
+        params: JsonObject = {},
         axiosConfig?: AxiosRequestConfig,
     ): Promise<T> {
         const kebabCaseParams: JsonObject = {};
-        for (const [k, v] of Object.entries(parameters)) {
+        for (const [k, v] of Object.entries(params)) {
             kebabCaseParams[paramCase(k)] = v;
         }
 
@@ -63,14 +64,18 @@ export class HttpClient {
 
     public async post<T>(
         endpoint: string,
-        data: JsonObject | FormData,
+        data: JsonObject | FormData | undefined,
         axiosConfig?: AxiosRequestConfig,
     ): Promise<T> {
         return this.axios.post(endpoint, data, axiosConfig).then((r) => r.data);
     }
 
-    public async patch<T>(endpoint: string, parameters: JsonObject): Promise<T> {
-        return this.axios.patch(endpoint, parameters).then((r) => r.data);
+    public async update<T>(endpoint: string, params: JsonObject): Promise<T> {
+        return this.put(endpoint, params);
+    }
+
+    public async put<T>(endpoint: string, params: JsonObject): Promise<T> {
+        return this.axios.put(endpoint, params).then((r) => r.data);
     }
 
     public async delete(endpoint: string): Promise<void> {
@@ -163,6 +168,7 @@ export class HttpClient {
     private async getHeaders(): Promise<Record<string, string>> {
         return {
             authorization: `Bearer ${await this.tokenProvider.getToken()}`,
+            'user-agent': `${packageName}/${packageVersion}`,
         };
     }
 }

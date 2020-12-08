@@ -129,7 +129,7 @@ describe('Parcel', () => {
         });
     });
 
-    type HttpVerb = 'GET' | 'POST' | 'PATCH' | 'DELETE';
+    type HttpVerb = 'GET' | 'POST' | 'PUT' | 'DELETE';
 
     function getRequestSchema(method: HttpVerb, endpoint: string): JsonObject {
         let schema =
@@ -137,6 +137,14 @@ describe('Parcel', () => {
                 'application/json'
             ].schema;
         if (schema.allOf) schema = mergeAllOf(schema.allOf);
+        for (const [propertyName, property] of Object.entries(schema.properties)) {
+            if ((property as any).readOnly) {
+                schema.required = schema.required.filter((p: string) => p !== propertyName);
+                // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+                delete schema.properties[propertyName];
+            }
+        }
+
         schema.additionalProperties = false;
         ajv.validateSchema(schema);
         expect(ajv.errors).toBeNull();
@@ -244,7 +252,6 @@ describe('Parcel', () => {
             acceptanceText: 'thanks for the data!',
             brandingColor: '#abcdef',
             category: 'testing',
-            consents: [createPodConsent()],
             owner: createIdentityId(),
             admins: [createIdentityId()],
             collaborators: [createIdentityId(), createIdentityId()],
@@ -280,7 +287,15 @@ describe('Parcel', () => {
                 : ['https://friendly.app/post-logout-redirect'],
             jsonWebKeys: options?.isScript
                 ? [
-                      `{"use":"sig","kty":"EC","kid":"J07JL44uZsnGWFt87Vqs5HLO7B1RM7zd5XtWJwS7bpw=","crv":"P-256","alg":"ES256","x":"L2uZsV50Qz4N227FeNARVi0IkKdgMKi8TqoBnhYp60s","y":"E7ZbVjSKjBuBSLWARvFZ_lmT_Q-ifUQBB6QriBhhN-w"}`,
+                      {
+                          use: 'sig',
+                          kty: 'EC',
+                          kid: 'J07JL44uZsnGWFt87Vqs5HLO7B1RM7zd5XtWJwS7bpw=',
+                          crv: 'P-256',
+                          alg: 'ES256',
+                          x: 'L2uZsV50Qz4N227FeNARVi0IkKdgMKi8TqoBnhYp60s',
+                          y: 'E7ZbVjSKjBuBSLWARvFZ_lmT_Q-ifUQBB6QriBhhN-w',
+                      } as const,
                   ]
                 : [],
             canHoldSecrets: Boolean(options?.isScript),
@@ -393,7 +408,7 @@ describe('Parcel', () => {
 
             scope.get('/identities/me').reply(200, fixtureIdentity);
             scope
-                .patch(`/identities/${fixtureIdentity.id}`, {
+                .put(`/identities/${fixtureIdentity.id}`, {
                     tokenVerifier: updatedIdentity.tokenVerifier,
                 })
                 .reply(200, updatedIdentity);
@@ -411,6 +426,17 @@ describe('Parcel', () => {
         });
 
         describe('consents', () => {
+            nockIt('grant', async (scope) => {
+                const fixtureConsent = createPodConsent();
+                scope.get(`/identities/me`).reply(200, fixtureIdentity);
+                scope
+                    .post(`/identities/${fixtureIdentity.id}/consents/${fixtureConsent.id}`)
+                    .reply(204);
+
+                const identity = await parcel.getCurrentIdentity();
+                await identity.grantConsent(fixtureConsent.id as ConsentId);
+            });
+
             describe('get', () => {
                 nockIt('granted', async (scope) => {
                     const fixtureConsent = createPodConsent();
@@ -520,6 +546,17 @@ describe('Parcel', () => {
                     expect(nextPageToken).toEqual(fixtureResultsPage.nextPageToken);
                 });
             });
+        });
+
+        nockIt('revoke', async (scope) => {
+            const fixtureConsent = createPodConsent();
+            scope.get(`/identities/me`).reply(200, fixtureIdentity);
+            scope
+                .delete(`/identities/${fixtureIdentity.id}/consents/${fixtureConsent.id}`)
+                .reply(204);
+
+            const identity = await parcel.getCurrentIdentity();
+            await identity.revokeConsent(fixtureConsent.id as ConsentId);
         });
     });
 
@@ -698,9 +735,9 @@ describe('Parcel', () => {
                     owner: createIdentityId(),
                     metadata: { hello: 'world', deleteKey: null },
                 };
-                expect(update).toMatchSchema(getRequestSchema('PATCH', '/datasets/{dataset-id}'));
+                expect(update).toMatchSchema(getRequestSchema('PUT', '/datasets/{dataset-id}'));
                 const updatedDataset = Object.assign(clone(fixtureDataset), update);
-                scope.patch(`/datasets/${fixtureDataset.id}`, update).reply(200, updatedDataset);
+                scope.put(`/datasets/${fixtureDataset.id}`, update).reply(200, updatedDataset);
                 const updated = await parcel.updateDataset(fixtureDataset.id as DatasetId, update);
                 expect(updated).toMatchPOD(updatedDataset);
             });
@@ -712,7 +749,7 @@ describe('Parcel', () => {
                 };
                 const updatedDataset = Object.assign(clone(fixtureDataset), update);
 
-                scope.patch(`/datasets/${fixtureDataset.id}`, update).reply(200, updatedDataset);
+                scope.put(`/datasets/${fixtureDataset.id}`, update).reply(200, updatedDataset);
                 scope.get(`/datasets/${fixtureDataset.id}`).reply(200, fixtureDataset);
 
                 const dataset = await parcel.getDataset(fixtureDataset.id as DatasetId);
@@ -799,7 +836,6 @@ describe('Parcel', () => {
         nockIt('create', async (scope) => {
             const createParams: any /* AppCreateParams & PODApp */ = {
                 ...clone(fixtureApp),
-                consents: [createPodConsent({ optional: true })],
                 identityTokenVerifier: {
                     sub: 'app',
                     iss: 'auth.oasislabs.com',
@@ -891,36 +927,37 @@ describe('Parcel', () => {
 
             beforeEach(() => {
                 update = {
-                    acceptanceText: 'new acceptance text',
-                    brandingColor: '#feeded',
+                    owner: fixtureApp.owner as IdentityId,
+                    admins: fixtureApp.admins as IdentityId[],
+                    collaborators: fixtureApp.collaborators as IdentityId[],
+                    published: true,
+                    inviteOnly: true,
+                    invites: fixtureApp.invites as IdentityId[],
+                    name: 'new name',
+                    organization: 'new organization',
+                    shortDescription: 'new short description',
+                    privacyPolicy: 'new privacy policy',
+                    termsAndConditions: 'new terms and conditions',
                     category: 'updated category',
+                    logo: 'https://logos.images',
+                    homepage: 'https://new.homepage',
+                    brandingColor: '#feeded',
                     extendedDescription: 'new extended description',
                     invitationText: 'new invitation text',
-                    inviteOnly: false,
-                    newOptionalConsents: [createPodConsent({ optional: true })],
-                    published: true,
+                    acceptanceText: 'new acceptance text',
                     rejectionText: 'new rejection text',
-                    removedConsents: [createConsentId()],
-                    shortDescription: 'new short description',
-                    logo: 'https://logos.images',
-                    uninvite: fixtureApp.invites as IdentityId[],
                 };
                 updatedApp = Object.assign(clone(fixtureApp), update);
-                delete (updatedApp as any).newOptionalConsents;
-                delete (updatedApp as any).removedConsents;
-                delete (updatedApp as any).uninvite;
-                updatedApp.consents = [];
-                updatedApp.invites = [];
             });
 
             nockIt('by id', async (scope) => {
-                scope.patch(`/apps/${fixtureApp.id}`, update).reply(200, updatedApp);
+                scope.put(`/apps/${fixtureApp.id}`, update).reply(200, updatedApp);
                 const updated = await parcel.updateApp(fixtureApp.id as AppId, update);
                 expect(updated).toMatchPOD(updatedApp);
             });
 
             nockIt('retrieved', async (scope) => {
-                scope.patch(`/apps/${fixtureApp.id}`, update).reply(200, updatedApp);
+                scope.put(`/apps/${fixtureApp.id}`, update).reply(200, updatedApp);
                 scope.get(`/apps/${fixtureApp.id}`).reply(200, fixtureApp);
 
                 const app = await parcel.getApp(fixtureApp.id as AppId);
@@ -955,7 +992,7 @@ describe('Parcel', () => {
 
             beforeEach(() => {
                 fixtureApp = createPodApp();
-                fixtureConsent = fixtureApp.consents[0];
+                fixtureConsent = createPodConsent();
                 fixtureConsentsEndpoint = `/apps/${fixtureApp.id}/consents`;
             });
 
@@ -982,7 +1019,6 @@ describe('Parcel', () => {
                 const consent = await app.createConsent(createParams);
 
                 expect(consent).toMatchPOD(fixtureConsent);
-                expect(app.consents[app.consents.length - 1]).toEqual(consent);
             });
 
             it('get', () => {
@@ -992,13 +1028,23 @@ describe('Parcel', () => {
             });
 
             describe('delete', () => {
+                nockIt('by id', async (scope) => {
+                    const consentEp = `${fixtureConsentsEndpoint}/${fixtureConsent.id}`;
+                    scope.delete(consentEp).reply(204);
+                    await parcel.deleteConsent(
+                        fixtureApp.id as AppId,
+                        fixtureConsent.id as ConsentId,
+                    );
+                });
+
                 nockIt('retrieved', async (scope) => {
                     const consentEp = `${fixtureConsentsEndpoint}/${fixtureConsent.id}`;
                     scope.get(`/apps/${fixtureApp.id}`).reply(200, fixtureApp);
+                    scope.get(fixtureConsentsEndpoint).reply(200, { results: [fixtureConsent] });
                     scope.delete(consentEp).reply(204);
                     const app = await parcel.getApp(fixtureApp.id as AppId);
-                    await app.deleteConsent(app.consents[0].id);
-                    expect(app.consents).toHaveLength(0);
+                    const consentsPage = await app.listConsents();
+                    await app.deleteConsent(consentsPage.results[0].id);
                 });
 
                 nockIt('expect 204', async (scope) => {
@@ -1006,7 +1052,9 @@ describe('Parcel', () => {
                     scope.get(`/apps/${fixtureApp.id}`).reply(200, fixtureApp);
                     scope.delete(consentEp).reply(200);
                     const app = await parcel.getApp(fixtureApp.id as AppId);
-                    await expect(app.deleteConsent(app.consents[0].id)).rejects.toThrow();
+                    await expect(
+                        app.deleteConsent(fixtureConsent.id as ConsentId),
+                    ).rejects.toThrow();
                 });
             });
         });
@@ -1132,19 +1180,19 @@ describe('Parcel', () => {
 
                 beforeEach(() => {
                     update = {
-                        newRedirectUris: ['https://friendly.app/new-redirect'],
-                        removedPostLogoutRedirectUris: [
-                            'https://friendly.app/post-logout-redirect',
-                        ],
+                        redirectUris: fixtureClient.redirectUris.concat([
+                            'https://friendly.app/new-redirect',
+                        ]),
+                        postLogoutRedirectUris: [],
+                        jsonWebKeys: fixtureClient.jsonWebKeys,
+                        name: fixtureClient.name,
                     };
-                    updatedClient = clone(fixtureClient);
-                    updatedClient.redirectUris.push('https://friendly.app/new-redirect');
-                    updatedClient.postLogoutRedirectUris = [];
+                    updatedClient = Object.assign(clone(fixtureClient), update);
                 });
 
                 nockIt('by id', async (scope) => {
                     scope
-                        .patch(`/apps/${fixtureApp.id}/clients/${fixtureClient.id}`, update)
+                        .put(`/apps/${fixtureApp.id}/clients/${fixtureClient.id}`, update)
                         .reply(200, updatedClient);
                     const updated = await parcel.updateClient(
                         fixtureApp.id as AppId,
@@ -1152,22 +1200,6 @@ describe('Parcel', () => {
                         update,
                     );
                     expect(updated).toMatchPOD(updatedClient);
-                });
-
-                nockIt('retrieved', async (scope) => {
-                    scope
-                        .patch(`/apps/${fixtureApp.id}/clients/${fixtureClient.id}`, update)
-                        .reply(200, updatedClient);
-                    scope
-                        .get(`/apps/${fixtureApp.id}/clients/${fixtureClient.id}`)
-                        .reply(200, fixtureClient);
-
-                    const client = await parcel.getClient(
-                        fixtureApp.id as AppId,
-                        fixtureClient.id as ClientId,
-                    );
-                    await client.update(update);
-                    expect(client).toMatchPOD(updatedClient);
                 });
             });
 
