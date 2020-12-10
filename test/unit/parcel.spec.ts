@@ -371,25 +371,6 @@ describe('Parcel', () => {
                 expect(identity).toMatchPOD(fixtureIdentity);
             });
 
-            nockIt('already exists', async (scope) => {
-                expect(fixtureIdentity).toMatchSchema(
-                    getResponseSchema('POST', '/identities', 200),
-                );
-
-                const expectedRequest = {
-                    tokenVerifiers: fixtureIdentity.tokenVerifiers,
-                };
-
-                const existingIdentityEp = `/identities/${fixtureIdentity.id}`;
-                scope.post('/identities', expectedRequest).reply(303, undefined, {
-                    location: API_BASE_URL + existingIdentityEp,
-                });
-                scope.get(existingIdentityEp).reply(200, fixtureIdentity);
-
-                const identity = await parcel.createIdentity(expectedRequest);
-                expect(identity).toMatchPOD(fixtureIdentity);
-            });
-
             nockIt('bad request', async (scope) => {
                 scope.post('/identities').reply(400);
                 await expect(parcel.createIdentity({} as any)).rejects.toThrow();

@@ -1,4 +1,4 @@
-import type { Opaque } from 'type-fest';
+import type { Opaque, SetOptional } from 'type-fest';
 
 import type { AppId } from './app';
 import { Consent } from './consent';
@@ -137,12 +137,16 @@ export namespace IdentityImpl {
     }
 }
 
-export type IdentityCreateParams = IdentityUpdateParams;
+export type IdentityCreateParams = IdentityUpdateParams & {
+    tokenVerifiers: IdentityTokenVerifierCreate[];
+};
 export type IdentityUpdateParams = Writable<Identity>;
 
 export type IdentityTokenVerifier = IdentityTokenClaims & {
     publicKey: PublicJWK;
 };
+
+export type IdentityTokenVerifierCreate = SetOptional<IdentityTokenVerifier, 'sub' | 'iss'>;
 
 export type ListGrantedConsentsFilter = Partial<{
     /** Only return consents granted to this app. */
