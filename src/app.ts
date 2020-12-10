@@ -180,14 +180,14 @@ export type AppCreateParams =
     | AppUpdateParams
     | {
           /** The credentials used to authorize clients acting as this app. */
-          identityTokenVerifier: IdentityTokenVerifier;
+          identityTokenVerifiers: IdentityTokenVerifier[];
       };
 
 export type AppUpdateParams = WritableExcluding<App, 'participants'>;
 
 export type ListAppsFilter = Partial<{
-    /** Only return Apps created/administered by the provided Identity. */
-    creator: IdentityId;
+    /** Only return Apps owned by the provided Identity. */
+    owner: IdentityId;
 
     /** Only return Apps for which the requester has the specified participation status. */
     participation: AppParticipation;

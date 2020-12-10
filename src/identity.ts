@@ -21,12 +21,12 @@ const endpointForConsent = (identityId: IdentityId, consentId: ConsentId) =>
 export class Identity implements Model {
     public id: IdentityId;
     public createdAt: Date;
-    public tokenVerifier: IdentityTokenVerifier;
+    public tokenVerifiers: IdentityTokenVerifier[];
 
     public constructor(private readonly client: HttpClient, pod: PODIdentity) {
         this.id = pod.id as IdentityId;
         this.createdAt = new Date(pod.createdAt);
-        this.tokenVerifier = pod.tokenVerifier;
+        this.tokenVerifiers = pod.tokenVerifiers;
     }
 
     public async update(params: IdentityUpdateParams): Promise<Identity> {

@@ -222,11 +222,13 @@ describe('Parcel', () => {
     function createPodIdentity(): PODIdentity {
         const podIdentity = {
             ...createPodModel(),
-            tokenVerifier: {
-                sub: 'subject',
-                iss: 'auth.oasislabs.com',
-                publicKey: API_KEY,
-            },
+            tokenVerifiers: [
+                {
+                    sub: 'subject',
+                    iss: 'auth.oasislabs.com',
+                    publicKey: API_KEY,
+                },
+            ],
         };
         expect(podIdentity).toMatchSchema('Identity');
         return podIdentity;
@@ -361,7 +363,7 @@ describe('Parcel', () => {
                     getResponseSchema('POST', '/identities', 201),
                 );
                 const createParams = {
-                    tokenVerifier: fixtureIdentity.tokenVerifier,
+                    tokenVerifiers: fixtureIdentity.tokenVerifiers,
                 };
                 expect(createParams).toMatchSchema(getRequestSchema('POST', '/identities'));
                 scope.post('/identities', createParams).reply(201, fixtureIdentity);
@@ -375,7 +377,7 @@ describe('Parcel', () => {
                 );
 
                 const expectedRequest = {
-                    tokenVerifier: fixtureIdentity.tokenVerifier,
+                    tokenVerifiers: fixtureIdentity.tokenVerifiers,
                 };
 
                 const existingIdentityEp = `/identities/${fixtureIdentity.id}`;
@@ -403,18 +405,18 @@ describe('Parcel', () => {
 
         nockIt('update', async (scope) => {
             const updatedIdentity = Object.assign(clone(fixtureIdentity), {
-                tokenVerifier: createPodIdentity().tokenVerifier,
+                tokenVerifiers: createPodIdentity().tokenVerifiers,
             });
 
             scope.get('/identities/me').reply(200, fixtureIdentity);
             scope
                 .put(`/identities/${fixtureIdentity.id}`, {
-                    tokenVerifier: updatedIdentity.tokenVerifier,
+                    tokenVerifiers: updatedIdentity.tokenVerifiers,
                 })
                 .reply(200, updatedIdentity);
 
             const identity = await parcel.getCurrentIdentity();
-            await identity.update({ tokenVerifier: updatedIdentity.tokenVerifier });
+            await identity.update({ tokenVerifiers: updatedIdentity.tokenVerifiers });
             expect(identity).toMatchPOD(updatedIdentity);
         });
 
@@ -836,11 +838,13 @@ describe('Parcel', () => {
         nockIt('create', async (scope) => {
             const createParams: any /* AppCreateParams & PODApp */ = {
                 ...clone(fixtureApp),
-                identityTokenVerifier: {
-                    sub: 'app',
-                    iss: 'auth.oasislabs.com',
-                    publicKey: API_KEY,
-                },
+                identityTokenVerifiers: [
+                    {
+                        sub: 'app',
+                        iss: 'auth.oasislabs.com',
+                        publicKey: API_KEY,
+                    },
+                ],
             };
             delete createParams.id;
             delete createParams.createdAt;
