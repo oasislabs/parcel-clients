@@ -8,27 +8,24 @@ import type {
     ClientUpdateParams,
     ListClientsFilter,
 } from './client';
-import type { Consent, ConsentCreateParams, ConsentId, ConsentUpdateParams } from './consent';
-import {
+import { ConsentImpl } from './consent';
+import type { Consent, ConsentCreateParams, ConsentId } from './consent';
+import { DatasetImpl } from './dataset';
+import type {
     Dataset,
     DatasetId,
-    DatasetImpl,
     DatasetUpdateParams,
     DatasetUploadParams,
     ListDatasetsFilter,
     Storable,
     Upload,
 } from './dataset';
-import { Grant, GrantCreateParams, GrantId, GrantImpl } from './grant';
+import { GrantImpl } from './grant';
+import type { Grant, GrantCreateParams, GrantId } from './grant';
 import { HttpClient } from './http';
 import type { Config as ClientConfig, Download } from './http';
-import {
-    Identity,
-    IdentityCreateParams,
-    IdentityId,
-    IdentityImpl,
-    IdentityUpdateParams,
-} from './identity';
+import { IdentityImpl } from './identity';
+import type { Identity, IdentityCreateParams, IdentityId, IdentityUpdateParams } from './identity';
 import type { Page, PageParams } from './model';
 import { TokenProvider } from './token';
 import type { ClientCredentials, PrivateJWK, PublicJWK, TokenSource } from './token';
@@ -42,7 +39,6 @@ export {
     Consent,
     ConsentCreateParams,
     ConsentId,
-    ConsentUpdateParams,
     Dataset,
     DatasetId,
     DatasetUpdateParams,
@@ -78,8 +74,8 @@ export default class Parcel {
         return this.client.apiUrl;
     }
 
-    public async createIdentity(parameters: IdentityCreateParams): Promise<Identity> {
-        return IdentityImpl.create(this.client, parameters);
+    public async createIdentity(params: IdentityCreateParams): Promise<Identity> {
+        return IdentityImpl.create(this.client, params);
     }
 
     public async getCurrentIdentity(): Promise<Identity> {
@@ -90,17 +86,8 @@ export default class Parcel {
         return this.currentIdentity;
     }
 
-    public async updateIdentity(id: IdentityId, update: IdentityUpdateParams): Promise<Identity> {
-        this.currentIdentity = await IdentityImpl.update(this.client, id, update);
-        return this.currentIdentity;
-    }
-
-    public async deleteIdentity(id: IdentityId): Promise<void> {
-        return IdentityImpl.delete(this.client, id);
-    }
-
-    public uploadDataset(data: Storable, parameters?: DatasetUploadParams): Upload {
-        return DatasetImpl.upload(this.client, data, parameters);
+    public uploadDataset(data: Storable, params?: DatasetUploadParams): Upload {
+        return DatasetImpl.upload(this.client, data, params);
     }
 
     public async getDataset(id: DatasetId): Promise<Dataset> {
@@ -120,11 +107,11 @@ export default class Parcel {
     }
 
     public async deleteDataset(id: DatasetId): Promise<void> {
-        return DatasetImpl.delete(this.client, id);
+        return DatasetImpl.delete_(this.client, id);
     }
 
-    public async createApp(parameters: AppCreateParams): Promise<App> {
-        return AppImpl.create(this.client, parameters);
+    public async createApp(params: AppCreateParams): Promise<App> {
+        return AppImpl.create(this.client, params);
     }
 
     public async getApp(id: AppId): Promise<App> {
@@ -140,23 +127,23 @@ export default class Parcel {
     }
 
     public async deleteApp(id: AppId): Promise<void> {
-        return AppImpl.delete(this.client, id);
+        return AppImpl.delete_(this.client, id);
     }
 
-    public async authorizeApp(id: AppId, optionalConsents?: ConsentId[]): Promise<void> {
-        return AppImpl.authorize(this.client, id, optionalConsents);
+    public async createConsent(appId: AppId, params: ConsentCreateParams): Promise<Consent> {
+        return ConsentImpl.create(this.client, appId, params);
     }
 
-    public async updateAppConsent(id: AppId, update: ConsentUpdateParams): Promise<void> {
-        return AppImpl.updateConsent(this.client, id, update);
+    public async listConsents(appId: AppId, filter: PageParams): Promise<Page<Consent>> {
+        return ConsentImpl.list(this.client, appId, filter);
     }
 
-    public async deauthorizeApp(id: AppId): Promise<void> {
-        return AppImpl.deauthorize(this.client, id);
+    public async deleteConsent(appId: AppId, consentId: ConsentId): Promise<void> {
+        return ConsentImpl.delete_(this.client, appId, consentId);
     }
 
-    public async createClient(appId: AppId, parameters: ClientCreateParams): Promise<Client> {
-        return ClientImpl.create(this.client, appId, parameters);
+    public async createClient(appId: AppId, params: ClientCreateParams): Promise<Client> {
+        return ClientImpl.create(this.client, appId, params);
     }
 
     public async getClient(appId: AppId, clientId: ClientId): Promise<Client> {
@@ -179,11 +166,11 @@ export default class Parcel {
     }
 
     public async deleteClient(appId: AppId, clientId: ClientId): Promise<void> {
-        return ClientImpl.delete(this.client, appId, clientId);
+        return ClientImpl.delete_(this.client, appId, clientId);
     }
 
-    public async createGrant(parameters: GrantCreateParams): Promise<Grant> {
-        return GrantImpl.create(this.client, parameters);
+    public async createGrant(params: GrantCreateParams): Promise<Grant> {
+        return GrantImpl.create(this.client, params);
     }
 
     public async getGrant(id: GrantId): Promise<Grant> {
@@ -191,7 +178,7 @@ export default class Parcel {
     }
 
     public async deleteGrant(id: GrantId): Promise<void> {
-        return GrantImpl.delete(this.client, id);
+        return GrantImpl.delete_(this.client, id);
     }
 }
 

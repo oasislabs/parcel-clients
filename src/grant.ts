@@ -25,39 +25,24 @@ export type GrantCreateParams = {
     filter?: Constraints;
 };
 
-export interface Grant extends Model {
-    /** The time at which this grant was made. */
-    createdAt: Date;
-
-    /** The Identity from which permission is given. */
-    granter: IdentityId;
-
-    /**
-     * The Identity to which permission is given. `null` represents everybody.
-     */
-    grantee: IdentityId | null;
-
-    /** The Consent that created this Grant, if any. */
-    consent?: ConsentId;
-
-    /**
-     * Revokes the Grant.
-     * @throws `ParcelError`
-     */
-    delete: () => Promise<void>;
-}
-
 const GRANTS_EP = '/grants';
+const endpointForId = (id: GrantId) => `${GRANTS_EP}/${id}`;
 
-export class GrantImpl implements Grant {
+export class Grant implements Model {
     public id: GrantId;
     public createdAt: Date;
+    /** The Identity from which permission is given. */
     public granter: IdentityId;
-    public grantee: IdentityId | null;
+    /**
+     * The Identity to which permission is given or everyone,
+     */
+    public grantee: IdentityId | 'everyone';
+    /** A filter that gives permission to only matching Datasets. */
     public filter?: Constraints;
+    /** The Consent that created this Grant, if any. */
     public consent?: ConsentId;
 
-    private constructor(private readonly client: HttpClient, pod: PODGrant) {
+    public constructor(private readonly client: HttpClient, pod: PODGrant) {
         this.id = pod.id as GrantId;
         this.createdAt = new Date(pod.createdAt);
         this.granter = pod.granter as IdentityId;
@@ -66,27 +51,25 @@ export class GrantImpl implements Grant {
         this.consent = pod.consent as ConsentId;
     }
 
-    public static async create(client: HttpClient, parameters: GrantCreateParams): Promise<Grant> {
-        return client
-            .create<PODGrant>(GRANTS_EP, parameters)
-            .then((podGrant) => new GrantImpl(client, podGrant));
-    }
-
-    public static async get(client: HttpClient, id: GrantId): Promise<Grant> {
-        return client
-            .get<PODGrant>(GrantImpl.endpointForId(id))
-            .then((podGrant) => new GrantImpl(client, podGrant));
-    }
-
-    public static async delete(client: HttpClient, id: GrantId): Promise<void> {
-        return client.delete(GrantImpl.endpointForId(id));
-    }
-
-    private static endpointForId(id: GrantId): string {
-        return `${GRANTS_EP}/${id}`;
-    }
-
     public async delete(): Promise<void> {
-        return this.client.delete(GrantImpl.endpointForId(this.id));
+        return this.client.delete(endpointForId(this.id));
+    }
+}
+
+export namespace GrantImpl {
+    export async function create(client: HttpClient, params: GrantCreateParams): Promise<Grant> {
+        return client
+            .create<PODGrant>(GRANTS_EP, params)
+            .then((podGrant) => new Grant(client, podGrant));
+    }
+
+    export async function get(client: HttpClient, id: GrantId): Promise<Grant> {
+        return client
+            .get<PODGrant>(endpointForId(id))
+            .then((podGrant) => new Grant(client, podGrant));
+    }
+
+    export async function delete_(client: HttpClient, id: GrantId): Promise<void> {
+        return client.delete(endpointForId(id));
     }
 }

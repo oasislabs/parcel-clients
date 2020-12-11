@@ -2,12 +2,11 @@ import axios, { CancelTokenSource } from 'axios';
 import EventEmitter from 'eventemitter3';
 import FormData from 'form-data';
 import { Readable } from 'readable-stream';
-import type { JsonObject, Opaque, RequireAtLeastOne, RequireExactlyOne } from 'type-fest';
+import type { JsonObject, Opaque, RequireExactlyOne, SetOptional } from 'type-fest';
 
-import type { AppId } from './app';
 import type { HttpClient, Download } from './http';
 import type { IdentityId } from './identity';
-import type { Model, Page, PageParams, PODModel, ResourceId } from './model';
+import type { Model, Page, PageParams, PODModel, ResourceId, WritableExcluding } from './model';
 
 export type DatasetId = Opaque<ResourceId>;
 
@@ -20,77 +19,15 @@ export type PODDataset = PODModel & {
 
 type DatasetMetadata = JsonObject & { tags?: string[] };
 
-export type DatasetUploadParams = {
-    /** The initial owner of the Dataset. Leave unset to default to you, the creator. */
-    owner?: IdentityId;
-
-    /**
-     * Dataset metadata. The well-known value `tags` should be an array of strings if
-     * you want to use it with the `dataset.metadata.tags` filter.
-     */
-    metadata?: DatasetMetadata;
-
-    /**
-     * The id of the app for which data is being uploaded. This is for convenience
-     * and is equivalent to uploading a dataset with tags that allow access to an
-     * app for the owner's currently granted consents.
-     */
-    forApp?: AppId;
-};
-
-export interface Dataset extends Model {
-    /** The unique ID of the Dataset. */
-    id: DatasetId;
-
-    /** The Identity that created the Dataset. */
-    creator: IdentityId;
-
-    /** The time at which this dataset was created. */
-    createdAt: Date;
-
-    /** The current owner of the Dataset. */
-    owner: IdentityId;
-
-    /**
-     * Dataset metadata. The well-known value `tags` must be an array of strings if
-     * you want to use it with the `dataset.metadata.tags` filter.
-     */
-    metadata: DatasetMetadata;
-
-    /**
-     * Downloads the private data
-     * @returns the decrypted data as a stream
-     */
-    download: () => Download;
-
-    /**
-     * Updates the dataset according to the provided `params`.
-     * @returns the updated `this`
-     * @throws `ParcelError`
-     */
-    update: (params: DatasetUpdateParams) => Promise<Dataset>;
-
-    /**
-     * Deletes the dataset.
-     * @throws `ParcelError`
-     */
-    delete: () => Promise<void>;
-
-    /**
-     * Gets the dataset's access history.
-     * @returns a page of access logs
-     * @throws `ParcelError`
-     */
-    history: (filter?: ListAccessLogsFilter) => Promise<Page<AccessLog>>;
-}
-
-const DATASETS_EP = '/datasets';
-
-export class DatasetImpl implements Dataset {
+export class Dataset implements Model {
     public id: DatasetId;
     public createdAt: Date;
     public creator: IdentityId;
     public owner: IdentityId;
+    /**
+     * Dataset metadata. The well-known value `tags` should be an array of strings if
+     * you want to use it with the `dataset.metadata.tags` filter.
+     */
     public metadata: DatasetMetadata;
 
     public constructor(private readonly client: HttpClient, pod: PODDataset) {
@@ -101,13 +38,33 @@ export class DatasetImpl implements Dataset {
         this.metadata = pod.metadata ?? {};
     }
 
-    public static async get(client: HttpClient, id: DatasetId): Promise<Dataset> {
-        return client
-            .get<PODDataset>(DatasetImpl.endpointForId(id))
-            .then((podDataset) => new DatasetImpl(client, podDataset));
+    /**
+     * Downloads the private data referenced by the dataset if the authorized identity
+     * has been granted access.
+     * @returns the decrypted data as a stream
+     */
+    public download(): Download {
+        return DatasetImpl.download(this.client, this.id);
     }
 
-    public static async list(
+    public async update(params: DatasetUpdateParams): Promise<Dataset> {
+        Object.assign(this, await DatasetImpl.update(this.client, this.id, params));
+        return this;
+    }
+
+    public async delete(): Promise<void> {
+        return DatasetImpl.delete_(this.client, this.id);
+    }
+}
+
+export namespace DatasetImpl {
+    export async function get(client: HttpClient, id: DatasetId): Promise<Dataset> {
+        return client
+            .get<PODDataset>(endpointForId(id))
+            .then((podDataset) => new Dataset(client, podDataset));
+    }
+
+    export async function list(
         client: HttpClient,
         filter?: ListDatasetsFilter & PageParams,
     ): Promise<Page<Dataset>> {
@@ -123,78 +80,45 @@ export class DatasetImpl implements Dataset {
             ...filter,
             tags: tagsFilter,
         });
-        const results = podPage.results.map((podDataset) => new DatasetImpl(client, podDataset));
+        const results = podPage.results.map((podDataset) => new Dataset(client, podDataset));
         return {
             results,
             nextPageToken: podPage.nextPageToken,
         };
     }
 
-    public static upload(
+    export function upload(
         client: HttpClient,
         data: Storable,
-        parameters?: DatasetUploadParams,
+        params?: DatasetUploadParams,
     ): Upload {
-        return new Upload(client, data, parameters);
+        return new Upload(client, data, params);
     }
 
-    public static download(client: HttpClient, id: DatasetId): Download {
-        return client.download(`${DatasetImpl.endpointForId(id)}/download`);
+    export function download(client: HttpClient, id: DatasetId): Download {
+        return client.download(endpointForId(id) + '/download');
     }
 
-    public static async history(client: HttpClient, id: DatasetId, filter?: ListAccessLogsFilter & PageParams): Promise<Page<AccessLog>> {
-        return await client.get<Page<AccessLog>>(`${DatasetImpl.endpointForId(id)}/history`, {
-            ...filter,
-        });
-    }
-
-    public static async update(
+    export async function update(
         client: HttpClient,
         id: DatasetId,
-        parameters: DatasetUpdateParams,
+        params: DatasetUpdateParams,
     ): Promise<Dataset> {
         return client
-            .patch<PODDataset>(DatasetImpl.endpointForId(id), parameters)
-            .then((podDataset) => new DatasetImpl(client, podDataset));
+            .update<PODDataset>(endpointForId(id), params)
+            .then((podDataset) => new Dataset(client, podDataset));
     }
 
-    public static async delete(client: HttpClient, id: DatasetId): Promise<void> {
-        return client.delete(DatasetImpl.endpointForId(id));
-    }
-
-    private static endpointForId(id: DatasetId): string {
-        return `/datasets/${id}`;
-    }
-
-    public download(): Download {
-        return DatasetImpl.download(this.client, this.id);
-    }
-
-    public async history(filter?: ListAccessLogsFilter & PageParams): Promise<Page<AccessLog>> {
-        return await this.client.get<Page<AccessLog>>(`${DatasetImpl.endpointForId(this.id)}/history`, {
-            ...filter,
-        });
-    }
-
-    public async update(parameters: DatasetUpdateParams): Promise<Dataset> {
-        Object.assign(this, await DatasetImpl.update(this.client, this.id, parameters));
-        return this;
-    }
-
-    public async delete(): Promise<void> {
-        return this.client.delete(DatasetImpl.endpointForId(this.id));
+    export async function delete_(client: HttpClient, id: DatasetId): Promise<void> {
+        return client.delete(endpointForId(id));
     }
 }
 
-export type DatasetUpdateParams = RequireAtLeastOne<{
-    /** The ID of the new owner's Identity. */
-    owner: IdentityId;
-    /**
-     * Mappings that will be merged into the existing metadata.
-     * A value of `null` represents delete.
-     */
-    metadata: JsonObject;
-}>;
+const DATASETS_EP = '/datasets';
+const endpointForId = (id: DatasetId) => `/datasets/${id}`;
+
+export type DatasetUpdateParams = WritableExcluding<Dataset, 'creator'>;
+export type DatasetUploadParams = SetOptional<DatasetUpdateParams, 'owner' | 'metadata'>;
 
 export type Storable = Uint8Array | Readable | Blob | string;
 
@@ -234,7 +158,7 @@ export class Upload extends EventEmitter {
 
     private readonly cancelToken: CancelTokenSource;
 
-    constructor(client: HttpClient, data: Storable, parameters?: DatasetUploadParams) {
+    constructor(client: HttpClient, data: Storable, params?: DatasetUploadParams) {
         super();
         this.cancelToken = axios.CancelToken.source();
         const form = new FormData();
@@ -258,9 +182,9 @@ export class Upload extends EventEmitter {
             }
         };
 
-        if (parameters) {
-            const parametersString = JSON.stringify(parameters);
-            appendPart('metadata', parametersString, 'application/json', parametersString.length);
+        if (params) {
+            const paramsString = JSON.stringify(params);
+            appendPart('metadata', paramsString, 'application/json', paramsString.length);
         }
 
         appendPart('data', data, 'application/octet-stream', (data as any).length);
@@ -273,7 +197,7 @@ export class Upload extends EventEmitter {
                 validateStatus: (s) => s === 201 /* Created */,
             })
             .then((podDataset) => {
-                this.emit('finish', new DatasetImpl(client, podDataset));
+                this.emit('finish', new Dataset(client, podDataset));
             })
             .catch((error: any) => {
                 if (!axios.isCancel(error)) {
