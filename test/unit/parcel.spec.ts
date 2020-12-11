@@ -53,10 +53,11 @@ const API_KEY = {
     use: 'sig',
     crv: 'P-256',
     kid: '6-j7iM2OHHqu1HoulfQFcCSPAl_ghWa0abUv4Nl9GGk',
-    x: 'C4GWlEeWvEQLtyvwndZzaHcKEfuZSZrQ2jikoH55EHU',
-    y: 'xNSJVFo7gewNmv-7aKZUkZdjn0fVi25XQi1pxYGZpWU',
+    x: 'C4GWlEeWvEQLtyvwndZzaHcKEfuZSZrQ2jikoH55EHU=',
+    y: 'xNSJVFo7gewNmv-7aKZUkZdjn0fVi25XQi1pxYGZpWU=',
     alg: 'ES256',
 } as const;
+const { d: _, ...API_PUBLIC_KEY } = API_KEY;
 
 const API_TOKEN =
     'eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJwYXJjZWwiLCJpc3MiOiJhdXRoLm9hc2lzbGFicy5jb20ifQ.foQOs-KXhOP6Vlwfs1sYqW1whbG-QW29Ex4Xa_mNNXaT4T2xtCwghhYGurkVUYSlo4cRxoaQYKo_foC2KysaDQ';
@@ -76,6 +77,7 @@ describe('Parcel', () => {
                 timestamp: (t: any) => typeof t === 'number' && t >= 0 && t <= 18446744073709552000,
                 'RGB hex': /^#[\da-f]{6}$/i,
                 binary: (b: any) => Buffer.isBuffer(b) || b.constructor.name === 'Uint8Array',
+                byte: (b64s: string) => /^(?=(.{4})*$)[-A-Za-z\d/]*={0,2}$/.test(b64s),
                 int32: Number.isInteger,
             },
         });
@@ -226,7 +228,7 @@ describe('Parcel', () => {
                 {
                     sub: 'subject',
                     iss: 'auth.oasislabs.com',
-                    publicKey: API_KEY,
+                    publicKey: API_PUBLIC_KEY,
                 },
             ],
         };
@@ -355,6 +357,14 @@ describe('Parcel', () => {
 
         beforeEach(() => {
             fixtureIdentity = createPodIdentity();
+        });
+
+        it('cannot send private key', () => {
+            expect({
+                sub: 'subject',
+                iss: 'auth.oasislabs.com',
+                publicKey: API_KEY, // Not public!
+            }).not.toMatchSchema('IdentityTokenVerifier');
         });
 
         describe('create', () => {
@@ -823,7 +833,7 @@ describe('Parcel', () => {
                     {
                         sub: 'app',
                         iss: 'auth.oasislabs.com',
-                        publicKey: API_KEY,
+                        publicKey: API_PUBLIC_KEY,
                     },
                 ],
             };
