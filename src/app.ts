@@ -11,6 +11,7 @@ export type AppId = Opaque<ResourceId>;
 export type PODApp = PODModel & {
     acceptanceText?: string;
     admins: ResourceId[];
+    allowUserUploads: boolean;
     brandingColor?: string;
     category?: string;
     collaborators: ResourceId[];
@@ -49,6 +50,8 @@ export class App implements Model {
     public invites: IdentityId[];
     /** The set of identities that are currently authorizing this app. */
     public participants: IdentityId[];
+    /** Allow non-admin users to upload datasets. */
+    public allowUserUploads: boolean;
 
     public name: string;
     /** The name of the app publisher's organization. */
@@ -82,6 +85,7 @@ export class App implements Model {
     public constructor(private readonly client: HttpClient, pod: PODApp) {
         this.acceptanceText = pod.acceptanceText;
         this.admins = pod.admins as IdentityId[];
+        this.allowUserUploads = pod.allowUserUploads;
         this.brandingColor = pod.brandingColor;
         this.category = pod.category;
         this.collaborators = pod.collaborators as IdentityId[];

@@ -83,6 +83,7 @@ describe('Parcel', () => {
         });
         Object.entries(openapiSchema.components.schemas).forEach(
             ([name, schema]: [string, any]) => {
+                delete schema.example; // Squelch warnings about ignored schema id
                 ajv.addSchema(schema, name);
             },
         );
@@ -253,25 +254,30 @@ describe('Parcel', () => {
     function createPodApp(): PODApp {
         const podApp = {
             ...createPodModel(),
-            acceptanceText: 'thanks for the data!',
-            brandingColor: '#abcdef',
-            category: 'testing',
             owner: createIdentityId(),
             admins: [createIdentityId()],
             collaborators: [createIdentityId(), createIdentityId()],
-            extendedDescription: 'looooong description',
-            homepage: 'https://friendly.app',
-            invitationText: 'plz give data',
+
+            published: false,
             inviteOnly: true,
             invites: [createIdentityId()],
+            participants: [],
+            allowUserUploads: true,
+
             name: 'test app',
             organization: 'Oasis Labs',
-            participants: [],
-            privacyPolicy: 'https://friendly.app/privacy',
-            published: false,
-            rejectionText: '🙁',
             shortDescription: 'shrt dscrptn',
-            termsAndConditions: 'https://friendly.app/terms',
+            homepage: 'https://example.com',
+            privacyPolicy: 'https://example.com/privacy',
+            termsAndConditions: 'https://example.com/terms',
+
+            invitationText: 'plz give data',
+            acceptanceText: 'thanks for the data!',
+            rejectionText: '🙁',
+
+            extendedDescription: 'looooong description',
+            brandingColor: '#abcdef',
+            category: 'testing',
             logo: 'data:image/png;base64,SGVsbG8sIFdvcmxkIQ==',
         };
         expect(podApp).toMatchSchema('App');
@@ -284,11 +290,11 @@ describe('Parcel', () => {
             creator: createIdentityId(),
             appId: options?.appId ?? createPodApp().id,
             name: 'test client',
-            audience: 'https://friendly.client/audience',
-            redirectUris: options?.isScript ? [] : ['https://friendly.app/redirect'],
+            audience: 'https://example.com/audience',
+            redirectUris: options?.isScript ? [] : ['https://example.com/redirect'],
             postLogoutRedirectUris: options?.isScript
                 ? []
-                : ['https://friendly.app/post-logout-redirect'],
+                : ['https://example.com/post-logout-redirect'],
             jsonWebKeys: options?.isScript
                 ? [
                       {
@@ -322,7 +328,7 @@ describe('Parcel', () => {
         return podGrant;
     }
 
-    function createPodConsent(options?: { optional: boolean }): PODConsent {
+    function createPodConsent(): PODConsent {
         const podConsent: PODConsent = {
             ...createPodModel(),
             grants: [
@@ -333,7 +339,6 @@ describe('Parcel', () => {
                 },
             ],
             appId: createAppId(),
-            required: !options?.optional,
             name: 'Consent Name',
             description: 'Consent Description',
             allowText: 'Allow',
@@ -436,7 +441,7 @@ describe('Parcel', () => {
                     expect(fixtureConsent).toMatchSchema(
                         getResponseSchema(
                             'GET',
-                            '/identities/{identity-id}/consents/{consent-id}',
+                            '/identities/{identity_id}/consents/{consent_id}',
                             200,
                         ),
                     );
@@ -475,7 +480,7 @@ describe('Parcel', () => {
                         createPodConsent,
                     );
                     expect(fixtureResultsPage).toMatchSchema(
-                        getResponseSchema('GET', '/identities/{identity-id}/consents', 200),
+                        getResponseSchema('GET', '/identities/{identity_id}/consents', 200),
                     );
 
                     scope.get(`/identities/me`).reply(200, fixtureIdentity);
@@ -503,7 +508,7 @@ describe('Parcel', () => {
                         nextPageToken: uuid.v4(),
                     };
                     expect(filterWithPagination).toMatchSchema(
-                        getQueryParametersSchema('GET', '/identities/{identity-id}/consents'),
+                        getQueryParametersSchema('GET', '/identities/{identity_id}/consents'),
                     );
 
                     scope.get(`/identities/me`).reply(200, fixtureIdentity);
@@ -616,7 +621,7 @@ describe('Parcel', () => {
 
         nockIt('get', async (scope) => {
             expect(fixtureDataset).toMatchSchema(
-                getResponseSchema('GET', '/datasets/{dataset-id}', 200),
+                getResponseSchema('GET', '/datasets/{dataset_id}', 200),
             );
             scope.get(`/datasets/${fixtureDataset.id}`).reply(200, fixtureDataset);
             const dataset = await parcel.getDataset(fixtureDataset.id as DatasetId);
@@ -728,7 +733,7 @@ describe('Parcel', () => {
                     owner: createIdentityId(),
                     metadata: { hello: 'world', deleteKey: null },
                 };
-                expect(update).toMatchSchema(getRequestSchema('PUT', '/datasets/{dataset-id}'));
+                expect(update).toMatchSchema(getRequestSchema('PUT', '/datasets/{dataset_id}'));
                 const updatedDataset = Object.assign(clone(fixtureDataset), update);
                 scope.put(`/datasets/${fixtureDataset.id}`, update).reply(200, updatedDataset);
                 const updated = await parcel.updateDataset(fixtureDataset.id as DatasetId, update);
@@ -793,7 +798,7 @@ describe('Parcel', () => {
         });
 
         nockIt('get', async (scope) => {
-            expect(fixtureGrant).toMatchSchema(getResponseSchema('GET', '/grants/{grant-id}', 200));
+            expect(fixtureGrant).toMatchSchema(getResponseSchema('GET', '/grants/{grant_id}', 200));
             scope.get(`/grants/${fixtureGrant.id}`).reply(200, JSON.stringify(fixtureGrant));
             const grant = await parcel.getGrant(fixtureGrant.id as GrantId);
             expect(grant).toMatchPOD(fixtureGrant);
@@ -853,7 +858,7 @@ describe('Parcel', () => {
         });
 
         nockIt('get', async (scope) => {
-            expect(fixtureApp).toMatchSchema(getResponseSchema('GET', '/apps/{app-id}', 200));
+            expect(fixtureApp).toMatchSchema(getResponseSchema('GET', '/apps/{app_id}', 200));
             scope.get(`/apps/${fixtureApp.id}`).reply(200, fixtureApp);
             const app = await parcel.getApp(fixtureApp.id as AppId);
             expect(app).toMatchPOD(fixtureApp);
@@ -925,22 +930,27 @@ describe('Parcel', () => {
                     owner: fixtureApp.owner as IdentityId,
                     admins: fixtureApp.admins as IdentityId[],
                     collaborators: fixtureApp.collaborators as IdentityId[],
+
                     published: true,
                     inviteOnly: true,
                     invites: fixtureApp.invites as IdentityId[],
+                    allowUserUploads: true,
+
                     name: 'new name',
                     organization: 'new organization',
                     shortDescription: 'new short description',
+                    homepage: 'https://example.com',
                     privacyPolicy: 'new privacy policy',
                     termsAndConditions: 'new terms and conditions',
-                    category: 'updated category',
-                    logo: 'https://logos.images',
-                    homepage: 'https://new.homepage',
-                    brandingColor: '#feeded',
-                    extendedDescription: 'new extended description',
+
                     invitationText: 'new invitation text',
                     acceptanceText: 'new acceptance text',
                     rejectionText: 'new rejection text',
+
+                    extendedDescription: 'new extended description',
+                    brandingColor: '#feeded',
+                    category: 'updated category',
+                    logo: 'https://example.com/logo.png',
                 };
                 updatedApp = Object.assign(clone(fixtureApp), update);
             });
@@ -993,7 +1003,7 @@ describe('Parcel', () => {
 
             nockIt('create', async (scope) => {
                 expect(fixtureConsent).toMatchSchema(
-                    getResponseSchema('POST', '/apps/{app-id}/consents', 201),
+                    getResponseSchema('POST', '/apps/{app_id}/consents', 201),
                 );
 
                 const createParams = {
@@ -1004,7 +1014,7 @@ describe('Parcel', () => {
                 delete createParams.createdAt;
 
                 expect(createParams).toMatchSchema(
-                    getRequestSchema('POST', '/apps/{app-id}/consents'),
+                    getRequestSchema('POST', '/apps/{app_id}/consents'),
                 );
 
                 scope.get(`/apps/${fixtureApp.id}`).reply(200, fixtureApp);
@@ -1018,7 +1028,7 @@ describe('Parcel', () => {
 
             it('get', () => {
                 expect(fixtureConsent).toMatchSchema(
-                    getResponseSchema('GET', '/apps/{app-id}/consents/{consent-id}', 200),
+                    getResponseSchema('GET', '/apps/{app_id}/consents/{consent_id}', 200),
                 );
             });
 
@@ -1072,13 +1082,13 @@ describe('Parcel', () => {
                 delete createParams.canActOnBehalfOfUsers;
 
                 expect(createParams).toMatchSchema(
-                    getRequestSchema('POST', '/apps/{app-id}/clients'),
+                    getRequestSchema('POST', '/apps/{app_id}/clients'),
                 );
                 scope
                     .post(`/apps/${fixtureApp.id}/clients`, createParams)
                     .reply(201, fixtureClient);
                 expect(fixtureClient).toMatchSchema(
-                    getResponseSchema('POST', '/apps/{app-id}/clients', 201),
+                    getResponseSchema('POST', '/apps/{app_id}/clients', 201),
                 );
                 const client = await parcel.createClient(fixtureApp.id as AppId, createParams);
                 expect(client).toMatchPOD(fixtureClient);
@@ -1086,7 +1096,7 @@ describe('Parcel', () => {
 
             nockIt('get', async (scope) => {
                 expect(fixtureClient).toMatchSchema(
-                    getResponseSchema('GET', '/apps/{app-id}/clients/{client-id}', 200),
+                    getResponseSchema('GET', '/apps/{app_id}/clients/{client_id}', 200),
                 );
                 scope
                     .get(`/apps/${fixtureApp.id}/clients/${fixtureClient.id}`)
@@ -1106,7 +1116,7 @@ describe('Parcel', () => {
                         () => createPodClient({ appId: fixtureApp.id as AppId }),
                     );
                     expect(fixtureResultsPage).toMatchSchema(
-                        getResponseSchema('GET', '/apps/{app-id}/clients', 200),
+                        getResponseSchema('GET', '/apps/{app_id}/clients', 200),
                     );
 
                     scope.get(`/apps/${fixtureApp.id}/clients`).reply(200, fixtureResultsPage);
@@ -1132,7 +1142,7 @@ describe('Parcel', () => {
                         nextPageToken: uuid.v4(),
                     };
                     expect(filterWithPagination).toMatchSchema(
-                        getQueryParametersSchema('GET', '/apps/{app-id}/clients'),
+                        getQueryParametersSchema('GET', '/apps/{app_id}/clients'),
                     );
                     scope
                         .get(`/apps/${fixtureApp.id}/clients`)
@@ -1176,7 +1186,7 @@ describe('Parcel', () => {
                 beforeEach(() => {
                     update = {
                         redirectUris: fixtureClient.redirectUris.concat([
-                            'https://friendly.app/new-redirect',
+                            'https://example.com/new-redirect',
                         ]),
                         postLogoutRedirectUris: [],
                         jsonWebKeys: fixtureClient.jsonWebKeys,
