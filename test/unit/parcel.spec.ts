@@ -257,7 +257,6 @@ describe('Parcel', () => {
             owner: createIdentityId(),
             admins: [createIdentityId()],
             collaborators: [createIdentityId(), createIdentityId()],
-
             published: false,
             inviteOnly: true,
             invites: [createIdentityId()],
@@ -267,7 +266,7 @@ describe('Parcel', () => {
             name: 'test app',
             organization: 'Oasis Labs',
             shortDescription: 'shrt dscrptn',
-            homepage: 'https://example.com',
+            homepageUrl: 'https://example.com',
             privacyPolicy: 'https://example.com/privacy',
             termsAndConditions: 'https://example.com/terms',
 
@@ -278,7 +277,7 @@ describe('Parcel', () => {
             extendedDescription: 'looooong description',
             brandingColor: '#abcdef',
             category: 'testing',
-            logo: 'data:image/png;base64,SGVsbG8sIFdvcmxkIQ==',
+            logoUrl: 'https://logos.gif',
         };
         expect(podApp).toMatchSchema('App');
         return podApp;
@@ -939,7 +938,7 @@ describe('Parcel', () => {
                     name: 'new name',
                     organization: 'new organization',
                     shortDescription: 'new short description',
-                    homepage: 'https://example.com',
+                    homepageUrl: 'https://example.com',
                     privacyPolicy: 'new privacy policy',
                     termsAndConditions: 'new terms and conditions',
 
@@ -950,7 +949,7 @@ describe('Parcel', () => {
                     extendedDescription: 'new extended description',
                     brandingColor: '#feeded',
                     category: 'updated category',
-                    logo: 'https://example.com/logo.png',
+                    logoUrl: 'https://example.com/logo.png',
                 };
                 updatedApp = Object.assign(clone(fixtureApp), update);
             });

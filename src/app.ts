@@ -16,11 +16,11 @@ export type PODApp = PODModel & {
     category?: string;
     collaborators: ResourceId[];
     extendedDescription?: string;
-    homepage: string;
+    homepageUrl: string;
     invitationText?: string;
     inviteOnly: boolean;
     invites?: ResourceId[];
-    logo?: string;
+    logoUrl: string;
     name: string;
     organization: string;
     owner: ResourceId;
@@ -58,7 +58,9 @@ export class App implements Model {
     public organization: string;
     public shortDescription: string;
     /** The app publisher's homepage URL. */
-    public homepage: string;
+    public homepageUrl: string;
+    /** A URL pointing to (or containing) the app's logo. */
+    public logoUrl: string;
     /** The privacy policy presented to the user when joining the app. */
     public privacyPolicy: string;
     /** The terms and conditions presented to the user when joining the app. */
@@ -79,8 +81,6 @@ export class App implements Model {
      * be used to search for the app.
      */
     public category?: string;
-    /** A URL pointing to (or containing) the app's logo. */
-    public logo?: string;
 
     public constructor(private readonly client: HttpClient, pod: PODApp) {
         this.acceptanceText = pod.acceptanceText;
@@ -92,7 +92,7 @@ export class App implements Model {
         this.createdAt = new Date(pod.createdAt);
         this.owner = pod.owner as IdentityId;
         this.extendedDescription = pod.extendedDescription;
-        this.homepage = pod.homepage;
+        this.homepageUrl = pod.homepageUrl;
         this.id = pod.id as AppId;
         this.invites = pod.invites as IdentityId[];
         this.invitationText = pod.invitationText;
@@ -105,7 +105,7 @@ export class App implements Model {
         this.rejectionText = pod.rejectionText;
         this.shortDescription = pod.shortDescription;
         this.termsAndConditions = pod.termsAndConditions;
-        this.logo = pod.logo;
+        this.logoUrl = pod.logoUrl;
     }
 
     public async update(params: AppUpdateParams): Promise<App> {

@@ -35,6 +35,7 @@ export {
     AppCreateParams,
     AppId,
     AppUpdateParams,
+    Client,
     ClientCredentials,
     Consent,
     ConsentCreateParams,
