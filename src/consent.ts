@@ -23,9 +23,6 @@ export type ConsentCreateParams = {
     /** The description of this consent seen by users when shown in an app. */
     description: string;
 
-    /** Whether this Consent is automatically accepted when joining an App. */
-    required?: boolean;
-
     /** The text seen by users when accepting this consent. */
     allowText: string;
 
@@ -37,15 +34,18 @@ export class Consent implements Model {
     public id: ConsentId;
     public appId: AppId;
     public createdAt: Date;
+
     /** The Grants to make when the App containing this Consent is joined. */
     public grants: GrantSpec[];
-    /** Whether this Consent is automatically accepted when joining an App. */
-    public required: boolean;
+
     public name: string;
+
     /** The description of this consent seen by users when shown in an app. */
     public description: string;
+
     /** The text seen by users when accepting this consent. */
     public allowText: string;
+
     /** The text seen by users when denying this consent. */
     public denyText: string;
 
@@ -54,7 +54,6 @@ export class Consent implements Model {
         this.appId = pod.appId as AppId;
         this.createdAt = new Date(pod.createdAt);
         this.grants = pod.grants;
-        this.required = pod.required ?? false;
         this.name = pod.name;
         this.description = pod.description;
         this.allowText = pod.allowText;
