@@ -44,7 +44,7 @@ export class App implements Model {
 
     /** Whether this app has been published. Consents may not be modified after publishing, */
     public published: boolean;
-    /** If `true`, only invited Identities may  the app. */
+    /** If `true`, only invited Identities may participate in the app. */
     public inviteOnly: boolean;
     /** Identities invited to participate in this app. */
     public invites: IdentityId[];
