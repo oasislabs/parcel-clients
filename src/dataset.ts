@@ -135,8 +135,8 @@ export type ListDatasetsFilter = Partial<{
 }>;
 
 export type AccessEvent = {
-    accessor: IdentityId,
-    createdAt: Date,
+    accessor: IdentityId;
+    createdAt: Date;
 };
 
 export type ListAccessLogsFilter = Partial<{
