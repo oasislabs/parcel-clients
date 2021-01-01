@@ -51,7 +51,7 @@ window.setApiCredentials = async function () {
         await parcel.getCurrentIdentity();
         document.body.removeAttribute('pre-auth');
         void window.listUploadedDatasets();
-    } catch (error) {
+    } catch (error: any) {
         console.error(error);
         setupErrorSpan.textContent = error.toString();
         setupErrorSpan.classList.add('visible');

@@ -1,5 +1,3 @@
-import { execSync } from 'child_process';
-
 import SwaggerParser from '@apidevtools/swagger-parser';
 import Ajv from 'ajv';
 import nock from 'nock';
@@ -40,6 +38,7 @@ function clone<T = JsonObject>(object: T): T {
 
 declare global {
     namespace jest {
+        // eslint-disable-next-line no-unused-vars
         interface Matchers<R> {
             toMatchSchema: (schema: string | JsonObject) => CustomMatcherResult;
             toMatchPOD: <T extends PODModel>(pod: T) => CustomMatcherResult;
@@ -69,8 +68,7 @@ describe('Parcel', () => {
     let parcel: Parcel;
 
     beforeAll(async () => {
-        const repoRoot = execSync('git rev-parse --show-toplevel').toString().trim();
-        openapiSchema = await SwaggerParser.validate(repoRoot + '/gateway/api/v1/parcel.yaml');
+        openapiSchema = await SwaggerParser.validate('../../api/v1/parcel.yaml');
 
         ajv = new Ajv({
             formats: {
@@ -124,7 +122,7 @@ describe('Parcel', () => {
             },
             toMatchPOD<T extends PODModel>(
                 received: any,
-                pod: PODModel,
+                pod: T,
             ): { message: () => string; pass: boolean } {
                 expect(JSON.parse(JSON.stringify(received))).toMatchObject(pod);
                 return { message: () => '', pass: true };
@@ -1005,7 +1003,7 @@ describe('Parcel', () => {
                     getResponseSchema('POST', '/apps/{app_id}/consents', 201),
                 );
 
-                const createParams = {
+                const createParams: any = {
                     ...fixtureConsent,
                 };
                 delete createParams.id;

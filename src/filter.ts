@@ -1,6 +1,6 @@
 import type { Primitive } from 'type-fest';
 
-import type { DatasetId } from './dataset';
+import type { DatasetId as $DatasetId } from './dataset';
 import type { IdentityId } from './identity';
 
 export namespace Constraints {
@@ -14,7 +14,7 @@ export namespace Constraints {
         $not: Constraints;
     };
     export type DatasetId = {
-        'dataset.id': Comparison<DatasetId>;
+        'dataset.id': Comparison<$DatasetId>;
     };
     export type DatasetCreator = {
         'dataset.creator': Comparison<IdentityId>;
