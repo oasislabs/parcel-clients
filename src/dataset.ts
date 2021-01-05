@@ -134,6 +134,17 @@ export type ListDatasetsFilter = Partial<{
           }>;
 }>;
 
+export type AccessEvent = {
+    accessor: IdentityId;
+    createdAt: Date;
+};
+
+export type ListAccessLogsFilter = Partial<{
+    accessor: IdentityId;
+    after: Date;
+    before: Date;
+}>;
+
 /**
  * An `Upload` is the result of calling `parcel.uploadDataset`.
  *
