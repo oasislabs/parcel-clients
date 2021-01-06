@@ -14,6 +14,8 @@ import type { DatasetId, PODAccessEvent, PODDataset } from '@oasislabs/parcel/da
 import type { GrantId, PODGrant } from '@oasislabs/parcel/grant';
 import type { IdentityId, PODIdentity } from '@oasislabs/parcel/identity';
 import type { Page, PODModel } from '@oasislabs/parcel/model';
+import type { JobId, JobSpec, PODJob } from '@oasislabs/parcel/compute';
+import { JobPhase } from '@oasislabs/parcel/compute';
 
 const API_BASE_URL = 'https://api.oasislabs.com/parcel/v1';
 function nockIt(testName: string, test: (scope: nock.Scope) => Promise<void>): void {
@@ -41,7 +43,7 @@ declare global {
     // eslint-disable-next-line no-unused-vars
     interface Matchers<R> {
       toMatchSchema: (schema: string | JsonObject) => CustomMatcherResult;
-      toMatchPOD: <T>(pod: T) => CustomMatcherResult;
+      toMatchPOD: <T extends PODModel | JsonObject>(pod: T) => CustomMatcherResult;
     }
   }
 }
@@ -78,6 +80,7 @@ describe('Parcel', () => {
         byte: (b64s: string) => /^(?=(.{4})*$)[-A-Za-z\d/]*={0,2}$/.test(b64s),
         int32: Number.isInteger,
         int64: Number.isInteger,
+        path: /[^\0]+/,
       },
     });
     Object.entries(openapiSchema.components.schemas).forEach(([name, schema]: [string, any]) => {
@@ -214,6 +217,8 @@ describe('Parcel', () => {
   }
 
   const createIdentityId: () => IdentityId = () => uuid.v4() as IdentityId;
+  const createDatasetId: () => DatasetId = () => uuid.v4() as DatasetId;
+  const createJobId: () => JobId = () => uuid.v4() as JobId;
   const createAppId: () => AppId = () => uuid.v4() as AppId;
   const createConsentId: () => ConsentId = () => uuid.v4() as ConsentId;
 
@@ -332,6 +337,43 @@ describe('Parcel', () => {
     };
     expect(podGrant).toMatchSchema('Grant');
     return podGrant;
+  }
+
+  function createJobSpec(): JobSpec {
+    const jobSpec = {
+      name: 'my job',
+      cmd: ['-v', 'foo,bar'],
+      image: 'myrepo:mysha',
+      env: { MY_ENV_VAR: 'my value', OTHER_VAR: 'other value' },
+      inputDatasets: [
+        {
+          mountPath: 'myimage.png',
+          id: createDatasetId(),
+        },
+      ],
+      outputDatasets: [
+        {
+          mountPath: 'labels.json',
+          owner: createIdentityId(),
+        },
+      ],
+    };
+    expect(jobSpec).toMatchSchema('JobSpec');
+    return jobSpec;
+  }
+
+  function createPodJob(): PODJob {
+    const podJob: PODJob = {
+      id: createJobId(),
+      spec: createJobSpec(),
+      status: {
+        phase: JobPhase.PENDING,
+        message: 'foo',
+        host: 'http://myworker/',
+      },
+    };
+    expect(podJob).toMatchSchema('Job');
+    return podJob;
   }
 
   function createPodConsent(): PODConsent {
@@ -1248,5 +1290,44 @@ describe('Parcel', () => {
         });
       });
     });
+  });
+
+  describe('compute', () => {
+    nockIt('create', async (scope) => {
+      const fixtureJob = createPodJob();
+      expect(fixtureJob).toMatchSchema(getResponseSchema('POST', '/compute/jobs', 201));
+      const createParams = createJobSpec();
+      expect(createParams).toMatchSchema(getRequestSchema('POST', '/compute/jobs'));
+      scope.post('/compute/jobs', createParams).reply(201, fixtureJob);
+      const job = await parcel.submitJob(createParams);
+      expect(job).toMatchPOD(fixtureJob);
+    });
+    /*
+        nockIt('get', async (scope) => {
+            expect(fixtureGrant).toMatchSchema(getResponseSchema('GET', '/grants/{grant_id}', 200));
+            scope.get(`/grants/${fixtureGrant.id}`).reply(200, JSON.stringify(fixtureGrant));
+            const grant = await parcel.getGrant(fixtureGrant.id as GrantId);
+            expect(grant).toMatchPOD(fixtureGrant);
+        });
+
+        describe('delete', () => {
+            nockIt('by id', async (scope) => {
+                scope.delete(`/grants/${fixtureGrant.id}`).reply(204);
+                await parcel.deleteGrant(fixtureGrant.id as GrantId);
+            });
+
+            nockIt('retrieved', async (scope) => {
+                scope.get(`/grants/${fixtureGrant.id}`).reply(200, fixtureGrant);
+                scope.delete(`/grants/${fixtureGrant.id}`).reply(204);
+                const grant = await parcel.getGrant(fixtureGrant.id as GrantId);
+                await grant.delete();
+            });
+
+            nockIt('expect 204', async (scope) => {
+                scope.delete(`/grants/${fixtureGrant.id}`).reply(200);
+                await expect(parcel.deleteGrant(fixtureGrant.id as GrantId)).rejects.toThrow();
+            });
+        });
+*/
   });
 });

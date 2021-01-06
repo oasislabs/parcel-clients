@@ -31,6 +31,8 @@ import type { Identity, IdentityCreateParams, IdentityId, IdentityUpdateParams }
 import type { Page, PageParams } from './model';
 import { TokenProvider } from './token';
 import type { ClientCredentials, PrivateJWK, PublicJWK, TokenSource } from './token';
+import { ComputeImpl } from './compute';
+import type { Job, JobId, JobSpec, JobStatus } from './compute';
 
 export {
   App,
@@ -53,6 +55,10 @@ export {
   IdentityCreateParams,
   IdentityId,
   IdentityUpdateParams,
+    Job,
+    JobId,
+    JobSpec,
+    JobStatus,
   Page,
   PageParams,
   PrivateJWK,
@@ -190,6 +196,47 @@ export default class Parcel {
   public async deleteGrant(id: GrantId): Promise<void> {
     return GrantImpl.delete_(this.client, id);
   }
+
+    /**
+     * Enqueues a new job.
+     * @param requestBody The job to equeue.
+     * @result Job The new job.
+     * @throws ApiError
+     */
+    public async submitJob(spec: JobSpec): Promise<Job> {
+        return ComputeImpl.submitJob(this.client, spec);
+    }
+
+    /**
+     * Lists known jobs.
+     * Returns all known jobs owned by the current user. The dispatcher keeps track of jobs for at most 24h after they complete.
+     * @param filter Controls pagination.
+     * @result Job Lists known jobs. Includes recently completed jobs.
+     * @throws ApiError
+     */
+    public async listJobs(client: HttpClient, filter: PageParams = {}): Promise<Page<Job>> {
+        return ComputeImpl.listJobs(this.client, filter);
+    }
+
+    /**
+     * Returns the status of a known job.
+     * @param jobId The unique identifier of the job.
+     * @result Job The requested job.
+     * @throws ApiError
+     */
+    public async getJob(jobId: JobId): Promise<Job> {
+        return ComputeImpl.getJob(this.client, jobId);
+    }
+
+    /**
+     * Asynchronously terminates a currently running job.
+     * @param jobId The unique identifier of the job.
+     * @result any The job is running or pending and its termination was successfully requested.
+     * @throws ApiError
+     */
+    public async terminateJob(jobId: JobId): Promise<void> {
+        return ComputeImpl.terminateJob(this.client, jobId);
+    }
 }
 
 export type Config = ClientConfig;
