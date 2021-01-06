@@ -20,7 +20,7 @@ export namespace Constraints {
         'dataset.creator': Comparison<IdentityId>;
     };
     export type DatasetTags = {
-        'dataset.metadata.tags': ArrayOp<string>;
+        'dataset.details.tags': ArrayOp<string>;
     };
 }
 export type Constraints =
