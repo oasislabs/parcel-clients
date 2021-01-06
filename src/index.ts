@@ -103,6 +103,10 @@ export default class Parcel {
         return DatasetImpl.download(this.client, id);
     }
 
+    public async getDatasetHistory(id: DatasetId, filter?: ListAccessLogsFilter & PageParams): Promise<Page<AccessEvent>> {
+        return DatasetImpl.history(this.client, id, filter);
+    }
+
     public async updateDataset(id: DatasetId, update: DatasetUpdateParams): Promise<Dataset> {
         return DatasetImpl.update(this.client, id, update);
     }

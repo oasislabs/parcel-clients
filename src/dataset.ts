@@ -6,7 +6,8 @@ import type { JsonObject, Opaque, RequireExactlyOne, SetOptional } from 'type-fe
 
 import type { HttpClient, Download } from './http';
 import type { IdentityId } from './identity';
-import type { Model, Page, PageParams, PODModel, ResourceId, WritableExcluding } from './model';
+import typeimport { HttpClient } from './http';
+ { Model, Page, PageParams, PODModel, ResourceId, WritableExcluding } from './model';
 
 export type DatasetId = Opaque<ResourceId>;
 
@@ -24,6 +25,7 @@ export class Dataset implements Model {
     public createdAt: Date;
     public creator: IdentityId;
     public owner: IdentityId;
+    public history: AccessEvent[];
     /**
      * Dataset metadata. The well-known value `tags` should be an array of strings if
      * you want to use it with the `dataset.metadata.tags` filter.
@@ -36,6 +38,7 @@ export class Dataset implements Model {
         this.creator = pod.creator as IdentityId;
         this.owner = pod.owner as IdentityId;
         this.metadata = pod.metadata ?? {};
+        this.history = [];
     }
 
     /**
@@ -97,6 +100,20 @@ export namespace DatasetImpl {
 
     export function download(client: HttpClient, id: DatasetId): Download {
         return client.download(endpointForId(id) + '/download');
+    }
+
+    export async function history(
+        client: HttpClient,
+        id: DatasetId,
+        filter?: ListAccessLogsFilter & PageParams,
+    ): Promise<Page<AccessEvent>> {
+        const podPage = await client.get<Page<PODDataset>>(endpointForId(id) + '/history', {
+            ...filter,
+        });
+        return {
+            podPage.results,
+            nextPageToken: podPage.nextPageToken,
+        };
     }
 
     export async function update(
