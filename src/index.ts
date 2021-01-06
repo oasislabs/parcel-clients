@@ -12,10 +12,12 @@ import { ConsentImpl } from './consent';
 import type { Consent, ConsentCreateParams, ConsentId } from './consent';
 import { DatasetImpl } from './dataset';
 import type {
+    AccessEvent,
     Dataset,
     DatasetId,
     DatasetUpdateParams,
     DatasetUploadParams,
+    ListAccessLogFilter,
     ListDatasetsFilter,
     Storable,
     Upload,
@@ -103,7 +105,10 @@ export default class Parcel {
         return DatasetImpl.download(this.client, id);
     }
 
-    public async getDatasetHistory(id: DatasetId, filter?: ListAccessLogsFilter & PageParams): Promise<Page<AccessEvent>> {
+    public async getDatasetHistory(
+        id: DatasetId,
+        filter?: ListAccessLogFilter & PageParams,
+    ): Promise<Page<AccessEvent>> {
         return DatasetImpl.history(this.client, id, filter);
     }
 

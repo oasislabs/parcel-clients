@@ -6,8 +6,7 @@ import type { JsonObject, Opaque, RequireExactlyOne, SetOptional } from 'type-fe
 
 import type { HttpClient, Download } from './http';
 import type { IdentityId } from './identity';
-import typeimport { HttpClient } from './http';
- { Model, Page, PageParams, PODModel, ResourceId, WritableExcluding } from './model';
+import type { Model, Page, PageParams, PODModel, ResourceId, WritableExcluding } from './model';
 
 export type DatasetId = Opaque<ResourceId>;
 
@@ -16,6 +15,12 @@ export type PODDataset = PODModel & {
     creator: ResourceId;
     owner: ResourceId;
     metadata?: DatasetMetadata;
+};
+
+export type PODAccessEvent = {
+    createdAt: string;
+    dataset: ResourceId;
+    accessor: ResourceId;
 };
 
 type DatasetMetadata = JsonObject & { tags?: string[] };
@@ -105,13 +110,23 @@ export namespace DatasetImpl {
     export async function history(
         client: HttpClient,
         id: DatasetId,
-        filter?: ListAccessLogsFilter & PageParams,
+        filter?: ListAccessLogFilter & PageParams,
     ): Promise<Page<AccessEvent>> {
-        const podPage = await client.get<Page<PODDataset>>(endpointForId(id) + '/history', {
+        const podPage = await client.get<Page<PODAccessEvent>>(endpointForId(id) + '/history', {
             ...filter,
+            after: filter?.after?.getTime(),
+            before: filter?.before?.getTime(),
+        });
+
+        const results = podPage.results.map((podAccessEvent) => {
+            return {
+                createdAt: new Date(podAccessEvent.createdAt),
+                dataset: podAccessEvent.dataset as DatasetId,
+                accessor: podAccessEvent.accessor as IdentityId,
+            };
         });
         return {
-            podPage.results,
+            results,
             nextPageToken: podPage.nextPageToken,
         };
     }
@@ -134,7 +149,7 @@ export namespace DatasetImpl {
 const DATASETS_EP = '/datasets';
 const endpointForId = (id: DatasetId) => `/datasets/${id}`;
 
-export type DatasetUpdateParams = WritableExcluding<Dataset, 'creator'>;
+export type DatasetUpdateParams = WritableExcluding<Dataset, 'creator' | 'history'>;
 export type DatasetUploadParams = SetOptional<DatasetUpdateParams, 'owner' | 'metadata'>;
 
 export type Storable = Uint8Array | Readable | Blob | string;
@@ -152,11 +167,12 @@ export type ListDatasetsFilter = Partial<{
 }>;
 
 export type AccessEvent = {
-    accessor: IdentityId;
     createdAt: Date;
+    dataset: DatasetId;
+    accessor: IdentityId;
 };
 
-export type ListAccessLogsFilter = Partial<{
+export type ListAccessLogFilter = Partial<{
     accessor: IdentityId;
     after: Date;
     before: Date;
