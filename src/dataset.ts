@@ -14,28 +14,29 @@ export type PODDataset = PODModel & {
     id: ResourceId;
     creator: ResourceId;
     owner: ResourceId;
-    metadata?: DatasetMetadata;
+    size: number;
+    details: DatasetDetails;
 };
 
-type DatasetMetadata = JsonObject & { tags?: string[] };
+type DatasetDetails = JsonObject & { title?: string; tags?: string[] };
 
 export class Dataset implements Model {
     public id: DatasetId;
     public createdAt: Date;
     public creator: IdentityId;
+    public size: number;
     public owner: IdentityId;
-    /**
-     * Dataset metadata. The well-known value `tags` should be an array of strings if
-     * you want to use it with the `dataset.metadata.tags` filter.
-     */
-    public metadata: DatasetMetadata;
+
+    /** Additional, optional information about the dataset. */
+    public details: DatasetDetails;
 
     public constructor(private readonly client: HttpClient, pod: PODDataset) {
         this.id = pod.id as DatasetId;
         this.createdAt = new Date(pod.createdAt);
         this.creator = pod.creator as IdentityId;
         this.owner = pod.owner as IdentityId;
-        this.metadata = pod.metadata ?? {};
+        this.size = pod.size;
+        this.details = pod.details;
     }
 
     /**
@@ -117,8 +118,8 @@ export namespace DatasetImpl {
 const DATASETS_EP = '/datasets';
 const endpointForId = (id: DatasetId) => `/datasets/${id}`;
 
-export type DatasetUpdateParams = WritableExcluding<Dataset, 'creator'>;
-export type DatasetUploadParams = SetOptional<DatasetUpdateParams, 'owner' | 'metadata'>;
+export type DatasetUpdateParams = WritableExcluding<Dataset, 'creator' | 'size'>;
+export type DatasetUploadParams = SetOptional<DatasetUpdateParams, 'owner' | 'details'>;
 
 export type Storable = Uint8Array | Readable | Blob | string;
 

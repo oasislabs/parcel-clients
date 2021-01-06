@@ -61,9 +61,9 @@ window.setApiCredentials = async function () {
 window.uploadDataset = async function () {
     const datasetFile = datasetPicker.files![0];
     const dataset = await parcel.uploadDataset(datasetFile, {
-        metadata: { name: datasetName.value },
+        details: { title: datasetName.value },
     }).finished;
-    addDatasetToList(dataset.id, dataset.metadata?.name as string | undefined);
+    addDatasetToList(dataset.id, dataset.details.title);
 };
 
 window.downloadDataset = async function (id: string) {
@@ -81,7 +81,7 @@ window.listUploadedDatasets = async function () {
     ).results;
 
     while (datasetsList.lastChild) datasetsList.lastChild.remove();
-    uploadedDatasets.forEach((d) => addDatasetToList(d.id, d.metadata?.name as string | undefined));
+    uploadedDatasets.forEach((d) => addDatasetToList(d.id, d.details.title));
 };
 
 function addDatasetToList(id: string, name?: string) {

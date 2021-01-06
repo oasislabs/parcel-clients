@@ -77,6 +77,7 @@ describe('Parcel', () => {
                 binary: (b: any) => Buffer.isBuffer(b) || b.constructor.name === 'Uint8Array',
                 byte: (b64s: string) => /^(?=(.{4})*$)[-A-Za-z\d/]*={0,2}$/.test(b64s),
                 int32: Number.isInteger,
+                int64: Number.isInteger,
             },
         });
         Object.entries(openapiSchema.components.schemas).forEach(
@@ -240,7 +241,8 @@ describe('Parcel', () => {
             ...createPodModel(),
             creator: createIdentityId(),
             owner: createIdentityId(),
-            metadata: {
+            size: 1234,
+            details: {
                 tags: ['mock', 'dataset'],
                 key: { value: 42 },
             },
@@ -319,7 +321,7 @@ describe('Parcel', () => {
             granter: createIdentityId(),
             grantee: createIdentityId(),
             consent: createConsentId(),
-            filter: { 'dataset.metadata.tags': { $any: { $eq: 'mock' } } },
+            filter: { 'dataset.details.tags': { $any: { $eq: 'mock' } } },
         };
         expect(podGrant).toMatchSchema('Grant');
         return podGrant;
@@ -332,7 +334,7 @@ describe('Parcel', () => {
                 {
                     granter: 'participant',
                     grantee: 'app',
-                    filter: { 'dataset.metadata.tags': { $any: { $eq: 'mock' } } },
+                    filter: { 'dataset.details.tags': { $any: { $eq: 'mock' } } },
                 },
             ],
             appId: createAppId(),
@@ -586,7 +588,7 @@ describe('Parcel', () => {
         }
 
         // Matches the metadata part of a (multipart) dataset upload request
-        const MULTIPART_METADATA_RE = /content-disposition: form-data; name="metadata"\r\ncontent-type: application\/json\r\n\r\n{"metadata":{"tags":\["mock","dataset"],"key":{"value":42}}}\r\n/gi;
+        const MULTIPART_METADATA_RE = /content-disposition: form-data; name="metadata"\r\ncontent-type: application\/json\r\n\r\n{"details":{"tags":\["mock","dataset"],"key":{"value":42}}}\r\n/gi;
         // Matches the data part of a (multipart) dataset upload request
         const MULTIPART_DATA_RE = /content-disposition: form-data; name="data"\r\ncontent-type: application\/octet-stream\r\n\r\nfixture data\r\n/gi;
 
@@ -610,7 +612,7 @@ describe('Parcel', () => {
                     .matchHeader('content-type', /^multipart\/form-data; boundary=/)
                     .reply(201, fixtureDataset);
                 const dataset = await parcel.uploadDataset(fixtureData, {
-                    metadata: fixtureDataset.metadata!,
+                    details: fixtureDataset.details,
                 }).finished;
                 expect(dataset).toMatchPOD(fixtureDataset);
             });
@@ -728,7 +730,7 @@ describe('Parcel', () => {
             nockIt('by id', async (scope) => {
                 const update = {
                     owner: createIdentityId(),
-                    metadata: { hello: 'world', deleteKey: null },
+                    details: { hello: 'world', deleteKey: null },
                 };
                 expect(update).toMatchSchema(getRequestSchema('PUT', '/datasets/{dataset_id}'));
                 const updatedDataset = Object.assign(clone(fixtureDataset), update);
@@ -740,7 +742,7 @@ describe('Parcel', () => {
             nockIt('retrieved', async (scope) => {
                 const update = {
                     owner: createIdentityId(),
-                    metadata: { hello: 'world', deleteKey: null },
+                    details: { hello: 'world', deleteKey: null },
                 };
                 const updatedDataset = Object.assign(clone(fixtureDataset), update);
 
