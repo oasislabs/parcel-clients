@@ -1302,32 +1302,87 @@ describe('Parcel', () => {
       const job = await parcel.submitJob(createParams);
       expect(job).toMatchPOD(fixtureJob);
     });
-    /*
+
+        describe('list', () => {
+            nockIt('no filter', async (scope) => {
+                const numberResults = 3;
+                const fixtureResultsPage: Page<PODJob> = createResultsPage(
+                    numberResults,
+                    createPodJob,
+                );
+                expect(fixtureResultsPage).toMatchSchema(
+                    getResponseSchema('GET', '/compute/jobs', 200),
+                );
+
+                scope.get('/compute/jobs').reply(200, fixtureResultsPage);
+
+                const { results, nextPageToken } = await parcel.listJobs();
+                expect(results).toHaveLength(numberResults);
+                results.forEach((r, i) => expect(r).toMatchPOD(fixtureResultsPage.results[i]));
+                expect(nextPageToken).toEqual(fixtureResultsPage.nextPageToken);
+            });
+
+            nockIt('with filter and pagination', async (scope) => {
+                const numberResults = 1;
+                const fixtureResultsPage: Page<PODJob> = createResultsPage(
+                    numberResults,
+                    createPodJob,
+                );
+
+                const filterWithPagination = {
+                    // Only pagination params; listing jobs does not support other filters.
+                    pageSize: 2,
+                    nextPageToken: uuid.v4(),
+                };
+                expect(filterWithPagination).toMatchSchema(
+                    getQueryParametersSchema('GET', '/compute/jobs'),
+                );
+                scope
+                    .get('/compute/jobs')
+                    .query(
+                        Object.fromEntries(
+                            Object.entries(filterWithPagination).map(([k, v]) => [paramCase(k), v]),
+                        ),
+                    )
+                    .reply(200, fixtureResultsPage);
+
+                const { results, nextPageToken } = await parcel.listJobs(filterWithPagination);
+                expect(results).toHaveLength(numberResults);
+                results.forEach((r, i) => expect(r).toMatchPOD(fixtureResultsPage.results[i]));
+                expect(nextPageToken).toEqual(fixtureResultsPage.nextPageToken);
+            });
+
+            nockIt('no results', async (scope) => {
+                const fixtureResultsPage: Page<PODJob> = createResultsPage(0, createPodJob);
+                scope.get('/compute/jobs').reply(200, fixtureResultsPage);
+                const { results, nextPageToken } = await parcel.listJobs();
+                expect(results).toHaveLength(0);
+                expect(nextPageToken).toEqual(fixtureResultsPage.nextPageToken);
+            });
+        });
+
         nockIt('get', async (scope) => {
-            expect(fixtureGrant).toMatchSchema(getResponseSchema('GET', '/grants/{grant_id}', 200));
-            scope.get(`/grants/${fixtureGrant.id}`).reply(200, JSON.stringify(fixtureGrant));
-            const grant = await parcel.getGrant(fixtureGrant.id as GrantId);
-            expect(grant).toMatchPOD(fixtureGrant);
+            const fixtureJob = createPodJob();
+            expect(fixtureJob).toMatchSchema(
+                getResponseSchema('GET', '/compute/jobs/{job_id}', 200),
+            );
+            scope.get(`/compute/jobs/${fixtureJob.id}`).reply(200, JSON.stringify(fixtureJob));
+            const job = await parcel.getJob(fixtureJob.id);
+            expect(job).toMatchPOD(fixtureJob);
         });
 
         describe('delete', () => {
             nockIt('by id', async (scope) => {
-                scope.delete(`/grants/${fixtureGrant.id}`).reply(204);
-                await parcel.deleteGrant(fixtureGrant.id as GrantId);
-            });
-
-            nockIt('retrieved', async (scope) => {
-                scope.get(`/grants/${fixtureGrant.id}`).reply(200, fixtureGrant);
-                scope.delete(`/grants/${fixtureGrant.id}`).reply(204);
-                const grant = await parcel.getGrant(fixtureGrant.id as GrantId);
-                await grant.delete();
+                const jobId = createJobId();
+                scope.delete(`/compute/jobs/${jobId}`).reply(204);
+                await parcel.terminateJob(jobId);
             });
 
             nockIt('expect 204', async (scope) => {
-                scope.delete(`/grants/${fixtureGrant.id}`).reply(200);
-                await expect(parcel.deleteGrant(fixtureGrant.id as GrantId)).rejects.toThrow();
+                const jobId = createJobId();
+                scope.delete(`/compute/jobs/${jobId}`).reply(200);
+                await expect(parcel.terminateJob(jobId)).rejects.toThrow();
             });
         });
-*/
   });
 });

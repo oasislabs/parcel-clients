@@ -214,7 +214,7 @@ export default class Parcel {
      * @result Job Lists known jobs. Includes recently completed jobs.
      * @throws ApiError
      */
-    public async listJobs(client: HttpClient, filter: PageParams = {}): Promise<Page<Job>> {
+    public async listJobs(filter: PageParams = {}): Promise<Page<Job>> {
         return ComputeImpl.listJobs(this.client, filter);
     }
 

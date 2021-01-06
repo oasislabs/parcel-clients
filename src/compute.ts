@@ -96,7 +96,7 @@ export class Job {
 
 const ENDPOINTS = {
     jobs: '/compute/jobs',
-    forJobId: (id: string) => `/compute/job/${id}`,
+    forJobId: (id: string) => `/compute/jobs/${id}`,
 };
 
 export namespace ComputeImpl {
