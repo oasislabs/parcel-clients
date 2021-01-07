@@ -113,6 +113,8 @@ export namespace DatasetImpl {
     ): Promise<Page<AccessEvent>> {
         const podPage = await client.get<Page<PODAccessEvent>>(endpointForId(id) + '/history', {
             ...filter,
+            // Dates must be string-ified since request parameters are of type JSONObject
+            // and doesn't support Date.
             after: filter?.after?.getTime(),
             before: filter?.before?.getTime(),
         });
