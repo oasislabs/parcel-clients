@@ -1,4 +1,4 @@
-import type { JsonObject, Opaque, Class } from 'type-fest';
+import type { JsonObject, Opaque } from 'type-fest';
 
 import type { HttpClient } from './http';
 import type { IdentityId } from './identity';
@@ -36,15 +36,15 @@ export type JobSpec = JsonObject & {
      * Environment variables to use when running the image. Setting `PATH` is
      * not allowed.
      */
-    env?: { [_: string]: string };
-    inputDatasets?: {
+    env?: Record<string, string>;
+    inputDatasets?: Array<{
         mountPath: string;
         id: DatasetId;
-    }[];
-    outputDatasets?: {
+    }>;
+    outputDatasets?: Array<{
         mountPath: string;
         owner?: IdentityId;
-    }[];
+    }>;
 };
 
 export type JobStatus = {
