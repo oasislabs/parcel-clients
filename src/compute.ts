@@ -9,7 +9,8 @@ export type JobId = Opaque<string, 'JobId'>;
 
 /**
  * A specification/manifest for the job. This is a complete description of what
- * and how the job should run. */
+ * and how the job should run.
+ */
 export type JobSpec = JsonObject & {
     /**
      * A human-readable name for the job. Intended to help with monitoring and
