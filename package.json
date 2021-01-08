@@ -79,6 +79,7 @@
         "eventemitter3": "^4.0.4",
         "form-data": "^3.0.0",
         "jsrsasign": "^10.0.0",
+        "minimist": "0.2.1",
         "param-case": "^3.0.3",
         "readable-stream": "^3.6.0",
         "type-fest": "^0.20.0"
