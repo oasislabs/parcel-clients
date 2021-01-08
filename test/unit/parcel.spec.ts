@@ -3,7 +3,7 @@ import Ajv from 'ajv';
 import nock from 'nock';
 import { paramCase } from 'param-case';
 import { Writable } from 'readable-stream';
-import type { JsonObject } from 'type-fest';
+import type { Except, JsonObject } from 'type-fest';
 import * as uuid from 'uuid';
 
 import Parcel from '@oasislabs/parcel';
@@ -60,7 +60,7 @@ const API_KEY = {
 } as const;
 // The public key is a copy of the private key, but without the "d" key.
 // We use slightly awkward syntax to make typescript type inference happy.
-const API_PUBLIC_KEY: Omit<typeof API_KEY, 'd'> = (() => {
+const API_PUBLIC_KEY: Except<typeof API_KEY, 'd'> = (() => {
     const { d: _, ...pub } = API_KEY;
     return pub;
 })();
