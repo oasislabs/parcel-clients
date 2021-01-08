@@ -43,7 +43,7 @@ declare global {
     // eslint-disable-next-line no-unused-vars
     interface Matchers<R> {
       toMatchSchema: (schema: string | JsonObject) => CustomMatcherResult;
-      toMatchPOD: <T extends PODModel | JsonObject>(pod: T) => CustomMatcherResult;
+            toMatchPOD: <T extends JsonObject>(pod: T) => CustomMatcherResult;
     }
   }
 }
@@ -58,7 +58,12 @@ const API_KEY = {
   y: 'xNSJVFo7gewNmv-7aKZUkZdjn0fVi25XQi1pxYGZpWU=',
   alg: 'ES256',
 } as const;
-const { d: _, ...API_PUBLIC_KEY } = API_KEY;
+// The public key is a copy of the private key, but without the "d" key.
+// We use slightly awkward syntax to make typescript type inference happy.
+const API_PUBLIC_KEY: Omit<typeof API_KEY, 'd'> = (() => {
+    const { d: _, ...pub } = API_KEY;
+    return pub;
+})();
 
 const API_TOKEN =
   'eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJwYXJjZWwiLCJpc3MiOiJhdXRoLm9hc2lzbGFicy5jb20ifQ.foQOs-KXhOP6Vlwfs1sYqW1whbG-QW29Ex4Xa_mNNXaT4T2xtCwghhYGurkVUYSlo4cRxoaQYKo_foC2KysaDQ';

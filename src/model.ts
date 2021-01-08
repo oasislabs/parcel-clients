@@ -2,7 +2,7 @@ import type { ConditionalExcept, Except, JsonObject, JsonValue } from 'type-fest
 
 export type ResourceId = string; // Format from runtime: `<resource>-<id>`
 
-export interface PODModel {
+export interface PODModel extends JsonObject {
     /** An undifferentiated model identifier. */
     id: ResourceId;
 
