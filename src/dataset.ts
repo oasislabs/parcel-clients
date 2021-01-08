@@ -62,6 +62,10 @@ export class Dataset implements Model {
     public async delete(): Promise<void> {
         return DatasetImpl.delete_(this.client, this.id);
     }
+
+    public async history(filter?: ListAccessLogFilter & PageParams): Promise<Page<AccessEvent>> {
+        return DatasetImpl.history(this.client, this.id, filter);
+    }
 }
 
 export namespace DatasetImpl {

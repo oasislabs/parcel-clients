@@ -10,7 +10,7 @@ import Parcel from '@oasislabs/parcel';
 import type { AppId, AppUpdateParams, PODApp } from '@oasislabs/parcel/app';
 import type { ClientId, ClientUpdateParams, PODClient } from '@oasislabs/parcel/client';
 import type { ConsentId, PODConsent } from '@oasislabs/parcel/consent';
-import type { DatasetId, PODDataset } from '@oasislabs/parcel/dataset';
+import type { DatasetId, PODAccessEvent, PODDataset } from '@oasislabs/parcel/dataset';
 import type { GrantId, PODGrant } from '@oasislabs/parcel/grant';
 import type { IdentityId, PODIdentity } from '@oasislabs/parcel/identity';
 import type { Page, PODModel } from '@oasislabs/parcel/model';
@@ -41,7 +41,7 @@ declare global {
         // eslint-disable-next-line no-unused-vars
         interface Matchers<R> {
             toMatchSchema: (schema: string | JsonObject) => CustomMatcherResult;
-            toMatchPOD: <T extends PODModel>(pod: T) => CustomMatcherResult;
+            toMatchPOD: <T>(pod: T) => CustomMatcherResult;
         }
     }
 }
@@ -249,6 +249,19 @@ describe('Parcel', () => {
         };
         expect(podDataset).toMatchSchema('Dataset');
         return podDataset;
+    }
+
+    function createPodAccessEvent(options?: {
+        dataset?: DatasetId;
+        accessor?: IdentityId;
+    }): PODAccessEvent {
+        const podAccessEvent = {
+            createdAt: new Date().toISOString(),
+            dataset: options?.dataset ?? createPodDataset().id,
+            accessor: options?.accessor ?? createPodIdentity().id,
+        };
+        expect(podAccessEvent).toMatchSchema('AccessEvent');
+        return podAccessEvent;
     }
 
     function createPodApp(): PODApp {
@@ -660,6 +673,85 @@ describe('Parcel', () => {
                 const download = parcel.downloadDataset(fixtureDataset.id as DatasetId);
                 const downloadCollector = new DownloadCollector({ error: new Error('whoops') });
                 await expect(download.pipeTo(downloadCollector)).rejects.toThrow('whoops');
+            });
+        });
+
+        describe('history', () => {
+            nockIt('no filter', async (scope) => {
+                scope.get(`/datasets/${fixtureDataset.id}`).reply(200, fixtureDataset);
+
+                const numberResults = 3;
+                const fixtureResultsPage: Page<PODAccessEvent> = createResultsPage(
+                    numberResults,
+                    createPodAccessEvent,
+                );
+                expect(fixtureResultsPage).toMatchSchema(
+                    getResponseSchema('GET', '/datasets/{dataset_id}/history', 200),
+                );
+
+                const dataset = await parcel.getDataset(fixtureDataset.id as DatasetId);
+
+                scope.get(`/datasets/${fixtureDataset.id}/history`).reply(200, fixtureResultsPage);
+
+                const { results, nextPageToken } = await dataset.history();
+                expect(results).toHaveLength(numberResults);
+                results.forEach((r, i) => expect(r).toMatchPOD(fixtureResultsPage.results[i]));
+                expect(nextPageToken).toEqual(fixtureResultsPage.nextPageToken);
+            });
+
+            nockIt('with filter and pagination', async (scope) => {
+                scope.get(`/datasets/${fixtureDataset.id}`).reply(200, fixtureDataset);
+
+                const numberResults = 1;
+                const fixtureResultsPage: Page<PODAccessEvent> = createResultsPage(
+                    numberResults,
+                    createPodAccessEvent,
+                );
+
+                const filterWithPagination = {
+                    accessor: fixtureDataset.owner as IdentityId,
+                    dataset: fixtureDataset.id as DatasetId,
+                    pageSize: 2,
+                    nextPageToken: uuid.v4(),
+                };
+                expect(filterWithPagination).toMatchSchema(
+                    getQueryParametersSchema('GET', '/datasets/{dataset_id}/history'),
+                );
+                scope
+                    .get(`/datasets/${fixtureDataset.id}/history`)
+                    .query(
+                        Object.fromEntries(
+                            Object.entries(filterWithPagination).map(([k, v]) => [paramCase(k), v]),
+                        ),
+                    )
+                    .reply(200, fixtureResultsPage);
+
+                const dataset = await parcel.getDataset(fixtureDataset.id as DatasetId);
+
+                const { results, nextPageToken } = await dataset.history(filterWithPagination);
+                expect(results).toHaveLength(numberResults);
+                results.forEach((r, i) => expect(r).toMatchPOD(fixtureResultsPage.results[i]));
+                expect(nextPageToken).toEqual(fixtureResultsPage.nextPageToken);
+            });
+
+            nockIt('by id', async (scope) => {
+                const numberResults = 3;
+                const fixtureResultsPage: Page<PODAccessEvent> = createResultsPage(
+                    numberResults,
+                    createPodAccessEvent,
+                );
+                expect(fixtureResultsPage).toMatchSchema(
+                    getResponseSchema('GET', '/datasets/{dataset_id}/history', 200),
+                );
+
+                scope.get(`/datasets/${fixtureDataset.id}/history`).reply(200, fixtureResultsPage);
+
+                const { results, nextPageToken } = await parcel.getDatasetHistory(
+                    fixtureDataset.id as DatasetId,
+                );
+                expect(results).toHaveLength(numberResults);
+                results.forEach((r, i) => expect(r).toMatchPOD(fixtureResultsPage.results[i]));
+                expect(nextPageToken).toEqual(fixtureResultsPage.nextPageToken);
             });
         });
 
