@@ -14,7 +14,7 @@ export type PODClient = PODModel & {
     name: string;
     redirectUris: string[];
     postLogoutRedirectUris: string[];
-    jsonWebKeys: PublicJWK[];
+    publicKeys: PublicJWK[];
     audience: string;
     canHoldSecrets: boolean;
     canActOnBehalfOfUsers: boolean;
@@ -29,7 +29,7 @@ export class Client implements Model {
     public name: string;
     public redirectUris: string[];
     public postLogoutRedirectUris: string[];
-    public jsonWebKeys: PublicJWK[];
+    public publicKeys: PublicJWK[];
     /** The allowed audience for this client's auth tokens. */
     public audience: string;
     public canHoldSecrets: boolean;
@@ -44,7 +44,7 @@ export class Client implements Model {
         this.name = pod.name;
         this.redirectUris = pod.redirectUris;
         this.postLogoutRedirectUris = pod.postLogoutRedirectUris;
-        this.jsonWebKeys = pod.jsonWebKeys;
+        this.publicKeys = pod.publicKeys;
         this.audience = pod.audience;
         this.canHoldSecrets = pod.canHoldSecrets;
         this.canActOnBehalfOfUsers = pod.canActOnBehalfOfUsers;

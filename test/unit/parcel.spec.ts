@@ -307,7 +307,7 @@ describe('Parcel', () => {
             postLogoutRedirectUris: options?.isScript
                 ? []
                 : ['https://example.com/post-logout-redirect'],
-            jsonWebKeys: options?.isScript
+            publicKeys: options?.isScript
                 ? [
                       {
                           use: 'sig',
@@ -1280,7 +1280,7 @@ describe('Parcel', () => {
                             'https://example.com/new-redirect',
                         ]),
                         postLogoutRedirectUris: [],
-                        jsonWebKeys: fixtureClient.jsonWebKeys,
+                        publicKeys: fixtureClient.publicKeys,
                         name: fixtureClient.name,
                     };
                     updatedClient = Object.assign(clone(fixtureClient), update);
