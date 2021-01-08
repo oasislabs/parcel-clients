@@ -291,6 +291,7 @@ describe('Parcel', () => {
             brandingColor: '#abcdef',
             category: 'testing',
             logoUrl: 'https://logos.gif',
+            trusted: false,
         };
         expect(podApp).toMatchSchema('App');
         return podApp;
@@ -302,7 +303,6 @@ describe('Parcel', () => {
             creator: createIdentityId(),
             appId: options?.appId ?? createPodApp().id,
             name: 'test client',
-            audience: 'https://example.com/audience',
             redirectUris: options?.isScript ? [] : ['https://example.com/redirect'],
             postLogoutRedirectUris: options?.isScript
                 ? []
@@ -940,6 +940,7 @@ describe('Parcel', () => {
             delete createParams.admins;
             delete createParams.participants;
             delete createParams.published;
+            delete createParams.trusted;
 
             expect(createParams).toMatchSchema(getRequestSchema('POST', '/apps'));
             scope.post('/apps', createParams).reply(201, fixtureApp);

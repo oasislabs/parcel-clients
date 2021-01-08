@@ -25,11 +25,12 @@ export type PODApp = PODModel & {
     organization: string;
     owner: ResourceId;
     participants: ResourceId[];
-    privacyPolicy: string;
     published: boolean;
     rejectionText?: string;
     shortDescription: string;
     termsAndConditions: string;
+    privacyPolicy: string;
+    trusted: boolean;
 };
 
 export class App implements Model {
@@ -81,6 +82,7 @@ export class App implements Model {
      * be used to search for the app.
      */
     public category?: string;
+    public trusted: boolean;
 
     public constructor(private readonly client: HttpClient, pod: PODApp) {
         this.acceptanceText = pod.acceptanceText;
@@ -106,6 +108,7 @@ export class App implements Model {
         this.shortDescription = pod.shortDescription;
         this.termsAndConditions = pod.termsAndConditions;
         this.logoUrl = pod.logoUrl;
+        this.trusted = pod.trusted;
     }
 
     public async update(params: AppUpdateParams): Promise<App> {
@@ -187,7 +190,7 @@ export type AppCreateParams =
           identityTokenVerifiers: IdentityTokenVerifier[];
       };
 
-export type AppUpdateParams = WritableExcluding<App, 'participants'>;
+export type AppUpdateParams = WritableExcluding<App, 'participants' | 'trusted'>;
 
 export type ListAppsFilter = Partial<{
     /** Only return Apps owned by the provided Identity. */

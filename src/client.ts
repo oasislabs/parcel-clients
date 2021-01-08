@@ -15,7 +15,6 @@ export type PODClient = PODModel & {
     redirectUris: string[];
     postLogoutRedirectUris: string[];
     publicKeys: PublicJWK[];
-    audience: string;
     canHoldSecrets: boolean;
     canActOnBehalfOfUsers: boolean;
     isScript: boolean;
@@ -30,8 +29,6 @@ export class Client implements Model {
     public redirectUris: string[];
     public postLogoutRedirectUris: string[];
     public publicKeys: PublicJWK[];
-    /** The allowed audience for this client's auth tokens. */
-    public audience: string;
     public canHoldSecrets: boolean;
     public canActOnBehalfOfUsers: boolean;
     public isScript: boolean;
@@ -45,7 +42,6 @@ export class Client implements Model {
         this.redirectUris = pod.redirectUris;
         this.postLogoutRedirectUris = pod.postLogoutRedirectUris;
         this.publicKeys = pod.publicKeys;
-        this.audience = pod.audience;
         this.canHoldSecrets = pod.canHoldSecrets;
         this.canActOnBehalfOfUsers = pod.canActOnBehalfOfUsers;
         this.isScript = pod.isScript;
@@ -122,7 +118,7 @@ const endpointForId = (appId: AppId, clientId: ClientId) =>
 export type ClientCreateParams = ClientUpdateParams;
 export type ClientUpdateParams = WritableExcluding<
     Client,
-    'creator' | 'appId' | 'audience' | 'canHoldSecrets' | 'canActOnBehalfOfUsers' | 'isScript'
+    'creator' | 'appId' | 'canHoldSecrets' | 'canActOnBehalfOfUsers' | 'isScript'
 >;
 
 export type ListClientsFilter = Partial<{
