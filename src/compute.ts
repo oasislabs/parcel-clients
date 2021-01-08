@@ -1,8 +1,8 @@
 import type { JsonObject, Opaque } from 'type-fest';
 
+import type { DatasetId } from './dataset';
 import type { HttpClient } from './http';
 import type { IdentityId } from './identity';
-import type { DatasetId } from './dataset';
 import type { Page, PageParams } from './model';
 
 export type JobId = Opaque<string, 'JobId'>;
@@ -16,6 +16,7 @@ export type JobSpec = JsonObject & {
      * debugging. The name SHOULD be unique among jobs submitted by the same
      * user. */
     name: string;
+
     /**
      * The command-line arguments to the command that should be run to start the
      * job. This corresponds to `CMD` in Docker terminology; note that images
@@ -25,6 +26,7 @@ export type JobSpec = JsonObject & {
      * of `ENTRYPOINT` and this field.
      */
     cmd: string[];
+
     /**
      * The name of the docker image to use, optionally prefixed with an image
      * repository hostname. See [docker
@@ -32,6 +34,7 @@ export type JobSpec = JsonObject & {
      * documentation for a full description of allowable formats.
      */
     image: string;
+
     /**
      * Environment variables to use when running the image. Setting `PATH` is
      * not allowed.
@@ -54,6 +57,7 @@ export type JobStatus = {
      * condition.
      */
     message?: string;
+
     /**
      * A reference to the worker hosting (running) this job, if any. This field
      * is intended for human reference/debugging only for now, so no semantics
@@ -72,6 +76,7 @@ export enum JobPhase {
 export type PODJob = JsonObject & {
     readonly id: JobId;
     readonly spec: JobSpec;
+
     /**
      * Most recently observed status of the pod. This data may not be up to
      * date. The data type is a mostly subset of [Kubernetes'
@@ -87,6 +92,7 @@ export class Job {
     public readonly id: JobId;
     public readonly spec: JobSpec;
     public readonly status: JobStatus;
+
     public constructor(pod: PODJob) {
         this.id = pod.id;
         this.spec = pod.spec;

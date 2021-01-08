@@ -14,8 +14,8 @@ import type { DatasetId, PODAccessEvent, PODDataset } from '@oasislabs/parcel/da
 import type { GrantId, PODGrant } from '@oasislabs/parcel/grant';
 import type { IdentityId, PODIdentity } from '@oasislabs/parcel/identity';
 import type { Page, PODModel } from '@oasislabs/parcel/model';
-import type { JobId, JobSpec, PODJob } from '@oasislabs/parcel/compute';
 import { JobPhase } from '@oasislabs/parcel/compute';
+import type { JobId, JobSpec, PODJob } from '@oasislabs/parcel/compute';
 
 const API_BASE_URL = 'https://api.oasislabs.com/parcel/v1';
 function nockIt(testName: string, test: (scope: nock.Scope) => Promise<void>): void {

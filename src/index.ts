@@ -22,6 +22,8 @@ import type {
   Storable,
   Upload,
 } from './dataset';
+import { ComputeImpl } from './compute';
+import type { Job, JobId, JobSpec, JobStatus } from './compute';
 import { GrantImpl } from './grant';
 import type { Grant, GrantCreateParams, GrantId } from './grant';
 import { HttpClient } from './http';
@@ -31,8 +33,6 @@ import type { Identity, IdentityCreateParams, IdentityId, IdentityUpdateParams }
 import type { Page, PageParams } from './model';
 import { TokenProvider } from './token';
 import type { ClientCredentials, PrivateJWK, PublicJWK, TokenSource } from './token';
-import { ComputeImpl } from './compute';
-import type { Job, JobId, JobSpec, JobStatus } from './compute';
 
 export {
   App,
@@ -199,40 +199,33 @@ export default class Parcel {
 
     /**
      * Enqueues a new job.
-     * @param requestBody The job to equeue.
-     * @result Job The new job.
-     * @throws ApiError
+     * @param spec Specification for the job to enqueue.
+     * @result Job The new job, including a newly-assigned ID.
      */
     public async submitJob(spec: JobSpec): Promise<Job> {
         return ComputeImpl.submitJob(this.client, spec);
     }
 
     /**
-     * Lists known jobs.
-     * Returns all known jobs owned by the current user. The dispatcher keeps track of jobs for at most 24h after they complete.
+     * Lists all known jobs owned by the current user. The dispatcher keeps track of jobs for at most 24h after they complete.
      * @param filter Controls pagination.
      * @result Job Lists known jobs. Includes recently completed jobs.
-     * @throws ApiError
      */
     public async listJobs(filter: PageParams = {}): Promise<Page<Job>> {
         return ComputeImpl.listJobs(this.client, filter);
     }
 
     /**
-     * Returns the status of a known job.
-     * @param jobId The unique identifier of the job.
-     * @result Job The requested job.
-     * @throws ApiError
+     * Returns the full description of a known job, including its status.
      */
     public async getJob(jobId: JobId): Promise<Job> {
         return ComputeImpl.getJob(this.client, jobId);
     }
 
     /**
-     * Asynchronously terminates a currently running job.
+     * Schedules the job for eventual termination/deletion. The job will be terminated at some point in the future on a best-effort basis.
+     * It is not an error to request to terminate an already-terminated or non-existing job.
      * @param jobId The unique identifier of the job.
-     * @result any The job is running or pending and its termination was successfully requested.
-     * @throws ApiError
      */
     public async terminateJob(jobId: JobId): Promise<void> {
         return ComputeImpl.terminateJob(this.client, jobId);
