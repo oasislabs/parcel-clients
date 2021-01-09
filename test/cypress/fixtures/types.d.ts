@@ -5,7 +5,7 @@
 import Parcel from '../../../src';
 type ParcelClass = typeof Parcel;
 declare global {
-    interface Window {
-        Parcel: ParcelClass;
-    }
+  interface Window {
+    Parcel: ParcelClass;
+  }
 }

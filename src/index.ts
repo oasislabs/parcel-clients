@@ -2,25 +2,25 @@ import { AppImpl } from './app';
 import type { App, AppCreateParams, AppId, AppUpdateParams, ListAppsFilter } from './app';
 import { ClientImpl } from './client';
 import type {
-    Client,
-    ClientCreateParams,
-    ClientId,
-    ClientUpdateParams,
-    ListClientsFilter,
+  Client,
+  ClientCreateParams,
+  ClientId,
+  ClientUpdateParams,
+  ListClientsFilter,
 } from './client';
 import { ConsentImpl } from './consent';
 import type { Consent, ConsentCreateParams, ConsentId } from './consent';
 import { DatasetImpl } from './dataset';
 import type {
-    AccessEvent,
-    Dataset,
-    DatasetId,
-    DatasetUpdateParams,
-    DatasetUploadParams,
-    ListAccessLogFilter,
-    ListDatasetsFilter,
-    Storable,
-    Upload,
+  AccessEvent,
+  Dataset,
+  DatasetId,
+  DatasetUpdateParams,
+  DatasetUploadParams,
+  ListAccessLogFilter,
+  ListDatasetsFilter,
+  Storable,
+  Upload,
 } from './dataset';
 import { GrantImpl } from './grant';
 import type { Grant, GrantCreateParams, GrantId } from './grant';
@@ -33,163 +33,163 @@ import { TokenProvider } from './token';
 import type { ClientCredentials, PrivateJWK, PublicJWK, TokenSource } from './token';
 
 export {
-    App,
-    AppCreateParams,
-    AppId,
-    AppUpdateParams,
-    Client,
-    ClientCredentials,
-    Consent,
-    ConsentCreateParams,
-    ConsentId,
-    Dataset,
-    DatasetId,
-    DatasetUpdateParams,
-    DatasetUploadParams,
-    Grant,
-    GrantCreateParams,
-    GrantId,
-    Identity,
-    IdentityCreateParams,
-    IdentityId,
-    IdentityUpdateParams,
-    Page,
-    PageParams,
-    PrivateJWK,
-    PublicJWK,
-    Storable,
-    TokenSource,
+  App,
+  AppCreateParams,
+  AppId,
+  AppUpdateParams,
+  Client,
+  ClientCredentials,
+  Consent,
+  ConsentCreateParams,
+  ConsentId,
+  Dataset,
+  DatasetId,
+  DatasetUpdateParams,
+  DatasetUploadParams,
+  Grant,
+  GrantCreateParams,
+  GrantId,
+  Identity,
+  IdentityCreateParams,
+  IdentityId,
+  IdentityUpdateParams,
+  Page,
+  PageParams,
+  PrivateJWK,
+  PublicJWK,
+  Storable,
+  TokenSource,
 };
 
 export default class Parcel {
-    private currentIdentity?: Identity;
-    private readonly client: HttpClient;
+  private currentIdentity?: Identity;
+  private readonly client: HttpClient;
 
-    public constructor(tokenSource: TokenSource, config?: Config) {
-        const tokenProvider = TokenProvider.fromSource(tokenSource);
-        this.client = new HttpClient(tokenProvider, {
-            apiUrl: config?.apiUrl,
-            httpClient: config?.httpClient,
-        });
+  public constructor(tokenSource: TokenSource, config?: Config) {
+    const tokenProvider = TokenProvider.fromSource(tokenSource);
+    this.client = new HttpClient(tokenProvider, {
+      apiUrl: config?.apiUrl,
+      httpClient: config?.httpClient,
+    });
+  }
+
+  public get apiUrl() {
+    return this.client.apiUrl;
+  }
+
+  public async createIdentity(params: IdentityCreateParams): Promise<Identity> {
+    return IdentityImpl.create(this.client, params);
+  }
+
+  public async getCurrentIdentity(): Promise<Identity> {
+    if (!this.currentIdentity) {
+      this.currentIdentity = await IdentityImpl.current(this.client);
     }
 
-    public get apiUrl() {
-        return this.client.apiUrl;
-    }
+    return this.currentIdentity;
+  }
 
-    public async createIdentity(params: IdentityCreateParams): Promise<Identity> {
-        return IdentityImpl.create(this.client, params);
-    }
+  public uploadDataset(data: Storable, params?: DatasetUploadParams): Upload {
+    return DatasetImpl.upload(this.client, data, params);
+  }
 
-    public async getCurrentIdentity(): Promise<Identity> {
-        if (!this.currentIdentity) {
-            this.currentIdentity = await IdentityImpl.current(this.client);
-        }
+  public async getDataset(id: DatasetId): Promise<Dataset> {
+    return DatasetImpl.get(this.client, id);
+  }
 
-        return this.currentIdentity;
-    }
+  public async listDatasets(filter?: ListDatasetsFilter & PageParams): Promise<Page<Dataset>> {
+    return DatasetImpl.list(this.client, filter);
+  }
 
-    public uploadDataset(data: Storable, params?: DatasetUploadParams): Upload {
-        return DatasetImpl.upload(this.client, data, params);
-    }
+  public downloadDataset(id: DatasetId): Download {
+    return DatasetImpl.download(this.client, id);
+  }
 
-    public async getDataset(id: DatasetId): Promise<Dataset> {
-        return DatasetImpl.get(this.client, id);
-    }
+  public async getDatasetHistory(
+    id: DatasetId,
+    filter?: ListAccessLogFilter & PageParams,
+  ): Promise<Page<AccessEvent>> {
+    return DatasetImpl.history(this.client, id, filter);
+  }
 
-    public async listDatasets(filter?: ListDatasetsFilter & PageParams): Promise<Page<Dataset>> {
-        return DatasetImpl.list(this.client, filter);
-    }
+  public async updateDataset(id: DatasetId, update: DatasetUpdateParams): Promise<Dataset> {
+    return DatasetImpl.update(this.client, id, update);
+  }
 
-    public downloadDataset(id: DatasetId): Download {
-        return DatasetImpl.download(this.client, id);
-    }
+  public async deleteDataset(id: DatasetId): Promise<void> {
+    return DatasetImpl.delete_(this.client, id);
+  }
 
-    public async getDatasetHistory(
-        id: DatasetId,
-        filter?: ListAccessLogFilter & PageParams,
-    ): Promise<Page<AccessEvent>> {
-        return DatasetImpl.history(this.client, id, filter);
-    }
+  public async createApp(params: AppCreateParams): Promise<App> {
+    return AppImpl.create(this.client, params);
+  }
 
-    public async updateDataset(id: DatasetId, update: DatasetUpdateParams): Promise<Dataset> {
-        return DatasetImpl.update(this.client, id, update);
-    }
+  public async getApp(id: AppId): Promise<App> {
+    return AppImpl.get(this.client, id);
+  }
 
-    public async deleteDataset(id: DatasetId): Promise<void> {
-        return DatasetImpl.delete_(this.client, id);
-    }
+  public async listApps(filter?: ListAppsFilter & PageParams): Promise<Page<App>> {
+    return AppImpl.list(this.client, filter);
+  }
 
-    public async createApp(params: AppCreateParams): Promise<App> {
-        return AppImpl.create(this.client, params);
-    }
+  public async updateApp(id: AppId, update: AppUpdateParams): Promise<App> {
+    return AppImpl.update(this.client, id, update);
+  }
 
-    public async getApp(id: AppId): Promise<App> {
-        return AppImpl.get(this.client, id);
-    }
+  public async deleteApp(id: AppId): Promise<void> {
+    return AppImpl.delete_(this.client, id);
+  }
 
-    public async listApps(filter?: ListAppsFilter & PageParams): Promise<Page<App>> {
-        return AppImpl.list(this.client, filter);
-    }
+  public async createConsent(appId: AppId, params: ConsentCreateParams): Promise<Consent> {
+    return ConsentImpl.create(this.client, appId, params);
+  }
 
-    public async updateApp(id: AppId, update: AppUpdateParams): Promise<App> {
-        return AppImpl.update(this.client, id, update);
-    }
+  public async listConsents(appId: AppId, filter: PageParams): Promise<Page<Consent>> {
+    return ConsentImpl.list(this.client, appId, filter);
+  }
 
-    public async deleteApp(id: AppId): Promise<void> {
-        return AppImpl.delete_(this.client, id);
-    }
+  public async deleteConsent(appId: AppId, consentId: ConsentId): Promise<void> {
+    return ConsentImpl.delete_(this.client, appId, consentId);
+  }
 
-    public async createConsent(appId: AppId, params: ConsentCreateParams): Promise<Consent> {
-        return ConsentImpl.create(this.client, appId, params);
-    }
+  public async createClient(appId: AppId, params: ClientCreateParams): Promise<Client> {
+    return ClientImpl.create(this.client, appId, params);
+  }
 
-    public async listConsents(appId: AppId, filter: PageParams): Promise<Page<Consent>> {
-        return ConsentImpl.list(this.client, appId, filter);
-    }
+  public async getClient(appId: AppId, clientId: ClientId): Promise<Client> {
+    return ClientImpl.get(this.client, appId, clientId);
+  }
 
-    public async deleteConsent(appId: AppId, consentId: ConsentId): Promise<void> {
-        return ConsentImpl.delete_(this.client, appId, consentId);
-    }
+  public async listClients(
+    appId: AppId,
+    filter?: ListClientsFilter & PageParams,
+  ): Promise<Page<Client>> {
+    return ClientImpl.list(this.client, appId, filter);
+  }
 
-    public async createClient(appId: AppId, params: ClientCreateParams): Promise<Client> {
-        return ClientImpl.create(this.client, appId, params);
-    }
+  public async updateClient(
+    appId: AppId,
+    clientId: ClientId,
+    update: ClientUpdateParams,
+  ): Promise<Client> {
+    return ClientImpl.update(this.client, appId, clientId, update);
+  }
 
-    public async getClient(appId: AppId, clientId: ClientId): Promise<Client> {
-        return ClientImpl.get(this.client, appId, clientId);
-    }
+  public async deleteClient(appId: AppId, clientId: ClientId): Promise<void> {
+    return ClientImpl.delete_(this.client, appId, clientId);
+  }
 
-    public async listClients(
-        appId: AppId,
-        filter?: ListClientsFilter & PageParams,
-    ): Promise<Page<Client>> {
-        return ClientImpl.list(this.client, appId, filter);
-    }
+  public async createGrant(params: GrantCreateParams): Promise<Grant> {
+    return GrantImpl.create(this.client, params);
+  }
 
-    public async updateClient(
-        appId: AppId,
-        clientId: ClientId,
-        update: ClientUpdateParams,
-    ): Promise<Client> {
-        return ClientImpl.update(this.client, appId, clientId, update);
-    }
+  public async getGrant(id: GrantId): Promise<Grant> {
+    return GrantImpl.get(this.client, id);
+  }
 
-    public async deleteClient(appId: AppId, clientId: ClientId): Promise<void> {
-        return ClientImpl.delete_(this.client, appId, clientId);
-    }
-
-    public async createGrant(params: GrantCreateParams): Promise<Grant> {
-        return GrantImpl.create(this.client, params);
-    }
-
-    public async getGrant(id: GrantId): Promise<Grant> {
-        return GrantImpl.get(this.client, id);
-    }
-
-    public async deleteGrant(id: GrantId): Promise<void> {
-        return GrantImpl.delete_(this.client, id);
-    }
+  public async deleteGrant(id: GrantId): Promise<void> {
+    return GrantImpl.delete_(this.client, id);
+  }
 }
 
 export type Config = ClientConfig;

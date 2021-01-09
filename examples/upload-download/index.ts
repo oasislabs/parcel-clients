@@ -1,12 +1,12 @@
 /// <reference types="@types/parcel-env" />
 
 declare global {
-    interface Window {
-        setApiCredentials: () => Promise<void>;
-        uploadDataset: () => Promise<void>;
-        downloadDataset: (id: string) => Promise<void>;
-        listUploadedDatasets: () => Promise<void>;
-    }
+  interface Window {
+    setApiCredentials: () => Promise<void>;
+    uploadDataset: () => Promise<void>;
+    downloadDataset: (id: string) => Promise<void>;
+    listUploadedDatasets: () => Promise<void>;
+  }
 }
 
 import Parcel, { DatasetId } from '../../src';
@@ -20,9 +20,9 @@ streamSaver.WritableStream = WritableStream;
 if (module.hot) module.hot.accept();
 
 const $ = <T extends Element = Element>(selector: string) => {
-    const element = document.querySelector<T>(selector);
-    if (!element) throw new Error(`\`${selector}\` did not match any elements`);
-    return element;
+  const element = document.querySelector<T>(selector);
+  if (!element) throw new Error(`\`${selector}\` did not match any elements`);
+  return element;
 };
 
 const apiCreds: HTMLTextAreaElement = $('#api-creds');
@@ -39,60 +39,60 @@ let parcel: Parcel;
 document.body.setAttribute('pre-auth', 'pre-auth');
 
 window.setApiCredentials = async function () {
-    setupErrorSpan.classList.remove('visible');
+  setupErrorSpan.classList.remove('visible');
 
-    const creds = apiCreds.value;
-    const tokenSource = await (async () => JSON.parse(creds))().catch(() => creds);
+  const creds = apiCreds.value;
+  const tokenSource = await (async () => JSON.parse(creds))().catch(() => creds);
 
-    try {
-        parcel = new Parcel(tokenSource, {
-            apiUrl: process.env.API,
-        });
-        await parcel.getCurrentIdentity();
-        document.body.removeAttribute('pre-auth');
-        void window.listUploadedDatasets();
-    } catch (error: any) {
-        console.error(error);
-        setupErrorSpan.textContent = error.toString();
-        setupErrorSpan.classList.add('visible');
-    }
+  try {
+    parcel = new Parcel(tokenSource, {
+      apiUrl: process.env.API,
+    });
+    await parcel.getCurrentIdentity();
+    document.body.removeAttribute('pre-auth');
+    void window.listUploadedDatasets();
+  } catch (error: any) {
+    console.error(error);
+    setupErrorSpan.textContent = error.toString();
+    setupErrorSpan.classList.add('visible');
+  }
 };
 
 window.uploadDataset = async function () {
-    const datasetFile = datasetPicker.files![0];
-    const dataset = await parcel.uploadDataset(datasetFile, {
-        details: { title: datasetName.value },
-    }).finished;
-    addDatasetToList(dataset.id, dataset.details.title);
+  const datasetFile = datasetPicker.files![0];
+  const dataset = await parcel.uploadDataset(datasetFile, {
+    details: { title: datasetName.value },
+  }).finished;
+  addDatasetToList(dataset.id, dataset.details.title);
 };
 
 window.downloadDataset = async function (id: string) {
-    const download = parcel.downloadDataset(id as DatasetId);
-    const saver = streamSaver.createWriteStream(`dataset-${id}`);
-    await download.pipeTo(saver);
+  const download = parcel.downloadDataset(id as DatasetId);
+  const saver = streamSaver.createWriteStream(`dataset-${id}`);
+  await download.pipeTo(saver);
 };
 
 window.listUploadedDatasets = async function () {
-    if (!parcel) return;
-    const uploadedDatasets = (
-        await parcel.listDatasets({
-            creator: (await parcel.getCurrentIdentity()).id,
-        })
-    ).results;
+  if (!parcel) return;
+  const uploadedDatasets = (
+    await parcel.listDatasets({
+      creator: (await parcel.getCurrentIdentity()).id,
+    })
+  ).results;
 
-    while (datasetsList.lastChild) datasetsList.lastChild.remove();
-    uploadedDatasets.forEach((d) => addDatasetToList(d.id, d.details.title));
+  while (datasetsList.lastChild) datasetsList.lastChild.remove();
+  uploadedDatasets.forEach((d) => addDatasetToList(d.id, d.details.title));
 };
 
 function addDatasetToList(id: string, name?: string) {
-    const datasetItem = document.createElement('li');
-    const datasetLink = document.createElement('a');
+  const datasetItem = document.createElement('li');
+  const datasetLink = document.createElement('a');
 
-    datasetLink.href = `javascript:downloadDataset('${id}')`;
-    datasetLink.textContent = `${name ?? 'Untitled'} (${id})`;
+  datasetLink.href = `javascript:downloadDataset('${id}')`;
+  datasetLink.textContent = `${name ?? 'Untitled'} (${id})`;
 
-    datasetItem.append(datasetLink);
-    datasetsList.append(datasetItem);
+  datasetItem.append(datasetLink);
+  datasetsList.append(datasetItem);
 }
 
 // $('#api-creds-modal form').submit(); // For debugging: auto-login
