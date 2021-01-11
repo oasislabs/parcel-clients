@@ -55,10 +55,10 @@ export {
   IdentityCreateParams,
   IdentityId,
   IdentityUpdateParams,
-    Job,
-    JobId,
-    JobSpec,
-    JobStatus,
+  Job,
+  JobId,
+  JobSpec,
+  JobStatus,
   Page,
   PageParams,
   PrivateJWK,
@@ -197,39 +197,39 @@ export default class Parcel {
     return GrantImpl.delete_(this.client, id);
   }
 
-    /**
-     * Enqueues a new job.
-     * @param spec Specification for the job to enqueue.
-     * @result Job The new job, including a newly-assigned ID.
-     */
-    public async submitJob(spec: JobSpec): Promise<Job> {
-        return ComputeImpl.submitJob(this.client, spec);
-    }
+  /**
+   * Enqueues a new job.
+   * @param spec Specification for the job to enqueue.
+   * @result Job The new job, including a newly-assigned ID.
+   */
+  public async submitJob(spec: JobSpec): Promise<Job> {
+    return ComputeImpl.submitJob(this.client, spec);
+  }
 
-    /**
-     * Lists all known jobs owned by the current user. The dispatcher keeps track of jobs for at most 24h after they complete.
-     * @param filter Controls pagination.
-     * @result Job Lists known jobs. Includes recently completed jobs.
-     */
-    public async listJobs(filter: PageParams = {}): Promise<Page<Job>> {
-        return ComputeImpl.listJobs(this.client, filter);
-    }
+  /**
+   * Lists all known jobs owned by the current user. The dispatcher keeps track of jobs for at most 24h after they complete.
+   * @param filter Controls pagination.
+   * @result Job Lists known jobs. Includes recently completed jobs.
+   */
+  public async listJobs(filter: PageParams = {}): Promise<Page<Job>> {
+    return ComputeImpl.listJobs(this.client, filter);
+  }
 
-    /**
-     * Returns the full description of a known job, including its status.
-     */
-    public async getJob(jobId: JobId): Promise<Job> {
-        return ComputeImpl.getJob(this.client, jobId);
-    }
+  /**
+   * Returns the full description of a known job, including its status.
+   */
+  public async getJob(jobId: JobId): Promise<Job> {
+    return ComputeImpl.getJob(this.client, jobId);
+  }
 
-    /**
-     * Schedules the job for eventual termination/deletion. The job will be terminated at some point in the future on a best-effort basis.
-     * It is not an error to request to terminate an already-terminated or non-existing job.
-     * @param jobId The unique identifier of the job.
-     */
-    public async terminateJob(jobId: JobId): Promise<void> {
-        return ComputeImpl.terminateJob(this.client, jobId);
-    }
+  /**
+   * Schedules the job for eventual termination/deletion. The job will be terminated at some point in the future on a best-effort basis.
+   * It is not an error to request to terminate an already-terminated or non-existing job.
+   * @param jobId The unique identifier of the job.
+   */
+  public async terminateJob(jobId: JobId): Promise<void> {
+    return ComputeImpl.terminateJob(this.client, jobId);
+  }
 }
 
 export type Config = ClientConfig;
