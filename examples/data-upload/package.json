@@ -1,0 +1,18 @@
+{
+    "private": true,
+    "name": "@oasislabs/parcel-examples-data-upload",
+    "version": "1.0.0",
+    "main": "./src/main.ts",
+    "license": "MIT",
+    "author": "Oasis Labs <feedback@oasislabs.com>",
+    "scripts": {
+        "prestart": "tsc -b",
+        "start": "node bin/main.js"
+    },
+    "dependencies": {
+        "@oasislabs/parcel": "file:../.."
+    },
+    "devDependencies": {
+        "typescript": "^4.1.2"
+    }
+}
