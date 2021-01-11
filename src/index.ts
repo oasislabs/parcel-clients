@@ -1,6 +1,5 @@
-import { AppImpl } from './app';
 import type { App, AppCreateParams, AppId, AppUpdateParams, ListAppsFilter } from './app';
-import { ClientImpl } from './client';
+import { AppImpl } from './app';
 import type {
   Client,
   ClientCreateParams,
@@ -8,9 +7,9 @@ import type {
   ClientUpdateParams,
   ListClientsFilter,
 } from './client';
-import { ConsentImpl } from './consent';
+import { ClientImpl } from './client';
 import type { Consent, ConsentCreateParams, ConsentId } from './consent';
-import { DatasetImpl } from './dataset';
+import { ConsentImpl } from './consent';
 import type {
   AccessEvent,
   Dataset,
@@ -22,17 +21,18 @@ import type {
   Storable,
   Upload,
 } from './dataset';
-import { ComputeImpl } from './compute';
+import { DatasetImpl } from './dataset';
 import type { Job, JobId, JobSpec, JobStatus } from './compute';
-import { GrantImpl } from './grant';
+import { ComputeImpl } from './compute';
 import type { Grant, GrantCreateParams, GrantId } from './grant';
-import { HttpClient } from './http';
+import { GrantImpl } from './grant';
 import type { Config as ClientConfig, Download } from './http';
-import { IdentityImpl } from './identity';
+import { HttpClient } from './http';
 import type { Identity, IdentityCreateParams, IdentityId, IdentityUpdateParams } from './identity';
+import { IdentityImpl } from './identity';
 import type { Page, PageParams } from './model';
-import { TokenProvider } from './token';
 import type { ClientCredentials, PrivateJWK, PublicJWK, TokenSource } from './token';
+import { TokenProvider } from './token';
 
 export {
   App,

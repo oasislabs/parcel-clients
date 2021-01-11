@@ -10,12 +10,12 @@ import Parcel from '@oasislabs/parcel';
 import type { AppId, AppUpdateParams, PODApp } from '@oasislabs/parcel/app';
 import type { ClientId, ClientUpdateParams, PODClient } from '@oasislabs/parcel/client';
 import type { ConsentId, PODConsent } from '@oasislabs/parcel/consent';
+import type { JobId, JobSpec, PODJob } from '@oasislabs/parcel/compute';
+import { JobPhase } from '@oasislabs/parcel/compute';
 import type { DatasetId, PODAccessEvent, PODDataset } from '@oasislabs/parcel/dataset';
 import type { GrantId, PODGrant } from '@oasislabs/parcel/grant';
 import type { IdentityId, PODIdentity } from '@oasislabs/parcel/identity';
 import type { Page, PODModel } from '@oasislabs/parcel/model';
-import { JobPhase } from '@oasislabs/parcel/compute';
-import type { JobId, JobSpec, PODJob } from '@oasislabs/parcel/compute';
 
 const API_BASE_URL = 'https://api.oasislabs.com/parcel/v1';
 function nockIt(testName: string, test: (scope: nock.Scope) => Promise<void>): void {
