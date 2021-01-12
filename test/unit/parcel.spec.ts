@@ -3,12 +3,17 @@ import Ajv from 'ajv';
 import nock from 'nock';
 import { paramCase } from 'param-case';
 import { Writable } from 'readable-stream';
-import type { Except, JsonObject } from 'type-fest';
+import type { JsonObject } from 'type-fest';
 import * as uuid from 'uuid';
 
 import Parcel from '@oasislabs/parcel';
 import type { AppId, AppUpdateParams, PODApp } from '@oasislabs/parcel/app';
-import type { ClientId, ClientUpdateParams, PODClient } from '@oasislabs/parcel/client';
+import type {
+  ClientCreateParams,
+  ClientId,
+  ClientUpdateParams,
+  PODClient,
+} from '@oasislabs/parcel/client';
 import type { ConsentId, PODConsent } from '@oasislabs/parcel/consent';
 import type { JobId, JobSpec, PODJob } from '@oasislabs/parcel/compute';
 import { JobPhase } from '@oasislabs/parcel/compute';
@@ -16,6 +21,7 @@ import type { DatasetId, PODAccessEvent, PODDataset } from '@oasislabs/parcel/da
 import type { GrantId, PODGrant } from '@oasislabs/parcel/grant';
 import type { IdentityId, PODIdentity } from '@oasislabs/parcel/identity';
 import type { Page, PODModel } from '@oasislabs/parcel/model';
+import type { PublicJWK } from '@oasislabs/parcel/token';
 
 const API_BASE_URL = 'https://api.oasislabs.com/parcel/v1';
 function nockIt(testName: string, test: (scope: nock.Scope) => Promise<void>): void {
@@ -60,7 +66,7 @@ const API_KEY = {
 } as const;
 // The public key is a copy of the private key, but without the "d" key.
 // We use slightly awkward syntax to make typescript type inference happy.
-const API_PUBLIC_KEY: Except<typeof API_KEY, 'd'> = (() => {
+const API_PUBLIC_KEY: PublicJWK = (() => {
   const { d: _, ...pub } = API_KEY;
   return pub;
 })();
@@ -1158,14 +1164,10 @@ describe('Parcel', () => {
       });
 
       nockIt('create', async (scope) => {
-        const createParams: any /* ClientCreateParams & PODClient */ = {
-          ...clone(fixtureClient),
-        };
-        delete createParams.id;
-        delete createParams.createdAt;
-        delete createParams.creator;
-        delete createParams.appId;
-        delete createParams.canActOnBehalfOfUsers;
+        const createParams: ClientCreateParams = (() => {
+          const { id, createdAt, creator, appId, ...createParams } = clone(fixtureClient);
+          return createParams;
+        })();
 
         expect(createParams).toMatchSchema(getRequestSchema('POST', '/apps/{app_id}/clients'));
         scope.post(`/apps/${fixtureApp.id}/clients`, createParams).reply(201, fixtureClient);
