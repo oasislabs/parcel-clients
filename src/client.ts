@@ -1,4 +1,4 @@
-import type { Opaque } from 'type-fest';
+import type { Except, Opaque } from 'type-fest';
 
 import type { AppId } from './app';
 import type { HttpClient } from './http';
@@ -111,10 +111,10 @@ const endpointForCollection = (appId: AppId) => `/apps/${appId}/clients`;
 const endpointForId = (appId: AppId, clientId: ClientId) =>
   `${endpointForCollection(appId)}/${clientId}`;
 
-export type ClientCreateParams = ClientUpdateParams;
-export type ClientUpdateParams = WritableExcluding<
-  Client,
-  'creator' | 'appId' | 'canHoldSecrets' | 'canActOnBehalfOfUsers' | 'isScript'
+export type ClientCreateParams = WritableExcluding<Client, 'creator' | 'appId'>;
+export type ClientUpdateParams = Except<
+  ClientCreateParams,
+  'canHoldSecrets' | 'canActOnBehalfOfUsers' | 'isScript'
 >;
 
 export type ListClientsFilter = Partial<{
