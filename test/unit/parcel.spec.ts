@@ -1165,7 +1165,9 @@ describe('Parcel', () => {
 
       nockIt('create', async (scope) => {
         const createParams: ClientCreateParams = (() => {
-          const { id, createdAt, creator, appId, ...createParams } = clone(fixtureClient);
+          const { id, createdAt, creator, appId, canActOnBehalfOfUsers, ...createParams } = clone(
+            fixtureClient,
+          );
           return createParams;
         })();
 

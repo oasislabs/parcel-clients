@@ -111,11 +111,11 @@ const endpointForCollection = (appId: AppId) => `/apps/${appId}/clients`;
 const endpointForId = (appId: AppId, clientId: ClientId) =>
   `${endpointForCollection(appId)}/${clientId}`;
 
-export type ClientCreateParams = WritableExcluding<Client, 'creator' | 'appId'>;
-export type ClientUpdateParams = Except<
-  ClientCreateParams,
-  'canHoldSecrets' | 'canActOnBehalfOfUsers' | 'isScript'
+export type ClientCreateParams = WritableExcluding<
+  Client,
+  'creator' | 'appId' | 'canActOnBehalfOfUsers'
 >;
+export type ClientUpdateParams = Except<ClientCreateParams, 'canHoldSecrets' | 'isScript'>;
 
 export type ListClientsFilter = Partial<{
   /** Only return clients created by the provided identity. */
