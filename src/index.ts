@@ -35,6 +35,7 @@ import type { ClientCredentials, PrivateJWK, PublicJWK, TokenSource } from './to
 import { TokenProvider } from './token';
 
 export {
+  AccessEvent,
   App,
   AppCreateParams,
   AppId,
