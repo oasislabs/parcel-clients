@@ -1,7 +1,5 @@
 # Compiled javascript.
 bin/
-# Lock file produced by npm. Examples should always be run from the fresh version of packages.
-package-lock.json
 # Example-specific files.
 bob_data_by_acme
 bob_data_by_bob
