@@ -1,7 +1,6 @@
 {
-    "inputFiles": ["src"],
+    "entryPoints": ["src"],
     "exclude": ["examples"],
-    "mode": "file",
     "out": "docs/typedoc",
     "includeVersion": true
 }
