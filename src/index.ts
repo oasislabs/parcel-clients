@@ -25,7 +25,7 @@ import { DatasetImpl } from './dataset';
 import type { Job, JobId, JobSpec, JobStatus } from './compute';
 import { ComputeImpl } from './compute';
 import type { Grant, GrantCreateParams, GrantId } from './grant';
-import { GrantImpl } from './grant';
+import { GrantImpl, ListGrantsFilter } from './grant';
 import type { Config as ClientConfig, Download } from './http';
 import { HttpClient } from './http';
 import type { Identity, IdentityCreateParams, IdentityId, IdentityUpdateParams } from './identity';
@@ -192,6 +192,10 @@ export default class Parcel {
 
   public async getGrant(id: GrantId): Promise<Grant> {
     return GrantImpl.get(this.client, id);
+  }
+
+  public async listGrants(filter?: ListGrantsFilter & PageParams): Promise<Page<Grant>> {
+    return GrantImpl.list(this.client, filter);
   }
 
   public async deleteGrant(id: GrantId): Promise<void> {

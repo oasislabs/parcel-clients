@@ -146,9 +146,11 @@ describe('Parcel', () => {
   type HttpVerb = 'GET' | 'POST' | 'PUT' | 'DELETE';
 
   function getRequestSchema(method: HttpVerb, endpoint: string): JsonObject {
-    let schema =
+    let schema = Object.assign(
+      {},
       openapiSchema.paths[endpoint][method.toLowerCase()].requestBody.content['application/json']
-        .schema;
+        .schema,
+    );
     if (schema.allOf) schema = mergeAllOf(schema.allOf);
     for (const [propertyName, property] of Object.entries(schema.properties)) {
       if ((property as any).readOnly) {
@@ -914,6 +916,46 @@ describe('Parcel', () => {
       scope.get(`/grants/${fixtureGrant.id}`).reply(200, JSON.stringify(fixtureGrant));
       const grant = await parcel.getGrant(fixtureGrant.id as GrantId);
       expect(grant).toMatchPOD(fixtureGrant);
+    });
+
+    describe('list', () => {
+      nockIt('no filter', async (scope) => {
+        const numberResults = 3;
+        const fixtureResultsPage: Page<PODGrant> = createResultsPage(numberResults, createPodGrant);
+        expect(fixtureResultsPage).toMatchSchema(getResponseSchema('GET', '/grants', 200));
+
+        scope.get('/grants').reply(200, fixtureResultsPage);
+
+        const { results, nextPageToken } = await parcel.listGrants();
+        expect(results).toHaveLength(numberResults);
+        results.forEach((r, i) => expect(r).toMatchPOD(fixtureResultsPage.results[i]));
+        expect(nextPageToken).toEqual(fixtureResultsPage.nextPageToken);
+      });
+
+      nockIt('with filter and pagination', async (scope) => {
+        const numberResults = 1;
+        const fixtureResultsPage: Page<PODGrant> = createResultsPage(numberResults, createPodGrant);
+        const filterWithPagination = {
+          grantee: createPodApp().id as AppId,
+          pageSize: 2,
+          nextPageToken: uuid.v4(),
+        };
+        expect(filterWithPagination).toMatchSchema(getQueryParametersSchema('GET', '/grants'));
+
+        scope
+          .get('/grants')
+          .query(
+            Object.fromEntries(
+              Object.entries(filterWithPagination).map(([k, v]) => [paramCase(k), v]),
+            ),
+          )
+          .reply(200, fixtureResultsPage);
+
+        const { results, nextPageToken } = await parcel.listGrants(filterWithPagination);
+        expect(results).toHaveLength(numberResults);
+        results.forEach((r, i) => expect(r).toMatchPOD(fixtureResultsPage.results[i]));
+        expect(nextPageToken).toEqual(fixtureResultsPage.nextPageToken);
+      });
     });
 
     describe('delete', () => {

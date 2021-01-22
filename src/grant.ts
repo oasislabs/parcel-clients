@@ -4,7 +4,7 @@ import type { ConsentId } from './consent';
 import type { Constraints } from './filter';
 import type { HttpClient } from './http';
 import type { IdentityId } from './identity';
-import type { Model, PODModel, ResourceId } from './model';
+import type { Model, Page, PageParams, PODModel, ResourceId } from './model';
 
 export type GrantId = Opaque<ResourceId>;
 
@@ -67,7 +67,27 @@ export namespace GrantImpl {
     return client.get<PODGrant>(endpointForId(id)).then((podGrant) => new Grant(client, podGrant));
   }
 
+  export async function list(
+    client: HttpClient,
+    filter?: ListGrantsFilter & PageParams,
+  ): Promise<Page<Grant>> {
+    const podPage = await client.get<Page<PODGrant>>(GRANTS_EP, filter);
+    const results = podPage.results.map((podGrant) => new Grant(client, podGrant));
+    return {
+      results,
+      nextPageToken: podPage.nextPageToken,
+    };
+  }
+
   export async function delete_(client: HttpClient, id: GrantId): Promise<void> {
     return client.delete(endpointForId(id));
   }
 }
+
+export type ListGrantsFilter = Partial<{
+  /** Only return grants from granter. */
+  granter?: IdentityId;
+
+  /** Only return grants for the provided app. */
+  grantee?: IdentityId;
+}>;
