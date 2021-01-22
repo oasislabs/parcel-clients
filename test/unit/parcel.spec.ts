@@ -381,6 +381,12 @@ describe('Parcel', () => {
         phase: JobPhase.PENDING,
         message: 'foo',
         host: 'http://myworker/',
+        outputDatasets: [
+          {
+            mountPath: 'example.txt',
+            id: createDatasetId(),
+          },
+        ],
       },
     };
     expect(podJob).toMatchSchema('Job');
