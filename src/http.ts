@@ -168,7 +168,7 @@ export class HttpClient {
   private async getHeaders(): Promise<Record<string, string>> {
     return {
       authorization: `Bearer ${await this.tokenProvider.getToken()}`,
-      'user-agent': `${packageName}/${packageVersion}`,
+      'x-user-agent': `${packageName}/${packageVersion}`,
     };
   }
 }
