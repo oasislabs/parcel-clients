@@ -427,6 +427,22 @@ describe('Parcel', () => {
   describe('identity', () => {
     let fixtureIdentity: PODIdentity;
 
+    function nockItWithCurrentIdentity(
+      testName: string,
+      test: (scope: nock.Scope) => Promise<void>,
+    ): void {
+      nockIt(testName, async (scope) => {
+        return test(
+          scope
+            .get('/identities/me')
+            // The `/parcel` below would be added by an ingress rewrite URL.
+            .reply(302, {}, { location: `/parcel/v1/identities/${fixtureIdentity.id}` })
+            .get(`/identities/${fixtureIdentity.id}`)
+            .reply(200, fixtureIdentity),
+        );
+      });
+    }
+
     beforeEach(() => {
       fixtureIdentity = createPodIdentity();
     });
@@ -457,19 +473,16 @@ describe('Parcel', () => {
       });
     });
 
-    nockIt('get current', async (scope) => {
-      expect(fixtureIdentity).toMatchSchema(getResponseSchema('GET', '/identities/me', 200));
-      scope.get('/identities/me').reply(200, fixtureIdentity);
+    nockItWithCurrentIdentity('get current', async () => {
       const identity = await parcel.getCurrentIdentity();
       expect(identity).toMatchPOD(fixtureIdentity);
     });
 
-    nockIt('update', async (scope) => {
+    nockItWithCurrentIdentity('update', async (scope) => {
       const updatedIdentity = Object.assign(clone(fixtureIdentity), {
         tokenVerifiers: createPodIdentity().tokenVerifiers,
       });
 
-      scope.get('/identities/me').reply(200, fixtureIdentity);
       scope
         .put(`/identities/${fixtureIdentity.id}`, {
           tokenVerifiers: updatedIdentity.tokenVerifiers,
@@ -481,17 +494,15 @@ describe('Parcel', () => {
       expect(identity).toMatchPOD(updatedIdentity);
     });
 
-    nockIt('delete', async (scope) => {
-      scope.get('/identities/me').reply(200, fixtureIdentity);
+    nockItWithCurrentIdentity('delete', async (scope) => {
       scope.delete(`/identities/${fixtureIdentity.id}`).reply(204);
       const identity = await parcel.getCurrentIdentity();
       expect(await identity.delete()).toBeUndefined();
     });
 
     describe('consents', () => {
-      nockIt('grant', async (scope) => {
+      nockItWithCurrentIdentity('grant', async (scope) => {
         const fixtureConsent = createPodConsent();
-        scope.get(`/identities/me`).reply(200, fixtureIdentity);
         scope.post(`/identities/${fixtureIdentity.id}/consents/${fixtureConsent.id}`).reply(204);
 
         const identity = await parcel.getCurrentIdentity();
@@ -499,13 +510,12 @@ describe('Parcel', () => {
       });
 
       describe('get', () => {
-        nockIt('granted', async (scope) => {
+        nockItWithCurrentIdentity('granted', async (scope) => {
           const fixtureConsent = createPodConsent();
           expect(fixtureConsent).toMatchSchema(
             getResponseSchema('GET', '/identities/{identity_id}/consents/{consent_id}', 200),
           );
 
-          scope.get(`/identities/me`).reply(200, fixtureIdentity);
           scope
             .get(`/identities/${fixtureIdentity.id}/consents/${fixtureConsent.id}`)
             .reply(200, fixtureConsent);
@@ -515,9 +525,8 @@ describe('Parcel', () => {
           expect(consent).toMatchPOD(fixtureConsent);
         });
 
-        nockIt('not granted', async (scope) => {
+        nockItWithCurrentIdentity('not granted', async (scope) => {
           const fixtureConsentId = createConsentId();
-          scope.get(`/identities/me`).reply(200, fixtureIdentity);
           scope.get(`/identities/${fixtureIdentity.id}/consents/${fixtureConsentId}`).reply(404);
 
           const identity = await parcel.getCurrentIdentity();
@@ -526,7 +535,7 @@ describe('Parcel', () => {
       });
 
       describe('list', () => {
-        nockIt('no filter', async (scope) => {
+        nockItWithCurrentIdentity('no filter', async (scope) => {
           const numberResults = 3;
           const fixtureResultsPage: Page<PODConsent> = createResultsPage(
             numberResults,
@@ -536,7 +545,6 @@ describe('Parcel', () => {
             getResponseSchema('GET', '/identities/{identity_id}/consents', 200),
           );
 
-          scope.get(`/identities/me`).reply(200, fixtureIdentity);
           scope.get(`/identities/${fixtureIdentity.id}/consents`).reply(200, fixtureResultsPage);
 
           const identity = await parcel.getCurrentIdentity();
@@ -546,7 +554,7 @@ describe('Parcel', () => {
           expect(nextPageToken).toEqual(fixtureResultsPage.nextPageToken);
         });
 
-        nockIt('with filter and pagination', async (scope) => {
+        nockItWithCurrentIdentity('with filter and pagination', async (scope) => {
           const numberResults = 1;
           const fixtureResultsPage: Page<PODConsent> = createResultsPage(
             numberResults,
@@ -562,7 +570,6 @@ describe('Parcel', () => {
             getQueryParametersSchema('GET', '/identities/{identity_id}/consents'),
           );
 
-          scope.get(`/identities/me`).reply(200, fixtureIdentity);
           scope
             .get(`/identities/${fixtureIdentity.id}/consents`)
             .query(
@@ -591,9 +598,8 @@ describe('Parcel', () => {
       });
     });
 
-    nockIt('revoke', async (scope) => {
+    nockItWithCurrentIdentity('revoke', async (scope) => {
       const fixtureConsent = createPodConsent();
-      scope.get(`/identities/me`).reply(200, fixtureIdentity);
       scope.delete(`/identities/${fixtureIdentity.id}/consents/${fixtureConsent.id}`).reply(204);
 
       const identity = await parcel.getCurrentIdentity();
