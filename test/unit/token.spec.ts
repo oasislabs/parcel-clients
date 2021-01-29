@@ -3,6 +3,7 @@ import { KEYUTIL } from 'jsrsasign';
 import nock from 'nock';
 
 import {
+  PARCEL_RUNTIME_AUD,
   RefreshingTokenProvider,
   RenewingTokenProvider,
   SelfIssuedTokenProvider,
@@ -164,7 +165,7 @@ describe('SelfIssuedTokenProvider', () => {
       algorithms: ['ES256'],
       issuer: defaultParams.principal,
       subject: defaultParams.principal,
-      audience: 'parcel-runtime',
+      audience: PARCEL_RUNTIME_AUD,
     }) as any;
     expect(header.kid).toBeDefined();
     expect(payload.exp).toBeGreaterThan(Date.now() / 1000 + 1 * 60 * 60 - 1 * 60);

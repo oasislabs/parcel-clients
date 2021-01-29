@@ -2,6 +2,8 @@ import axios, { AxiosResponse } from 'axios';
 import { KEYUTIL, KJUR } from 'jsrsasign';
 import type { Except, JsonObject } from 'type-fest';
 
+export const PARCEL_RUNTIME_AUD = 'https://api.oasislabs.com/parcel'; // TODO(#326)
+
 export abstract class TokenProvider {
   public static fromSource(source: TokenSource): TokenProvider {
     if (typeof source === 'string') return new StaticTokenProvider(source);
@@ -203,7 +205,7 @@ export class SelfIssuedTokenProvider extends ExpiringTokenProvider {
       payload: {
         sub: this.principal,
         iss: this.principal,
-        aud: 'parcel-runtime',
+        aud: PARCEL_RUNTIME_AUD,
         scope: this.scopes,
       },
       lifetime: this.tokenLifetime,
