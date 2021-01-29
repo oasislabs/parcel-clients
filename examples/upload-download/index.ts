@@ -13,7 +13,7 @@ import Parcel, { DatasetId } from '../../src';
 import streamSaver from 'streamsaver';
 import { WritableStream } from 'web-streams-polyfill/ponyfill/es2018';
 
-import fixtureJWK from '../../../../../runtime/test/fixtures/test_identity_creds.json';
+import fixtureJWK from '../../../../../runtime/fixtures/test_identity_creds.json';
 
 streamSaver.WritableStream = WritableStream;
 
