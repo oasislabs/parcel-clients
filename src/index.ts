@@ -23,7 +23,13 @@ import type {
 } from './dataset';
 import { DatasetImpl } from './dataset';
 import type { Job, JobId, JobSpec, JobStatus } from './compute';
-import { ComputeImpl } from './compute';
+import {
+  ComputeImpl,
+  InputDatasetSpec,
+  JobPhase,
+  OutputDataset,
+  OutputDatasetSpec,
+} from './compute';
 import type { Grant, GrantCreateParams, GrantId } from './grant';
 import { GrantImpl, ListGrantsFilter } from './grant';
 import type { Config as ClientConfig, Download } from './http';
@@ -56,10 +62,14 @@ export {
   IdentityCreateParams,
   IdentityId,
   IdentityUpdateParams,
+  InputDatasetSpec,
   Job,
   JobId,
+  JobPhase,
   JobSpec,
   JobStatus,
+  OutputDataset,
+  OutputDatasetSpec,
   Page,
   PageParams,
   PrivateJWK,

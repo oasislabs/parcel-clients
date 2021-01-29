@@ -71,7 +71,7 @@ export type JobSpec = JsonObject & {
   }>;
   outputDatasets?: Array<{
     mountPath: string;
-    owner?: IdentityId;
+    owner: IdentityId;
   }>;
 };
 
@@ -90,7 +90,7 @@ export type JobStatus = {
    * successfully completed job, each `outputDataset` entry from the job spec will
    * have a corresponding entry in this list.
    */
-  outputDatasets?: OutputDataset[];
+  outputDatasets: OutputDataset[];
 
   /**
    * A reference to the worker hosting (running) this job, if any. This field

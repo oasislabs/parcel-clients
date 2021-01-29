@@ -5,7 +5,7 @@ const API_URL = 'https://api.oasislabs.local/v1';
 
 const CORS_HEADERS = {
   'access-control-allow-origin': '*',
-  'access-control-allow-headers': 'authorization',
+  'access-control-allow-headers': 'authorization, x-user-agent',
 };
 
 context('Download', () => {

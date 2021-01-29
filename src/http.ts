@@ -123,7 +123,6 @@ export class HttpClient {
 
             let chunk;
             do {
-              // eslint-disable-next-line no-await-in-loop
               chunk = await rdr.read(); // Loop iterations are not independent.
               if (!chunk.value) continue;
               if (!this.push(chunk.value)) break;
