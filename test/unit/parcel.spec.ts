@@ -436,7 +436,7 @@ describe('Parcel', () => {
           scope
             .get('/identities/me')
             // The `/parcel` below would be added by an ingress rewrite URL.
-            .reply(302, {}, { location: `/parcel/v1/identities/${fixtureIdentity.id}` })
+            .reply(307, {}, { location: `/parcel/v1/identities/${fixtureIdentity.id}` })
             .get(`/identities/${fixtureIdentity.id}`)
             .reply(200, fixtureIdentity),
         );
