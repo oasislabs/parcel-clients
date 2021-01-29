@@ -21,7 +21,7 @@ const tokenSourceBob = {
     alg: 'ES256',
     use: 'sig',
     crv: 'P-256',
-    kid: '6cc5defa-af04-512f-6aa3-c13f64d03a8b',
+    kid: 'EA8OhUgQBJ4GNO7hwhr3JiG6L-oKqPqYA_2ZctSBtAw',
     x: 'L3u92SCDDcsbLpFI2NUmwWtu4Xit26y2lUt8w3Da6g8',
     y: '857gZPxQiiO3mRSKuK8-42_QG65Q1HVzU__h8n7hLeQ',
     d: 'gXQmoXWOQvh8X4fM0d9b5aVYro3jhCkx0svuez9yMhk',
