@@ -1,12 +1,11 @@
-import axios, { CancelTokenSource } from 'axios';
 import EventEmitter from 'eventemitter3';
 import FormData from 'form-data';
-import { Readable } from 'readable-stream';
+import type { Readable } from 'readable-stream';
 import type { JsonObject, Opaque, RequireExactlyOne, SetOptional } from 'type-fest';
 
-import type { HttpClient, Download } from './http';
-import type { IdentityId } from './identity';
-import type { Model, Page, PageParams, PODModel, ResourceId, WritableExcluding } from './model';
+import type { HttpClient, Download } from './http.js';
+import type { IdentityId } from './identity.js';
+import type { Model, Page, PageParams, PODModel, ResourceId, WritableExcluding } from './model.js';
 
 export type DatasetId = Opaque<ResourceId>;
 
@@ -147,8 +146,8 @@ export namespace DatasetImpl {
   }
 }
 
-const DATASETS_EP = '/datasets';
-const endpointForId = (id: DatasetId) => `/datasets/${id}`;
+const DATASETS_EP = 'datasets';
+const endpointForId = (id: DatasetId) => `${DATASETS_EP}/${id}`;
 
 export type DatasetUpdateParams = WritableExcluding<Dataset, 'creator' | 'size'>;
 export type DatasetUploadParams = SetOptional<DatasetUpdateParams, 'owner' | 'details'>;
@@ -188,13 +187,13 @@ export type ListAccessLogFilter = Partial<{
  * reference as its argument.
  */
 export class Upload extends EventEmitter {
-  public aborted = false;
-
-  private readonly cancelToken: CancelTokenSource;
+  private readonly abortController: AbortController;
 
   constructor(client: HttpClient, data: Storable, params?: DatasetUploadParams) {
     super();
-    this.cancelToken = axios.CancelToken.source();
+
+    this.abortController = new AbortController();
+
     const form = new FormData();
 
     const appendPart = (name: string, data: Storable, contentType: string, length?: number) => {
@@ -208,8 +207,8 @@ export class Upload extends EventEmitter {
         // If `Blob` eixsts, we're probably in the browser and will pefer to use it.
         if (typeof data === 'string' || data instanceof Uint8Array) {
           data = new Blob([data], { type: contentType });
-        } else if (data instanceof Readable) {
-          throw new TypeError('uploaded data must be a `Blob` or `Uint8Array`');
+        } else if ('pipe' in data) {
+          throw new TypeError('uploaded data must be a `string`, `Blob`, or `Uint8Array`');
         }
 
         form.append(name, data);
@@ -224,27 +223,26 @@ export class Upload extends EventEmitter {
     appendPart('data', data, 'application/octet-stream', (data as any).length);
 
     client
-      .post<PODDataset>(DATASETS_EP, form, {
-        headers: form.getHeaders ? /* node */ form.getHeaders() : undefined,
-        cancelToken: this.cancelToken.token,
-        onUploadProgress: this.emit.bind(this, 'progress'),
-        validateStatus: (s) => s === 201 /* Created */,
+      .create<PODDataset>(DATASETS_EP, form, {
+        headers: 'getHeaders' in form ? /* node */ form.getHeaders() : undefined,
+        signal: this.abortController.signal,
       })
       .then((podDataset) => {
         this.emit('finish', new Dataset(client, podDataset));
       })
       .catch((error: any) => {
-        if (!axios.isCancel(error)) {
-          this.emit('error', error);
-        }
+        this.emit('error', error);
       });
   }
 
   /** Aborts the upload. Emits an `abort` event and sets the `aborted` flag. */
   public abort(): void {
-    this.cancelToken.cancel();
-    this.aborted = true;
+    this.abortController.abort();
     this.emit('abort');
+  }
+
+  public get aborted(): boolean {
+    return this.abortController.signal.aborted;
   }
 
   /**

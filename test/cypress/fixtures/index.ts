@@ -1,3 +1,3 @@
-import Parcel from '../../../src';
+import Parcel from '../../..';
 
 window.Parcel = Parcel;

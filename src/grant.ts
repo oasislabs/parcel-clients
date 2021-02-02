@@ -1,10 +1,10 @@
 import type { Opaque } from 'type-fest';
 
-import type { ConsentId } from './consent';
-import type { Constraints } from './filter';
-import type { HttpClient } from './http';
-import type { IdentityId } from './identity';
-import type { Model, Page, PageParams, PODModel, ResourceId } from './model';
+import type { ConsentId } from './consent.js';
+import type { Constraints } from './filter.js';
+import type { HttpClient } from './http.js';
+import type { IdentityId } from './identity.js';
+import type { Model, Page, PageParams, PODModel, ResourceId } from './model.js';
 
 export type GrantId = Opaque<ResourceId>;
 
@@ -25,7 +25,7 @@ export type GrantCreateParams = {
   filter?: Constraints;
 };
 
-const GRANTS_EP = '/grants';
+const GRANTS_EP = 'grants';
 const endpointForId = (id: GrantId) => `${GRANTS_EP}/${id}`;
 
 export class Grant implements Model {

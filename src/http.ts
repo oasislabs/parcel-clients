@@ -1,73 +1,138 @@
 import type { WriteStream } from 'fs';
 
-import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
-import type FormData from 'form-data';
-import { PassThrough, Readable, Writable } from 'readable-stream';
+import AbortController from 'abort-controller';
+import FormData from 'form-data';
+import type {
+  BeforeRequestHook,
+  NormalizedOptions,
+  Options as KyOptions,
+  ResponsePromise,
+} from 'ky';
+import ky from 'ky';
 import { paramCase } from 'param-case';
+import type { Readable, Writable } from 'stream';
 import type { JsonObject } from 'type-fest';
 
-import { version as packageVersion, name as packageName } from '../package.json';
-import type { TokenProvider } from './token';
+import type { TokenProvider } from './token.js';
+import './polyfill.js'; // eslint-disable-line import/no-unassigned-import
 
 const DEFAULT_API_URL = 'https://api.oasislabs.com/parcel/v1';
 
 export type Config = Partial<{
   apiUrl: string;
-  httpClient: AxiosInstance;
+  httpClientConfig: KyOptions;
 }>;
+
+const EXPECTED_RESPONSE_CODES = new Map([
+  ['POST', 201],
+  ['PUT', 200],
+  ['PATCH', 200],
+  ['DELETE', 204],
+]);
 
 export class HttpClient {
   public readonly apiUrl: string;
 
-  private readonly axios: AxiosInstance;
+  private readonly ky: typeof ky;
 
   public constructor(private readonly tokenProvider: TokenProvider, config?: Config) {
     this.apiUrl = config?.apiUrl?.replace(/\/$/, '') ?? DEFAULT_API_URL;
-    this.axios =
-      config?.httpClient ??
-      axios.create({
-        baseURL: this.apiUrl,
-      });
+    this.ky = ky.create(config?.httpClientConfig ?? {}).extend({
+      prefixUrl: this.apiUrl,
+      headers: {
+        'x-requested-with': '@oasislabs/parcel',
+      },
+      hooks: {
+        beforeRequest: [
+          async (req) => {
+            req.headers.set('authorization', `Bearer ${await this.tokenProvider.getToken()}`);
+          },
+        ],
+        afterResponse: [
+          async (req, opts, res) => {
+            // The `authorization` header is not re-sent by the browser, so redirects fail,
+            // and must be retried manually.
+            if (
+              res.redirected &&
+              (res.status === 401 || res.status === 403) &&
+              res.url.startsWith(this.apiUrl)
+            ) {
+              return this.ky(res.url, {
+                method: req.method,
+                prefixUrl: '',
+              });
+            }
 
-    this.axios.interceptors.request.use(async (config) => {
-      return {
-        ...config,
-        headers: {
-          ...(await this.getHeaders()),
-          ...config.headers,
-        },
-      };
+            // Wrap errors, for easier client handling (and maybe better messages).
+            if (isApiErrorResponse(res)) {
+              throw new ApiError(req, opts, res, (await res.json()).error);
+            }
+
+            const expectedStatus: number =
+              (req as any).expectedStatus ?? EXPECTED_RESPONSE_CODES.get(req.method);
+            if (res.ok && expectedStatus && res.status !== expectedStatus) {
+              const endpoint = res.url.replace(this.apiUrl, '');
+              throw new ApiError(
+                req,
+                opts,
+                res,
+                `${req.method} ${endpoint} returned unexpected status ${expectedStatus}. expected: ${res.status}.`,
+              );
+            }
+          },
+        ],
+      },
     });
   }
 
   public async get<T>(
     endpoint: string,
-    params: JsonObject = {},
-    axiosConfig?: AxiosRequestConfig,
+    params: Record<string, string | number | boolean | undefined> = {},
+    requestOptions?: KyOptions,
   ): Promise<T> {
-    const kebabCaseParams: JsonObject = {};
+    let hasParams = false;
+    const kebabCaseParams: Record<string, string | number | boolean> = {};
     for (const [k, v] of Object.entries(params)) {
-      kebabCaseParams[paramCase(k)] = v;
+      if (v !== undefined) {
+        hasParams = true;
+        kebabCaseParams[paramCase(k)] = v;
+      }
     }
 
-    return this.axios
-      .get(endpoint, Object.assign({ params: kebabCaseParams }, axiosConfig))
-      .then((r) => r.data);
+    return this.ky
+      .get(endpoint, {
+        searchParams: hasParams ? kebabCaseParams : undefined,
+        ...requestOptions,
+      })
+      .json();
   }
 
   /** Convenience method for POSTing and expecting a 201 response */
-  public async create<T>(endpoint: string, data: JsonObject): Promise<T> {
-    return this.post(endpoint, data, {
-      validateStatus: (s) => s === 201,
-    });
+  public async create<T>(
+    endpoint: string,
+    data: JsonObject | FormData,
+    requestOptions?: KyOptions,
+  ): Promise<T> {
+    return this.post(endpoint, data, requestOptions);
   }
 
   public async post<T>(
     endpoint: string,
     data: JsonObject | FormData | undefined,
-    axiosConfig?: AxiosRequestConfig,
+    requestOptions?: KyOptions,
   ): Promise<T> {
-    return this.axios.post(endpoint, data, axiosConfig).then((r) => r.data);
+    const opts = requestOptions ?? {};
+    if (data !== undefined) {
+      if ('getBuffer' in data && typeof data.getBuffer === 'function') {
+        opts.body = data.getBuffer(); // It's the polyfill.
+      } else if (data instanceof FormData) {
+        opts.body = data as any;
+      } else {
+        opts.json = data;
+      }
+    }
+
+    return this.ky.post(endpoint, opts).json();
   }
 
   public async update<T>(endpoint: string, params: JsonObject): Promise<T> {
@@ -75,101 +140,29 @@ export class HttpClient {
   }
 
   public async put<T>(endpoint: string, params: JsonObject): Promise<T> {
-    return this.axios.put(endpoint, params).then((r) => r.data);
+    return this.ky.put(endpoint, { json: params }).json();
   }
 
   public async delete(endpoint: string): Promise<void> {
-    return this.axios
-      .delete(endpoint, {
-        validateStatus: (s) => s === 204,
-      })
-      .then(() => undefined);
+    await this.ky.delete(endpoint);
   }
 
   public download(endpoint: string): Download {
-    /* istanbul ignore if */
-    return 'fetch' in globalThis ? this.downloadBrowser(endpoint) : this.downloadNode(endpoint);
+    return new Download(this.ky, endpoint);
   }
+}
 
-  /* istanbul ignore next */
-  // This is tested using Cypress, which produces bogus line numbers.
-  private downloadBrowser(endpoint: string): Download {
-    const abortController = new AbortController();
-    const res = this.getHeaders().then(async (headers) => {
-      const res = await fetch(`${this.apiUrl}${endpoint}`, {
-        method: 'GET',
-        headers,
-        signal: abortController.signal,
-      });
+/** A beforeRequest hook that attaches context to the Request, for displaying in errors. */
+function attachContext(context: string): BeforeRequestHook {
+  return (req) => {
+    (req as any).context = context;
+  };
+}
 
-      if (!res.ok) {
-        const errorMessage: string = (await res.json()).error;
-        const error = new Error(`failed to fetch dataset: ${errorMessage}`);
-        (error as any).response = res;
-        throw error;
-      }
-
-      return res;
-    });
-    const reader = res.then((res) => {
-      if (!res.body) return null;
-      return res.body.getReader();
-    });
-    const dl = new (class extends Download {
-      public _read(): void {
-        reader
-          .then(async (rdr) => {
-            if (!rdr) return this.push(null);
-
-            let chunk;
-            do {
-              chunk = await rdr.read(); // Loop iterations are not independent.
-              if (!chunk.value) continue;
-              if (!this.push(chunk.value)) break;
-            } while (!chunk.done);
-
-            if (chunk.done) this.push(null);
-          })
-          .catch((error: any) => this.destroy(error));
-      }
-
-      public _destroy(error: Error, cb: (error?: Error) => void): void {
-        abortController.abort();
-        void res.then((res) => res.body?.cancel());
-        cb(error);
-      }
-    })();
-    res.catch((error) => dl.destroy(error));
-    return dl;
-  }
-
-  private downloadNode(endpoint: string): Download {
-    const cancelToken = axios.CancelToken.source();
-    const pt: Download = Object.assign(new PassThrough(), {
-      pipeTo: Download.prototype.pipeTo,
-      destroy: (error: any) => {
-        cancelToken.cancel();
-        PassThrough.prototype.destroy.call(pt, error);
-      },
-    });
-    this.axios
-      .get(endpoint, {
-        responseType: 'stream',
-        cancelToken: cancelToken.token,
-      })
-      .then((res) => {
-        res.data?.on('error', (error: Error) => pt.destroy(error)).pipe(pt);
-      })
-      .catch((error: Error) => pt.destroy(error));
-    return pt;
-  }
-
-  private async getHeaders(): Promise<Record<string, string>> {
-    return {
-      authorization: `Bearer ${await this.tokenProvider.getToken()}`,
-      'x-user-agent': `${packageName}/${packageVersion}`,
-    };
-  }
+export function setExpectedStatus(status: number): BeforeRequestHook {
+  return (req) => {
+    (req as any).expectedStatus = status;
+  };
 }
 
 /**
@@ -180,28 +173,106 @@ export class HttpClient {
  *
  * The download may be aborted by calling `download.destroy()`, as with any `Readable`.
  */
-export class Download extends Readable {
-  /** Convenience method for piping to a sink and waiting for writing to finish. */
+export class Download implements AsyncIterable<Uint8Array> {
+  private res?: ResponsePromise;
+  private readonly abortController: AbortController;
+
+  public constructor(private readonly client: typeof ky, private readonly endpoint: string) {
+    this.abortController = new AbortController();
+  }
+
+  public async *[Symbol.asyncIterator]() {
+    const body = (await this.makeRequest())?.body;
+    if (!body) return;
+
+    /* istanbul ignore else: tested using Cypress */
+    if ((body as any).getReader === undefined) {
+      // https://github.com/node-fetch/node-fetch/issues/930
+      const bodyReadable = (body as any) as Readable;
+      yield* bodyReadable;
+    } else {
+      const rdr = body.getReader();
+      let chunk;
+      do {
+        chunk = await rdr.read();
+        if (chunk.value) yield chunk.value;
+      } while (!chunk.done);
+    }
+  }
+
+  public abort(): void {
+    this.abortController.abort();
+  }
+
+  public get aborted(): boolean {
+    return this.abortController.signal.aborted;
+  }
+
+  /**
+   * Convenience method for piping to a sink and waiting for writing to finish.
+   * This method must not be used alongside `getStream` or `AsyncIterable`.
+   */
   public async pipeTo(sink: Writable | WriteStream | WritableStream): Promise<void> {
-    /* istanbul ignore if */ // This is tested using Cypress.
     if ('getWriter' in sink) {
-      const writer = sink.getWriter();
-      return new Promise((resolve, reject) => {
-        this.on('error', reject)
-          .on('data', (chunk) => {
-            void writer.ready.then(async () => writer.write(chunk)).catch(reject);
-          })
-          .on('end', () => {
-            writer.ready
-              .then(async () => writer.close())
-              .then(resolve)
-              .catch(reject);
-          });
+      const body = (await this.makeRequest()).body;
+      return body ? body.pipeTo(sink) : Promise.resolve();
+    }
+
+    const Readable = (await import('stream')).Readable;
+    return new Promise((resolve, reject) => {
+      Readable.from(this, { objectMode: false })
+        .on('error', reject)
+        .pipe(sink)
+        .on('error', reject)
+        .on('finish', resolve);
+    });
+  }
+
+  /**
+   * Lazily make the request. Helps avoid unhandled promise rejections when the request
+   * fails before a pipe or iterator handler is attached.
+   */
+  // This funciton returns double promise to make both xo and TS happy. V8 doesn't care.
+  private async makeRequest(): Promise<ResponsePromise> {
+    if (!this.res) {
+      this.res = this.client.get(this.endpoint, {
+        signal: this.abortController.signal,
+        hooks: {
+          beforeRequest: [attachContext('dataset download')],
+        },
       });
     }
 
-    return new Promise((resolve, reject) => {
-      this.on('error', reject).pipe(sink).on('finish', resolve).on('error', reject);
-    });
+    return this.res;
   }
+}
+
+export class ApiError extends ky.HTTPError {
+  public readonly message: string;
+
+  public constructor(
+    request: Request,
+    options: NormalizedOptions,
+    response: Response,
+    message: string, // Workaround for https://github.com/sindresorhus/ky/issues/148.
+  ) {
+    super(response, request, options);
+    this.name = 'ApiError';
+
+    const context: string = (request as any).context;
+    if (context) {
+      message = `error in ${context}: ${message}`;
+    }
+
+    this.message = message;
+  }
+
+  public static async fromHTTPError(error: ky.HTTPError): Promise<ApiError> {
+    const res = error.response;
+    return new ApiError(error.request, error.options, res, (await res.json()).error);
+  }
+}
+
+function isApiErrorResponse(response: Response): boolean {
+  return !response.ok && response.headers.get('content-type') === 'application/json';
 }

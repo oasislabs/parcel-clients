@@ -1,17 +1,18 @@
 import type { Opaque, SetOptional } from 'type-fest';
 
-import type { AppId } from './app';
-import { Consent } from './consent';
-import type { ConsentId, PODConsent } from './consent';
-import type { HttpClient } from './http';
-import type { Model, Page, PageParams, PODModel, ResourceId, Writable } from './model';
-import type { IdentityTokenClaims, PublicJWK } from './token';
+import type { AppId } from './app.js';
+import { Consent } from './consent.js';
+import type { ConsentId, PODConsent } from './consent.js';
+import type { HttpClient } from './http.js';
+import { setExpectedStatus } from './http.js';
+import type { Model, Page, PageParams, PODModel, ResourceId, Writable } from './model.js';
+import type { IdentityTokenClaims, PublicJWK } from './token.js';
 
-export type IdentityId = Opaque<ResourceId>;
+export type IdentityId = Opaque<ResourceId>; // TODO: uniqueify with second arg
 
 export type PODIdentity = PODModel & IdentityCreateParams;
 
-const IDENTITIES_EP = '/identities';
+const IDENTITIES_EP = 'identities';
 const IDENTITIES_ME = `${IDENTITIES_EP}/me`;
 const endpointForId = (id: IdentityId) => `${IDENTITIES_EP}/${id}`;
 const endpointForConsents = (id: IdentityId) => `${endpointForId(id)}/consents`;
@@ -65,9 +66,7 @@ export namespace IdentityImpl {
     params: IdentityCreateParams,
   ): Promise<Identity> {
     return client
-      .post<PODIdentity>(IDENTITIES_EP, params, {
-        validateStatus: (s) => s === 200 || s === 201,
-      })
+      .create<PODIdentity>(IDENTITIES_EP, params)
       .then((podIdentity) => new Identity(client, podIdentity));
   }
 
@@ -102,7 +101,11 @@ export namespace IdentityImpl {
     identityId: IdentityId,
     consentId: ConsentId,
   ): Promise<void> {
-    await client.post(endpointForConsent(identityId, consentId), undefined);
+    await client.post(endpointForConsent(identityId, consentId), undefined, {
+      hooks: {
+        beforeRequest: [setExpectedStatus(204)],
+      },
+    });
   }
 
   export async function listGrantedConsents(

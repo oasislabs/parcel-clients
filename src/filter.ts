@@ -1,7 +1,7 @@
 import type { Primitive } from 'type-fest';
 
-import type { DatasetId as $DatasetId } from './dataset';
-import type { IdentityId } from './identity';
+import type { DatasetId as $DatasetId } from './dataset.js';
+import type { IdentityId } from './identity.js';
 
 export namespace Constraints {
   export type And = {

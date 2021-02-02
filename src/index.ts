@@ -1,15 +1,15 @@
-import type { App, AppCreateParams, AppId, AppUpdateParams, ListAppsFilter } from './app';
-import { AppImpl } from './app';
+import type { App, AppCreateParams, AppId, AppUpdateParams, ListAppsFilter } from './app.js';
+import { AppImpl } from './app.js';
 import type {
   Client,
   ClientCreateParams,
   ClientId,
   ClientUpdateParams,
   ListClientsFilter,
-} from './client';
-import { ClientImpl } from './client';
-import type { Consent, ConsentCreateParams, ConsentId } from './consent';
-import { ConsentImpl } from './consent';
+} from './client.js';
+import { ClientImpl } from './client.js';
+import type { Consent, ConsentCreateParams, ConsentId } from './consent.js';
+import { ConsentImpl } from './consent.js';
 import type {
   AccessEvent,
   Dataset,
@@ -20,25 +20,30 @@ import type {
   ListDatasetsFilter,
   Storable,
   Upload,
-} from './dataset';
-import { DatasetImpl } from './dataset';
-import type { Job, JobId, JobSpec, JobStatus } from './compute';
+} from './dataset.js';
+import { DatasetImpl } from './dataset.js';
+import type { Job, JobId, JobSpec, JobStatus } from './compute.js';
 import {
   ComputeImpl,
   InputDatasetSpec,
   JobPhase,
   OutputDataset,
   OutputDatasetSpec,
-} from './compute';
-import type { Grant, GrantCreateParams, GrantId } from './grant';
-import { GrantImpl, ListGrantsFilter } from './grant';
-import type { Config as ClientConfig, Download } from './http';
-import { HttpClient } from './http';
-import type { Identity, IdentityCreateParams, IdentityId, IdentityUpdateParams } from './identity';
-import { IdentityImpl } from './identity';
-import type { Page, PageParams } from './model';
-import type { ClientCredentials, PrivateJWK, PublicJWK, TokenSource } from './token';
-import { TokenProvider } from './token';
+} from './compute.js';
+import type { Grant, GrantCreateParams, GrantId } from './grant.js';
+import { GrantImpl, ListGrantsFilter } from './grant.js';
+import type { Config as ClientConfig, Download } from './http.js';
+import { ApiError, HttpClient } from './http.js';
+import type {
+  Identity,
+  IdentityCreateParams,
+  IdentityId,
+  IdentityUpdateParams,
+} from './identity.js';
+import { IdentityImpl } from './identity.js';
+import type { Page, PageParams } from './model.js';
+import type { ClientCredentials, PrivateJWK, PublicJWK, TokenSource } from './token.js';
+import { TokenProvider } from './token.js';
 
 export {
   AccessEvent,
@@ -57,6 +62,7 @@ export {
   DatasetId,
   DatasetUpdateParams,
   DatasetUploadParams,
+  ApiError,
   Grant,
   GrantCreateParams,
   GrantId,
@@ -88,7 +94,7 @@ export default class Parcel {
     const tokenProvider = TokenProvider.fromSource(tokenSource);
     this.client = new HttpClient(tokenProvider, {
       apiUrl: config?.apiUrl,
-      httpClient: config?.httpClient,
+      httpClientConfig: config?.httpClientConfig,
     });
   }
 

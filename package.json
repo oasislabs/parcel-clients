@@ -1,88 +1,95 @@
 {
-    "name": "@oasislabs/parcel",
-    "version": "0.1.6",
-    "license": "Apache-2.0",
-    "author": "Oasis Labs <feedback@oasislabs.com>",
-    "main": "lib/src/index.js",
-    "types": "lib/src/index.d.ts",
-    "files": [
-        "lib",
-        "src"
+  "name": "@oasislabs/parcel",
+  "version": "0.1.6",
+  "license": "Apache-2.0",
+  "author": "Oasis Labs <feedback@oasislabs.com>",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "type": "module",
+  "files": [
+    "lib",
+    "src"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "fmt": "xo --fix && prettier --write {tsconfig,package}.json",
+    "lint": "xo && prettier --check {tsconfig,package}.json",
+    "test": "jest",
+    "test:cy": "start-test 'parcel serve test/cypress/fixtures/index.html -p 4444' 4444 'cypress run'",
+    "coverage": "jest --coverage && yarn test:cy",
+    "doc": "typedoc --options docs/typedoc.json",
+    "prepublishOnly": "yarn build"
+  },
+  "jest": {
+    "coverageDirectory": "coverage/jest",
+    "coveragePathIgnorePatterns": [
+      "test/*"
     ],
-    "scripts": {
-        "build": "tsc -b",
-        "fmt": "xo --fix",
-        "lint": "xo",
-        "test": "jest",
-        "test:cy": "start-test 'parcel serve test/cypress/fixtures/index.html -p 4444' 4444 'cypress run'",
-        "coverage": "jest --coverage && yarn test:cy",
-        "doc": "typedoc --options docs/typedoc.json",
-        "prepublishOnly": "yarn build"
+    "coverageReporters": [
+      "lcov",
+      "text",
+      "cobertura"
+    ],
+    "moduleFileExtensions": [
+      "js",
+      "ts"
+    ],
+    "moduleNameMapper": {
+      "^@oasislabs/parcel$": "<rootDir>/src/index",
+      "^\\./(app|client|compute|consent|dataset|filter|grant|http|identity|model|polyfill|token).js$": "<rootDir>/src/$1",
+      "^@oasislabs/parcel/(.*)$": "<rootDir>/src/$1"
     },
-    "jest": {
-        "coverageDirectory": "coverage/jest",
-        "coveragePathIgnorePatterns": [
-            "test/*"
-        ],
-        "coverageReporters": [
-            "lcov",
-            "text",
-            "cobertura"
-        ],
-        "moduleFileExtensions": [
-            "js",
-            "ts"
-        ],
-        "moduleNameMapper": {
-            "^@oasislabs/parcel$": "<rootDir>/src/index",
-            "^@oasislabs/parcel/(.*)$": "<rootDir>/src/$1"
-        },
-        "testEnvironment": "node",
-        "testRegex": ".*\\.spec\\.ts$",
-        "transform": {
-            "\\.ts$": "ts-jest"
-        }
+    "testEnvironment": "node",
+    "testRegex": ".*\\.spec\\.ts$",
+    "transform": {
+      "\\.ts$": "ts-jest",
+      "\\.js$": "babel-jest"
     },
-    "nyc": {
-        "report-dir": "./coverage/cypress"
-    },
-    "devDependencies": {
-        "@apidevtools/swagger-parser": "^10.0.2",
-        "@babel/core": "^7.11.6",
-        "@cypress/code-coverage": "^3.8.1",
-        "@types/jest": "^26.0.9",
-        "@types/jsonwebtoken": "^8.5.0",
-        "@types/jsrsasign": "^8.0.5",
-        "@types/node": "^14.0.20",
-        "@types/openapi-sampler": "^1.0.0",
-        "@types/uuid": "^8.3.0",
-        "ajv": "^6.12.5",
-        "cypress": "^5.3.0",
-        "eslint-plugin-cypress": "^2.11.2",
-        "jest": "^26.2.2",
-        "jsonwebtoken": "^8.5.1",
-        "jwk-to-pem": "^2.0.4",
-        "nock": "^13.0.4",
-        "openapi-types": "^7.0.1",
-        "parcel-bundler": "^1.12.4",
-        "parcel-plugin-bundle-visualiser": "^1.2.0",
-        "start-server-and-test": "^1.11.5",
-        "ts-jest": "^26.4.4",
-        "typedoc": "^0.20.14",
-        "typescript": "^4.1.3",
-        "uuid": "^8.3.0",
-        "xo": "^0.36.1"
-    },
-    "dependencies": {
-        "@types/readable-stream": "^2.3.9",
-        "axios": "^0.21.1",
-        "eventemitter3": "^4.0.4",
-        "form-data": "^3.0.0",
-        "jsrsasign": "^10.0.0",
-        "minimist": "0.2.1",
-        "param-case": "^3.0.3",
-        "readable-stream": "^3.6.0",
-        "type-fest": "^0.20.0"
-    },
-    "browserslist": ">2%"
+    "transformIgnorePatterns": [
+      "<rootDir>/node_modules/?!(ky|node-fetch)"
+    ]
+  },
+  "nyc": {
+    "report-dir": "./coverage/cypress"
+  },
+  "devDependencies": {
+    "@apidevtools/swagger-parser": "^10.0.2",
+    "@babel/core": "^7.11.6",
+    "@cypress/code-coverage": "^3.8.1",
+    "@types/jest": "^26.0.9",
+    "@types/jsonwebtoken": "^8.5.0",
+    "@types/jsrsasign": "^8.0.5",
+    "@types/node": "^14.0.20",
+    "@types/node-fetch": "^2.5.8",
+    "@types/uuid": "^8.3.0",
+    "ajv": "^6.12.5",
+    "cypress": "^5.3.0",
+    "eslint-plugin-cypress": "^2.11.2",
+    "jest": "^26.2.2",
+    "jsonwebtoken": "^8.5.1",
+    "jwk-to-pem": "^2.0.4",
+    "nock": "^13.0.4",
+    "openapi-types": "^7.0.1",
+    "parcel-bundler": "^1.12.4",
+    "parcel-plugin-bundle-visualiser": "^1.2.0",
+    "start-server-and-test": "^1.11.5",
+    "ts-jest": "^26.4.4",
+    "typedoc": "^0.20.14",
+    "typescript": "^4.1.3",
+    "uuid": "^8.3.0",
+    "xo": "^0.36.1"
+  },
+  "dependencies": {
+    "@types/readable-stream": "^2.3.9",
+    "abort-controller": "^3.0.0",
+    "eventemitter3": "^4.0.4",
+    "form-data": "^3.0.0",
+    "jsrsasign": "^10.0.0",
+    "ky": "^0.26.0",
+    "node-fetch": "^2.6.1",
+    "param-case": "^3.0.3",
+    "type-fest": "^0.20.0",
+    "web-streams-polyfill": "^3.0.1"
+  },
+  "browserslist": ">2%"
 }

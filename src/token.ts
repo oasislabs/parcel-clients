@@ -1,6 +1,9 @@
-import axios, { AxiosResponse } from 'axios';
 import { KEYUTIL, KJUR } from 'jsrsasign';
+import type { ResponsePromise } from 'ky';
+import ky from 'ky';
 import type { Except, JsonObject } from 'type-fest';
+
+import './polyfill.js'; // eslint-disable-line import/no-unassigned-import
 
 export const PARCEL_RUNTIME_AUD = 'https://api.oasislabs.com/parcel'; // TODO(#326)
 
@@ -118,7 +121,7 @@ export class RenewingTokenProvider extends ExpiringTokenProvider {
     );
     authParams.append('scope', this.scopes.join(' '));
 
-    return Token.fromResponse(axios.post(this.tokenEndpoint, authParams));
+    return Token.fromResponse(ky.post(this.tokenEndpoint, { body: authParams }));
   }
 }
 
@@ -143,12 +146,15 @@ export class RefreshingTokenProvider extends ExpiringTokenProvider {
     refreshParams.append('grant_type', 'refresh_token');
     refreshParams.append('refresh_token', this.refreshToken);
 
-    return Token.fromResponse(
-      axios.post(this.tokenEndpoint, refreshParams).then((refreshResponse) => {
-        this.refreshToken = refreshResponse.data.refresh_token;
-        return refreshResponse;
-      }),
-    );
+    const res = ky.post(this.tokenEndpoint, { body: refreshParams });
+    res
+      .then(async (refreshResponse) => {
+        this.refreshToken = (await refreshResponse.clone().json()).refresh_token;
+      })
+      .catch(() => {
+        // Do nothing. The promise lives on.
+      });
+    return Token.fromResponse(res);
   }
 }
 
@@ -217,9 +223,13 @@ export class SelfIssuedTokenProvider extends ExpiringTokenProvider {
 class Token {
   public constructor(private readonly token: string, private readonly expiry: number) {}
 
-  public static async fromResponse(response: Promise<AxiosResponse>): Promise<Token> {
+  public static async fromResponse(response: ResponsePromise): Promise<Token> {
     const requestTime = Date.now();
-    const body = (await response).data;
+    const body: {
+      access_token: string;
+      request_time: number;
+      expires_in: number;
+    } = await response.json();
     return new Token(body.access_token, requestTime + body.expires_in * 1000);
   }
 

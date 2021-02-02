@@ -5,7 +5,7 @@
     "fileServerFolder": "./test/cypress",
     "fixturesFolder": "./test/cypress/fixtures",
     "integrationFolder": "./test/cypress/integration",
-    "pluginsFile": "./test/cypress/plugins.js",
+    "pluginsFile": false,
     "screenshotOnRunFailure": false,
     "supportFile": "./test/cypress/support.js",
     "video": false

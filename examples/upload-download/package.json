@@ -26,8 +26,7 @@
     "typescript": "^4.1.3"
   },
   "dependencies": {
-    "streamsaver": "^2.0.5",
-    "web-streams-polyfill": "^3.0.0"
+    "streamsaver": "^2.0.5"
   },
   "alias": {
     "@oasislabs/parcel": "../../"

@@ -527,10 +527,12 @@ describe('Parcel', () => {
 
         nockItWithCurrentIdentity('not granted', async (scope) => {
           const fixtureConsentId = createConsentId();
-          scope.get(`/identities/${fixtureIdentity.id}/consents/${fixtureConsentId}`).reply(404);
+          scope
+            .get(`/identities/${fixtureIdentity.id}/consents/${fixtureConsentId}`)
+            .reply(404, { error: 'not found' });
 
           const identity = await parcel.getCurrentIdentity();
-          await expect(identity.getGrantedConsent(fixtureConsentId)).rejects.toThrow('404');
+          await expect(identity.getGrantedConsent(fixtureConsentId)).rejects.toThrow('not found');
         });
       });
 
@@ -697,10 +699,12 @@ describe('Parcel', () => {
       });
 
       nockIt('not found', async (scope) => {
-        scope.get(`/datasets/${fixtureDataset.id}/download`).reply(404);
+        scope.get(`/datasets/${fixtureDataset.id}/download`).reply(404, { error: 'not found' });
         const download = parcel.downloadDataset(fixtureDataset.id as DatasetId);
         const downloadCollector = new DownloadCollector();
-        await expect(download.pipeTo(downloadCollector)).rejects.toThrow('404');
+        await expect(download.pipeTo(downloadCollector)).rejects.toThrow(
+          'error in dataset download: not found',
+        );
       });
 
       nockIt('write error', async (scope) => {
@@ -708,6 +712,17 @@ describe('Parcel', () => {
         const download = parcel.downloadDataset(fixtureDataset.id as DatasetId);
         const downloadCollector = new DownloadCollector({ error: new Error('whoops') });
         await expect(download.pipeTo(downloadCollector)).rejects.toThrow('whoops');
+      });
+
+      nockIt('aborted', async (scope) => {
+        scope.get(`/datasets/${fixtureDataset.id}/download`).delayBody(30).reply(200, fixtureData);
+        const download = parcel.downloadDataset(fixtureDataset.id as DatasetId);
+        const downloadCollector = new DownloadCollector();
+        const downloadComplete = download.pipeTo(downloadCollector);
+        setTimeout(() => download.abort(), 10);
+        await expect(downloadComplete).rejects.toThrow('The user aborted a request');
+        expect(download.aborted).toBe(true);
+        expect(downloadCollector.collectedDownload).toHaveLength(0);
       });
     });
 

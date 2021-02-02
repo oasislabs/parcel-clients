@@ -1,9 +1,9 @@
 import type { JsonObject, Opaque } from 'type-fest';
 
-import type { DatasetId } from './dataset';
-import type { HttpClient } from './http';
-import type { IdentityId } from './identity';
-import type { Page, PageParams } from './model';
+import type { DatasetId } from './dataset.js';
+import type { HttpClient } from './http.js';
+import type { IdentityId } from './identity.js';
+import type { Page, PageParams } from './model.js';
 
 export type JobId = Opaque<string, 'JobId'>;
 
@@ -134,28 +134,27 @@ export class Job {
   }
 }
 
-const ENDPOINTS = {
-  jobs: '/compute/jobs',
-  forJobId: (id: string) => `/compute/jobs/${id}`,
-};
+const COMPUTE_EP = 'compute';
+const JOBS_EP = `${COMPUTE_EP}/jobs`;
+const endpointForId = (id: JobId) => `${JOBS_EP}/${id}`;
 
 export namespace ComputeImpl {
   export async function submitJob(client: HttpClient, spec: JobSpec): Promise<Job> {
-    return client.post<PODJob>(ENDPOINTS.jobs, spec).then((pod) => new Job(pod));
+    return client.post<PODJob>(JOBS_EP, spec).then((pod) => new Job(pod));
   }
 
   export async function listJobs(client: HttpClient, filter: PageParams = {}): Promise<Page<Job>> {
-    return client.get<Page<PODJob>>(ENDPOINTS.jobs, filter).then((podPage) => ({
+    return client.get<Page<PODJob>>(JOBS_EP, filter).then((podPage) => ({
       results: podPage.results.map((podJob) => new Job(podJob)),
       nextPageToken: podPage.nextPageToken,
     }));
   }
 
   export async function getJob(client: HttpClient, jobId: JobId): Promise<Job> {
-    return client.get<PODJob>(ENDPOINTS.forJobId(jobId)).then((pod) => new Job(pod));
+    return client.get<PODJob>(endpointForId(jobId)).then((pod) => new Job(pod));
   }
 
   export async function terminateJob(client: HttpClient, jobId: JobId): Promise<void> {
-    return client.delete(ENDPOINTS.forJobId(jobId));
+    return client.delete(endpointForId(jobId));
   }
 }

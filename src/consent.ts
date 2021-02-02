@@ -1,10 +1,11 @@
 import type { Opaque } from 'type-fest';
 
-import type { AppId } from './app';
-import type { Constraints } from './filter';
-import type { HttpClient } from './http';
-import type { IdentityId } from './identity';
-import type { Model, Page, PageParams, PODModel, ResourceId } from './model';
+import type { AppId } from './app.js';
+import { endpointForId as endpointForApp } from './app.js';
+import type { Constraints } from './filter.js';
+import type { HttpClient } from './http.js';
+import type { IdentityId } from './identity.js';
+import type { Model, Page, PageParams, PODModel, ResourceId } from './model.js';
 
 export type ConsentId = Opaque<ResourceId>;
 
@@ -104,7 +105,7 @@ export namespace ConsentImpl {
   }
 }
 
-const endpointForCollection = (appId: AppId) => `/apps/${appId}/consents`;
+const endpointForCollection = (appId: AppId) => `${endpointForApp(appId)}/consents`;
 const endpointForId = (appId: AppId, consentId: ConsentId) =>
   `${endpointForCollection(appId)}/${consentId}`;
 

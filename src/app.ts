@@ -1,10 +1,10 @@
 import type { Opaque } from 'type-fest';
 
-import { Consent, ConsentImpl } from './consent';
-import type { ConsentCreateParams, ConsentId } from './consent';
-import type { HttpClient } from './http';
-import type { IdentityId, IdentityTokenVerifier } from './identity';
-import type { Model, Page, PageParams, PODModel, ResourceId, WritableExcluding } from './model';
+import { Consent, ConsentImpl } from './consent.js';
+import type { ConsentCreateParams, ConsentId } from './consent.js';
+import type { HttpClient } from './http.js';
+import type { IdentityId, IdentityTokenVerifier } from './identity.js';
+import type { Model, Page, PageParams, PODModel, ResourceId, WritableExcluding } from './model.js';
 
 export type AppId = Opaque<ResourceId>;
 
@@ -180,8 +180,8 @@ export namespace AppImpl {
   }
 }
 
-const APPS_EP = '/apps';
-const endpointForId = (id: AppId) => `/apps/${id}`;
+export const APPS_EP = 'apps';
+export const endpointForId = (id: AppId) => `${APPS_EP}/${id}`;
 
 export type AppCreateParams =
   | AppUpdateParams
