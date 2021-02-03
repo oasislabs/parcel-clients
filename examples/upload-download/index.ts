@@ -12,7 +12,7 @@ declare global {
 import Parcel, { DatasetId } from '../..';
 import streamSaver from 'streamsaver';
 
-import fixtureJWK from '../../../../../runtime/fixtures/test_identity_creds.json';
+import fixtureJWK from '../../../../../runtime/genesis/test_identity_creds.json';
 
 streamSaver.WritableStream = WritableStream;
 
