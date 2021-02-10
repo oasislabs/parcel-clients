@@ -1,4 +1,4 @@
-import type { Opaque } from 'type-fest';
+import type { Except, Opaque } from 'type-fest';
 
 import { Consent, ConsentImpl } from './consent.js';
 import type { ConsentCreateParams, ConsentId } from './consent.js';
@@ -183,12 +183,10 @@ export namespace AppImpl {
 export const APPS_EP = 'apps';
 export const endpointForId = (id: AppId) => `${APPS_EP}/${id}`;
 
-export type AppCreateParams =
-  | AppUpdateParams
-  | {
-      /** The credentials used to authorize clients acting as this app. */
-      identityTokenVerifiers: IdentityTokenVerifier[];
-    };
+export type AppCreateParams = Except<AppUpdateParams, 'owner'> & {
+  /** The credentials used to authorize clients acting as this app. */
+  identityTokenVerifiers: IdentityTokenVerifier[];
+};
 
 export type AppUpdateParams = WritableExcluding<App, 'participants' | 'trusted'>;
 
