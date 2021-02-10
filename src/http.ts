@@ -218,7 +218,8 @@ export class Download implements AsyncIterable<Uint8Array> {
       return body ? body.pipeTo(sink) : Promise.resolve();
     }
 
-    const Readable = (await import('stream')).Readable;
+    const stream = await import('stream');
+    const Readable = stream.Readable ?? stream.default.Readable; // Imported differently depending on i-dont-know-what :/
     return new Promise((resolve, reject) => {
       Readable.from(this, { objectMode: false })
         .on('error', reject)
