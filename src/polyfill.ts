@@ -4,9 +4,12 @@
 import AbortController from 'abort-controller';
 import FormData from 'form-data';
 import fetch, { Headers, Request as RequestPF, Response as ResponsePF } from 'node-fetch';
-// @ts-expect-error: The package isn't ESM-compatible. It's not used by us anyway.
-// eslint-disable-next-line import/extensions
-import { ReadableStream, WritableStream } from 'web-streams-polyfill/dist/ponyfill.es2018.js';
+import {
+  ReadableStream as ReadableStreamPF,
+  WritableStream as WritableStreamPF,
+  // @ts-expect-error: The package isn't ESM-compatible.
+  // eslint-disable-next-line import/extensions
+} from 'web-streams-polyfill/dist/ponyfill.es2018.js';
 
 globalThis.fetch =
   globalThis.fetch ??
@@ -16,5 +19,9 @@ globalThis.Request = globalThis.Request ?? RequestPF;
 globalThis.Response = globalThis.Response ?? ResponsePF;
 globalThis.AbortController = globalThis.AbortController ?? AbortController;
 globalThis.FormData = globalThis.FormData ?? FormData;
-globalThis.ReadableStream = globalThis.ReadableStream ?? ReadableStream;
-globalThis.WritableStream = globalThis.WritableStream ?? WritableStream;
+globalThis.ReadableStream = globalThis.ReadableStream ?? ReadableStreamPF;
+globalThis.WritableStream = globalThis.WritableStream ?? WritableStreamPF;
+
+const ReadableStreamPF_ = ReadableStreamPF as typeof globalThis.ReadableStream;
+
+export { ReadableStreamPF_ as ReadableStreamPF };

@@ -14,7 +14,7 @@ import type { Readable, Writable } from 'stream';
 import type { JsonObject } from 'type-fest';
 
 import type { TokenProvider } from './token.js';
-import './polyfill.js'; // eslint-disable-line import/no-unassigned-import
+import { ReadableStreamPF } from './polyfill.js';
 
 const DEFAULT_API_URL = 'https://api.oasislabs.com/parcel/v1';
 
@@ -215,7 +215,14 @@ export class Download implements AsyncIterable<Uint8Array> {
   public async pipeTo(sink: Writable | WriteStream | WritableStream): Promise<void> {
     if ('getWriter' in sink) {
       const body = (await this.makeRequest()).body;
-      return body ? body.pipeTo(sink) : Promise.resolve();
+      if (!body) return;
+      if (body.pipeTo) {
+        return body.pipeTo(sink);
+      }
+
+      // Firefox's native ReadableStream is missing pipeTo.
+      (body as any)._readableStreamController = null; // https://github.com/MattiasBuelens/web-streams-polyfill/blob/36c08de/src/lib/readable-stream.ts#L407
+      return ReadableStreamPF.prototype.pipeTo.call(body, sink);
     }
 
     const stream = await import('stream');
