@@ -66,6 +66,11 @@ export type RenewingTokenProviderParams = {
   tokenEndpoint: string;
 
   /**
+   * The audience to use when using provider's OAuth token retrieval endpoint.
+   */
+  audience: string;
+
+  /**
    * A list of scopes that will be requested from the identity provider, which
    * may be different from the scopes that the identity provider actually returns.
    */
@@ -76,6 +81,7 @@ export type RenewingTokenProviderParams = {
 export class RenewingTokenProvider extends ExpiringTokenProvider {
   private readonly clientId: string;
   private readonly tokenEndpoint: string;
+  private readonly audience: string;
   private readonly scopes: string[];
   private readonly privateKey: string; // PKCS8-encoded
   private readonly keyId: string;
@@ -87,6 +93,7 @@ export class RenewingTokenProvider extends ExpiringTokenProvider {
     privateKey: privateJWK,
     scopes,
     tokenEndpoint,
+    audience,
   }: RenewingTokenProviderParams) {
     super();
 
@@ -96,6 +103,7 @@ export class RenewingTokenProvider extends ExpiringTokenProvider {
 
     this.clientId = clientId;
     this.tokenEndpoint = tokenEndpoint;
+    this.audience = audience;
     this.scopes = scopes;
   }
 
@@ -120,6 +128,7 @@ export class RenewingTokenProvider extends ExpiringTokenProvider {
       'urn:ietf:params:oauth:client-assertion-type:jwt-bearer',
     );
     authParams.append('scope', this.scopes.join(' '));
+    authParams.append('audience', this.audience);
 
     return Token.fromResponse(ky.post(this.tokenEndpoint, { body: authParams }));
   }
@@ -128,23 +137,27 @@ export class RenewingTokenProvider extends ExpiringTokenProvider {
 export type RefreshingTokenProviderParams = {
   refreshToken: string;
   tokenEndpoint: string;
+  audience: string;
 };
 
 /** A `TokenProvider` that obtains a new token using a refresh token. */
 export class RefreshingTokenProvider extends ExpiringTokenProvider {
   private refreshToken: string;
   private readonly tokenEndpoint: string;
+  private readonly audience: string;
 
-  public constructor({ refreshToken, tokenEndpoint }: RefreshingTokenProviderParams) {
+  public constructor({ refreshToken, tokenEndpoint, audience }: RefreshingTokenProviderParams) {
     super();
     this.refreshToken = refreshToken;
     this.tokenEndpoint = tokenEndpoint;
+    this.audience = audience;
   }
 
   protected async renewToken(): Promise<Token> {
     const refreshParams = new URLSearchParams();
     refreshParams.append('grant_type', 'refresh_token');
     refreshParams.append('refresh_token', this.refreshToken);
+    refreshParams.append('audience', this.audience);
 
     const res = ky.post(this.tokenEndpoint, { body: refreshParams });
     res

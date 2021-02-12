@@ -46,11 +46,13 @@ describe('Re(new|fresh)ingTokenProvider', () => {
     privateKey: privateJwk,
     tokenEndpoint,
     scopes: ['api', 'storage'],
+    audience: PARCEL_RUNTIME_AUD,
   };
 
   const refreshingProviderParams = {
     tokenEndpoint,
     refreshToken: '5BcgyHetfeUlcoeaO0AIA9NtYq1xiIKxlsNAmtHxqE4',
+    audience: PARCEL_RUNTIME_AUD,
   };
 
   afterEach(() => {
@@ -77,6 +79,7 @@ describe('Re(new|fresh)ingTokenProvider', () => {
         return (
           body.grant_type === 'client_credentials' &&
           body.scope === 'api storage' &&
+          body.audience === PARCEL_RUNTIME_AUD &&
           body.client_assertion_type === 'urn:ietf:params:oauth:client-assertion-type:jwt-bearer' &&
           isGoodJwt
         );
@@ -88,9 +91,10 @@ describe('Re(new|fresh)ingTokenProvider', () => {
       expectedRequest: {
         grant_type: 'refresh_token',
         refresh_token: refreshingProviderParams.refreshToken,
+        audience: PARCEL_RUNTIME_AUD,
       },
       expectedRefreshRequest: (body: any) => {
-        return body.refresh_token === 'refresh token 2';
+        return body.refresh_token === 'refresh token 2' && body.audience === PARCEL_RUNTIME_AUD;
       },
     },
   ].forEach((suite) => {
