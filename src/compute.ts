@@ -1,4 +1,4 @@
-import type { Opaque } from 'type-fest';
+import type { JsonObject, Opaque } from 'type-fest';
 
 import type { DatasetId } from './dataset.js';
 import type { HttpClient } from './http.js';
@@ -10,7 +10,7 @@ export type JobId = Opaque<string, 'JobId'>;
 /**
  * Input dataset for a compute job.
  */
-export declare type InputDatasetSpec = {
+export declare type InputDatasetSpec = JsonObject & {
   mountPath: string;
   id: DatasetId;
 };
@@ -18,7 +18,7 @@ export declare type InputDatasetSpec = {
 /**
  * Specification for a compute job for outputting a dataset.
  */
-export declare type OutputDatasetSpec = {
+export declare type OutputDatasetSpec = JsonObject & {
   mountPath: string;
   owner?: IdentityId;
 };
@@ -26,7 +26,7 @@ export declare type OutputDatasetSpec = {
 /**
  * An output dataset produced in the context of running a job.
  */
-export declare type OutputDataset = {
+export declare type OutputDataset = JsonObject & {
   mountPath: string;
   id: DatasetId;
 };
@@ -35,7 +35,7 @@ export declare type OutputDataset = {
  * A specification/manifest for the job. This is a complete description of what
  * and how the job should run.
  */
-export type JobSpec = {
+export type JobSpec = JsonObject & {
   /**
    * A human-readable name for the job. Intended to help with monitoring and
    * debugging. The name SHOULD be unique among jobs submitted by the same
@@ -107,7 +107,7 @@ export enum JobPhase {
   FAILED = 'Failed',
 }
 
-export type PODJob = {
+export type PODJob = JsonObject & {
   readonly id: JobId;
   readonly spec: JobSpec;
 

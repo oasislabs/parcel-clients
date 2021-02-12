@@ -1,7 +1,7 @@
 import EventEmitter from 'eventemitter3';
 import FormData from 'form-data';
 import type { Readable } from 'readable-stream';
-import type { Opaque, RequireExactlyOne, SetOptional } from 'type-fest';
+import type { JsonObject, Opaque, RequireExactlyOne, SetOptional } from 'type-fest';
 
 import type { HttpClient, Download } from './http.js';
 import type { IdentityId } from './identity.js';
@@ -23,7 +23,7 @@ export type PODAccessEvent = {
   accessor: ResourceId;
 };
 
-type DatasetDetails = { title?: string; tags?: string[] };
+type DatasetDetails = JsonObject & { title?: string; tags?: string[] };
 
 export class Dataset implements Model {
   public id: DatasetId;
