@@ -3,7 +3,7 @@ import type { Except, Opaque } from 'type-fest';
 import { Consent, ConsentImpl } from './consent.js';
 import type { ConsentCreateParams, ConsentId } from './consent.js';
 import type { HttpClient } from './http.js';
-import type { IdentityId, IdentityTokenVerifier } from './identity.js';
+import type { IdentityId, IdentityTokenVerifierCreate } from './identity.js';
 import type { Model, Page, PageParams, PODModel, ResourceId, WritableExcluding } from './model.js';
 
 export type AppId = Opaque<ResourceId>;
@@ -185,7 +185,7 @@ export const endpointForId = (id: AppId) => `${APPS_EP}/${id}`;
 
 export type AppCreateParams = Except<AppUpdateParams, 'owner'> & {
   /** The credentials used to authorize clients acting as this app. */
-  identityTokenVerifiers: IdentityTokenVerifier[];
+  identityTokenVerifiers: IdentityTokenVerifierCreate[];
 };
 
 export type AppUpdateParams = WritableExcluding<App, 'participants' | 'trusted'>;
