@@ -3,6 +3,7 @@ import type { ResponsePromise } from 'ky';
 import ky from 'ky';
 import type { Except, JsonObject } from 'type-fest';
 
+import type { IdentityId } from './identity.js';
 import './polyfill.js'; // eslint-disable-line import/no-unassigned-import
 
 export const PARCEL_RUNTIME_AUD = 'https://api.oasislabs.com/parcel'; // TODO(#326)
@@ -174,7 +175,7 @@ export class RefreshingTokenProvider extends ExpiringTokenProvider {
 
 export type SelfIssuedTokenProviderParams = {
   /** The `sub` and `iss` claims of the provided access token. */
-  principal: string;
+  principal: string | IdentityId;
 
   /** The private key that will be used to sign the access token. */
   privateKey: PrivateJWK;
