@@ -49,7 +49,7 @@ declare global {
     // eslint-disable-next-line no-unused-vars
     interface Matchers<R> {
       toMatchSchema: (schema: string | JsonObject) => CustomMatcherResult;
-      toMatchPOD: <T extends JsonObject>(pod: T) => CustomMatcherResult;
+      toMatchPOD: <T extends PODModel | JsonObject>(pod: T) => CustomMatcherResult;
     }
   }
 }
@@ -133,7 +133,7 @@ describe('Parcel', () => {
             )}`,
         };
       },
-      toMatchPOD<T extends PODModel>(
+      toMatchPOD<T extends PODModel | JsonObject>(
         received: any,
         pod: T,
       ): { message: () => string; pass: boolean } {
@@ -868,7 +868,7 @@ describe('Parcel', () => {
       nockIt('by id', async (scope) => {
         const update = {
           owner: createIdentityId(),
-          details: { hello: 'world', deleteKey: null },
+          details: { title: 'newtitle', tags: ['foo', 'bar'] },
         };
         expect(update).toMatchSchema(getRequestSchema('PUT', '/datasets/{dataset_id}'));
         const updatedDataset = Object.assign(clone(fixtureDataset), update);
@@ -880,7 +880,7 @@ describe('Parcel', () => {
       nockIt('retrieved', async (scope) => {
         const update = {
           owner: createIdentityId(),
-          details: { hello: 'world', deleteKey: null },
+          details: { title: 'newtitle', tags: ['foo', 'bar'] },
         };
         const updatedDataset = Object.assign(clone(fixtureDataset), update);
 
