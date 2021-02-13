@@ -6,13 +6,16 @@ import type { Constraints } from './filter.js';
 import type { HttpClient } from './http.js';
 import type { IdentityId } from './identity.js';
 import type { Model, Page, PageParams, PODModel, ResourceId } from './model.js';
+import { makePage } from './model.js';
 
-export type ConsentId = Opaque<ResourceId>;
+export type ConsentId = Opaque<ResourceId, 'ConsentId'>;
 
-export type PODConsent = PODModel &
-  ConsentCreateParams & {
-    appId: ResourceId;
-  };
+export type PODConsent = Readonly<
+  PODModel &
+    ConsentCreateParams & {
+      appId: ResourceId;
+    }
+>;
 
 export type ConsentCreateParams = {
   /** The Grants to make when the App containing this Consent is joined. */
@@ -32,23 +35,23 @@ export type ConsentCreateParams = {
 };
 
 export class Consent implements Model {
-  public id: ConsentId;
-  public appId: AppId;
-  public createdAt: Date;
+  public readonly id: ConsentId;
+  public readonly appId: AppId;
+  public readonly createdAt: Date;
 
   /** The Grants to make when the App containing this Consent is joined. */
-  public grants: GrantSpec[];
+  public readonly grants: GrantSpec[];
 
-  public name: string;
+  public readonly name: string;
 
   /** The description of this consent seen by users when shown in an app. */
-  public description: string;
+  public readonly description: string;
 
   /** The text seen by users when accepting this consent. */
-  public allowText: string;
+  public readonly allowText: string;
 
   /** The text seen by users when denying this consent. */
-  public denyText: string;
+  public readonly denyText: string;
 
   public constructor(private readonly client: HttpClient, pod: PODConsent) {
     this.id = pod.id as ConsentId;
@@ -68,9 +71,8 @@ export namespace ConsentImpl {
     appId: AppId,
     params: ConsentCreateParams,
   ): Promise<Consent> {
-    return client
-      .create<PODConsent>(endpointForCollection(appId), params)
-      .then((podConsent) => new Consent(client, podConsent));
+    const podConsent = await client.create<PODConsent>(endpointForCollection(appId), params);
+    return new Consent(client, podConsent);
   }
 
   export async function list(
@@ -79,11 +81,7 @@ export namespace ConsentImpl {
     filter?: PageParams,
   ): Promise<Page<Consent>> {
     const podPage = await client.get<Page<PODConsent>>(endpointForCollection(appId), filter);
-    const results = podPage.results.map((podConsent) => new Consent(client, podConsent));
-    return {
-      results,
-      nextPageToken: podPage.nextPageToken,
-    };
+    return makePage(Consent, podPage, client);
   }
 
   export async function get(
@@ -91,9 +89,8 @@ export namespace ConsentImpl {
     appId: AppId,
     consentId: ConsentId,
   ): Promise<Consent> {
-    return client
-      .get<PODConsent>(endpointForId(appId, consentId))
-      .then((podConsent) => new Consent(client, podConsent));
+    const podConsent = await client.get<PODConsent>(endpointForId(appId, consentId));
+    return new Consent(client, podConsent);
   }
 
   export async function delete_(

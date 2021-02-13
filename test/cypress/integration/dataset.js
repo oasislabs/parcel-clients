@@ -1,4 +1,5 @@
 /// <reference path="../fixtures/types.d.ts" />
+/* eslint-disable promise/prefer-await-to-then */ // These `thens` aren't Promises.
 
 // @ts-check
 const API_MOUNT_POINT = `/parcel/v1`;

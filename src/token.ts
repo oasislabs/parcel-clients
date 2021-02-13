@@ -161,6 +161,7 @@ export class RefreshingTokenProvider extends ExpiringTokenProvider {
 
     const res = ky.post(this.tokenEndpoint, { body: refreshParams });
     res
+      // eslint-disable-next-line promise/prefer-await-to-then
       .then(async (refreshResponse) => {
         this.refreshToken = (await refreshResponse.clone().json()).refresh_token;
       })

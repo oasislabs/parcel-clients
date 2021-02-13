@@ -146,11 +146,8 @@ describe('Parcel', () => {
   type HttpVerb = 'GET' | 'POST' | 'PUT' | 'DELETE';
 
   function getRequestSchema(method: HttpVerb, endpoint: string): JsonObject {
-    let schema = Object.assign(
-      {},
-      openapiSchema.paths[endpoint][method.toLowerCase()].requestBody.content['application/json']
-        .schema,
-    );
+    const requestSchema = openapiSchema.paths[endpoint][method.toLowerCase()];
+    let schema = clone(requestSchema.requestBody.content['application/json'].schema);
     if (schema.allOf) schema = mergeAllOf(schema.allOf);
     for (const [propertyName, property] of Object.entries(schema.properties)) {
       if ((property as any).readOnly) {
@@ -200,7 +197,7 @@ describe('Parcel', () => {
     const responses = openapiSchema.paths[endpoint][method.toLowerCase()].responses[statusCode];
     if (!responses.content) return undefined;
 
-    let schema = responses.content[contentType ?? 'application/json'].schema;
+    let { schema } = responses.content[contentType ?? 'application/json'];
 
     if (schema.type === 'string' && schema.format === 'binary') {
       schema.type = 'object'; // Workaround for JSON schema not having binary
@@ -377,6 +374,7 @@ describe('Parcel', () => {
 
   function createPodJob(): PODJob {
     const podJob: PODJob = {
+      ...createPodModel(),
       id: createJobId(),
       spec: createJobSpec(),
       status: {

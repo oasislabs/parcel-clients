@@ -8,9 +8,9 @@ import { setExpectedStatus } from './http.js';
 import type { Model, Page, PageParams, PODModel, ResourceId, Writable } from './model.js';
 import type { IdentityTokenClaims, PublicJWK } from './token.js';
 
-export type IdentityId = Opaque<ResourceId>; // TODO: uniqueify with second arg
+export type IdentityId = Opaque<ResourceId, 'IdentityId' | 'AppId'>;
 
-export type PODIdentity = PODModel & IdentityCreateParams;
+export type PODIdentity = Readonly<PODModel & IdentityCreateParams>;
 
 const IDENTITIES_EP = 'identities';
 const IDENTITIES_ME = `${IDENTITIES_EP}/me`;
@@ -20,9 +20,9 @@ const endpointForConsent = (identityId: IdentityId, consentId: ConsentId) =>
   `${endpointForConsents(identityId)}/${consentId}`;
 
 export class Identity implements Model {
-  public id: IdentityId;
-  public createdAt: Date;
-  public tokenVerifiers: IdentityTokenVerifier[];
+  public readonly id: IdentityId;
+  public readonly createdAt: Date;
+  public readonly tokenVerifiers: IdentityTokenVerifier[];
 
   public constructor(private readonly client: HttpClient, pod: PODIdentity) {
     this.id = pod.id as IdentityId;
@@ -65,21 +65,18 @@ export namespace IdentityImpl {
     client: HttpClient,
     params: IdentityCreateParams,
   ): Promise<Identity> {
-    return client
-      .create<PODIdentity>(IDENTITIES_EP, params)
-      .then((podIdentity) => new Identity(client, podIdentity));
+    const podIdentity = await client.create<PODIdentity>(IDENTITIES_EP, params);
+    return new Identity(client, podIdentity);
   }
 
   export async function current(client: HttpClient): Promise<Identity> {
-    return client
-      .get<PODIdentity>(IDENTITIES_ME)
-      .then((podIdentity) => new Identity(client, podIdentity));
+    const podIdentity = await client.get<PODIdentity>(IDENTITIES_ME);
+    return new Identity(client, podIdentity);
   }
 
   export async function get(client: HttpClient, id: IdentityId): Promise<Identity> {
-    return client
-      .get<PODIdentity>(endpointForId(id))
-      .then((podIdentity) => new Identity(client, podIdentity));
+    const podIdentity = await client.get<PODIdentity>(endpointForId(id));
+    return new Identity(client, podIdentity);
   }
 
   export async function update(
@@ -87,9 +84,8 @@ export namespace IdentityImpl {
     id: IdentityId,
     params: IdentityUpdateParams,
   ): Promise<Identity> {
-    return client
-      .update<PODIdentity>(endpointForId(id), params)
-      .then((podIdentity) => new Identity(client, podIdentity));
+    const podIdentity = await client.update<PODIdentity>(endpointForId(id), params);
+    return new Identity(client, podIdentity);
   }
 
   export async function delete_(client: HttpClient, id: IdentityId): Promise<void> {
@@ -126,9 +122,8 @@ export namespace IdentityImpl {
     identityId: IdentityId,
     consentId: ConsentId,
   ): Promise<Consent> {
-    return client
-      .get<PODConsent>(endpointForConsent(identityId, consentId))
-      .then((podConsent) => new Consent(client, podConsent));
+    const podConsent = await client.get<PODConsent>(endpointForConsent(identityId, consentId));
+    return new Consent(client, podConsent);
   }
 
   export async function revokeConsent(

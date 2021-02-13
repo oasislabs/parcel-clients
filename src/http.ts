@@ -214,7 +214,7 @@ export class Download implements AsyncIterable<Uint8Array> {
    */
   public async pipeTo(sink: Writable | WriteStream | WritableStream): Promise<void> {
     if ('getWriter' in sink) {
-      const body = (await this.makeRequest()).body;
+      const { body } = await this.makeRequest();
       if (!body) return;
       if (body.pipeTo) {
         return body.pipeTo(sink);
@@ -225,7 +225,8 @@ export class Download implements AsyncIterable<Uint8Array> {
       return ReadableStreamPF.prototype.pipeTo.call(body, sink);
     }
 
-    const stream = await import('stream');
+    // eslint-disable-next-line node/no-unsupported-features/es-syntax
+    const stream = await import('stream'); // This only happens in the browser.
     const Readable = stream.Readable ?? stream.default.Readable; // Imported differently depending on i-dont-know-what :/
     return new Promise((resolve, reject) => {
       Readable.from(this, { objectMode: false })
@@ -267,7 +268,7 @@ export class ApiError extends ky.HTTPError {
     super(response, request, options);
     this.name = 'ApiError';
 
-    const context: string = (request as any).context;
+    const { context }: { context: string } = request as any;
     if (context) {
       message = `error in ${context}: ${message}`;
     }

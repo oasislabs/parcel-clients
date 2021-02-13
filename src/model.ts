@@ -1,6 +1,8 @@
 import type { ConditionalExcept, Except, JsonValue } from 'type-fest';
 
-export type ResourceId = string; // Format from runtime: `<resource>-<id>`
+import type { HttpClient } from './http.js';
+
+export type ResourceId = string;
 
 export interface PODModel {
   /** An undifferentiated model identifier. */
@@ -12,10 +14,10 @@ export interface PODModel {
 
 export interface Model {
   /** The model's unique ID. */
-  id: ResourceId;
+  readonly id: ResourceId;
 
   /** The number of seconds since the Unix epoch when this model was created */
-  createdAt: Date;
+  readonly createdAt: Date;
 }
 
 export type Writable<T extends Model> = WritableExcluding<T, never>;
@@ -33,3 +35,15 @@ export type PageParams = Partial<{
   pageSize: number;
   nextPageToken: string;
 }>;
+
+export function makePage<Pod extends PODModel, M extends Model>(
+  // eslint-disable-next-line @typescript-eslint/prefer-function-type
+  ModelTy: { new (client: HttpClient, pod: Pod): M },
+  podPage: Page<Pod>,
+  client: HttpClient,
+): Page<M> {
+  return {
+    results: podPage.results.map((podModel) => new ModelTy(client, podModel)),
+    nextPageToken: podPage.nextPageToken,
+  };
+}

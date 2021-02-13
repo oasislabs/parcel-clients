@@ -5,15 +5,18 @@ import type { Constraints } from './filter.js';
 import type { HttpClient } from './http.js';
 import type { IdentityId } from './identity.js';
 import type { Model, Page, PageParams, PODModel, ResourceId } from './model.js';
+import { makePage } from './model.js';
 
-export type GrantId = Opaque<ResourceId>;
+export type GrantId = Opaque<ResourceId, 'GrantId'>;
 
-export type PODGrant = PODModel & {
-  granter: ResourceId;
-  grantee?: ResourceId;
-  consent?: ResourceId;
-  filter?: Constraints;
-};
+export type PODGrant = Readonly<
+  PODModel & {
+    granter: ResourceId;
+    grantee?: ResourceId;
+    consent?: ResourceId;
+    filter?: Constraints;
+  }
+>;
 
 export type GrantCreateParams = {
   /**
@@ -29,18 +32,18 @@ const GRANTS_EP = 'grants';
 const endpointForId = (id: GrantId) => `${GRANTS_EP}/${id}`;
 
 export class Grant implements Model {
-  public id: GrantId;
-  public createdAt: Date;
+  public readonly id: GrantId;
+  public readonly createdAt: Date;
   /** The Identity from which permission is given. */
-  public granter: IdentityId;
+  public readonly granter: IdentityId;
   /**
    * The Identity to which permission is given or everyone,
    */
-  public grantee: IdentityId | 'everyone';
+  public readonly grantee: IdentityId | 'everyone';
   /** A filter that gives permission to only matching Datasets. */
-  public filter?: Constraints;
+  public readonly filter?: Constraints;
   /** The Consent that created this Grant, if any. */
-  public consent?: ConsentId;
+  public readonly consent?: ConsentId;
 
   public constructor(private readonly client: HttpClient, pod: PODGrant) {
     this.id = pod.id as GrantId;
@@ -58,13 +61,13 @@ export class Grant implements Model {
 
 export namespace GrantImpl {
   export async function create(client: HttpClient, params: GrantCreateParams): Promise<Grant> {
-    return client
-      .create<PODGrant>(GRANTS_EP, params)
-      .then((podGrant) => new Grant(client, podGrant));
+    const podGrant = await client.create<PODGrant>(GRANTS_EP, params);
+    return new Grant(client, podGrant);
   }
 
   export async function get(client: HttpClient, id: GrantId): Promise<Grant> {
-    return client.get<PODGrant>(endpointForId(id)).then((podGrant) => new Grant(client, podGrant));
+    const podGrant = await client.get<PODGrant>(endpointForId(id));
+    return new Grant(client, podGrant);
   }
 
   export async function list(
@@ -72,11 +75,7 @@ export namespace GrantImpl {
     filter?: ListGrantsFilter & PageParams,
   ): Promise<Page<Grant>> {
     const podPage = await client.get<Page<PODGrant>>(GRANTS_EP, filter);
-    const results = podPage.results.map((podGrant) => new Grant(client, podGrant));
-    return {
-      results,
-      nextPageToken: podPage.nextPageToken,
-    };
+    return makePage(Grant, podPage, client);
   }
 
   export async function delete_(client: HttpClient, id: GrantId): Promise<void> {

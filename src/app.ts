@@ -5,84 +5,87 @@ import type { ConsentCreateParams, ConsentId } from './consent.js';
 import type { HttpClient } from './http.js';
 import type { IdentityId, IdentityTokenVerifierCreate } from './identity.js';
 import type { Model, Page, PageParams, PODModel, ResourceId, WritableExcluding } from './model.js';
+import { makePage } from './model.js';
 
-export type AppId = Opaque<ResourceId>;
+export type AppId = Opaque<ResourceId, 'AppId'>;
 
-export type PODApp = PODModel & {
-  acceptanceText?: string;
-  admins: ResourceId[];
-  allowUserUploads: boolean;
-  brandingColor?: string;
-  category?: string;
-  collaborators: ResourceId[];
-  extendedDescription?: string;
-  homepageUrl: string;
-  invitationText?: string;
-  inviteOnly: boolean;
-  invites?: ResourceId[];
-  logoUrl: string;
-  name: string;
-  organization: string;
-  owner: ResourceId;
-  participants: ResourceId[];
-  published: boolean;
-  rejectionText?: string;
-  shortDescription: string;
-  termsAndConditions: string;
-  privacyPolicy: string;
-  trusted: boolean;
-};
+export type PODApp = Readonly<
+  PODModel & {
+    acceptanceText?: string;
+    admins: ResourceId[];
+    allowUserUploads: boolean;
+    brandingColor?: string;
+    category?: string;
+    collaborators: ResourceId[];
+    extendedDescription?: string;
+    homepageUrl: string;
+    invitationText?: string;
+    inviteOnly: boolean;
+    invites?: ResourceId[];
+    logoUrl: string;
+    name: string;
+    organization: string;
+    owner: ResourceId;
+    participants: ResourceId[];
+    published: boolean;
+    rejectionText?: string;
+    shortDescription: string;
+    termsAndConditions: string;
+    privacyPolicy: string;
+    trusted: boolean;
+  }
+>;
 
 export class App implements Model {
-  public id: AppId;
-  public createdAt: Date;
+  public readonly id: AppId;
+  public readonly createdAt: Date;
 
   /** The Identity that created the app. */
-  public owner: IdentityId;
-  public admins: IdentityId[];
+  public readonly owner: IdentityId;
+  public readonly admins: IdentityId[];
   /** Identities that can view participation of the app and modify un-privileged fields. */
-  public collaborators: IdentityId[];
+  public readonly collaborators: IdentityId[];
 
   /** Whether this app has been published. Consents may not be modified after publishing, */
-  public published: boolean;
+  public readonly published: boolean;
   /** If `true`, only invited Identities may participate in the app. */
-  public inviteOnly: boolean;
+  public readonly inviteOnly: boolean;
   /** Identities invited to participate in this app. */
-  public invites: IdentityId[];
+  public readonly invites: IdentityId[];
   /** The set of identities that are currently authorizing this app. */
-  public participants: IdentityId[];
+  public readonly participants: IdentityId[];
   /** Allow non-admin users to upload datasets. */
-  public allowUserUploads: boolean;
+  public readonly allowUserUploads: boolean;
 
-  public name: string;
+  public readonly name: string;
   /** The name of the app publisher's organization. */
-  public organization: string;
-  public shortDescription: string;
+  public readonly organization: string;
+  public readonly shortDescription: string;
   /** The app publisher's homepage URL. */
-  public homepageUrl: string;
+  public readonly homepageUrl: string;
   /** A URL pointing to (or containing) the app's logo. */
-  public logoUrl: string;
+  public readonly logoUrl: string;
   /** The privacy policy presented to the user when joining the app. */
-  public privacyPolicy: string;
+  public readonly privacyPolicy: string;
   /** The terms and conditions presented to the user when joining the app. */
-  public termsAndConditions: string;
+  public readonly termsAndConditions: string;
 
   /** Text shown to the user when viewing the app's invite page. */
-  public invitationText?: string;
+  public readonly invitationText?: string;
   /** Text shown to the user after accepting the app's invitation. */
-  public acceptanceText?: string;
+  public readonly acceptanceText?: string;
   /** Text shown to the user after rejecting the app's invitation. */
-  public rejectionText?: string;
+  public readonly rejectionText?: string;
 
-  public extendedDescription?: string;
+  public readonly extendedDescription?: string;
   /** The app's branding color in RGB hex format (e.g. `#ff4212`). */
-  public brandingColor?: string;
+  public readonly brandingColor?: string;
   /**
    * Text describing the category of the app (e.g., health, finance) that can
    * be used to search for the app.
    */
-  public category?: string;
-  public trusted: boolean;
+  public readonly category?: string;
+  public readonly trusted: boolean;
 
   public constructor(private readonly client: HttpClient, pod: PODApp) {
     this.acceptanceText = pod.acceptanceText;
@@ -146,11 +149,13 @@ export class App implements Model {
 
 export namespace AppImpl {
   export async function create(client: HttpClient, params: AppCreateParams): Promise<App> {
-    return client.create<PODApp>(APPS_EP, params).then((podApp) => new App(client, podApp));
+    const podApp = await client.create<PODApp>(APPS_EP, params);
+    return new App(client, podApp);
   }
 
   export async function get(client: HttpClient, id: AppId): Promise<App> {
-    return client.get<PODApp>(endpointForId(id)).then((podApp) => new App(client, podApp));
+    const podApp = await client.get<PODApp>(endpointForId(id));
+    return new App(client, podApp);
   }
 
   export async function list(
@@ -158,11 +163,7 @@ export namespace AppImpl {
     filter?: ListAppsFilter & PageParams,
   ): Promise<Page<App>> {
     const podPage = await client.get<Page<PODApp>>(APPS_EP, filter);
-    const results = podPage.results.map((podApp) => new App(client, podApp));
-    return {
-      results,
-      nextPageToken: podPage.nextPageToken,
-    };
+    return makePage(App, podPage, client);
   }
 
   export async function update(
@@ -170,9 +171,8 @@ export namespace AppImpl {
     id: AppId,
     params: AppUpdateParams,
   ): Promise<App> {
-    return client
-      .update<PODApp>(endpointForId(id), params)
-      .then((podApp) => new App(client, podApp));
+    const podApp = await client.update<PODApp>(endpointForId(id), params);
+    return new App(client, podApp);
   }
 
   export async function delete_(client: HttpClient, id: AppId): Promise<void> {

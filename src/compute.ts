@@ -3,9 +3,10 @@ import type { Opaque } from 'type-fest';
 import type { DatasetId } from './dataset.js';
 import type { HttpClient } from './http.js';
 import type { IdentityId } from './identity.js';
-import type { Page, PageParams } from './model.js';
+import type { Page, PageParams, PODModel } from './model.js';
+import { makePage, ResourceId } from './model.js';
 
-export type JobId = Opaque<string, 'JobId'>;
+export type JobId = Opaque<ResourceId, 'JobId'>;
 
 /**
  * Input dataset for a compute job.
@@ -107,28 +108,32 @@ export enum JobPhase {
   FAILED = 'Failed',
 }
 
-export type PODJob = {
-  readonly id: JobId;
-  readonly spec: JobSpec;
+export type PODJob = Readonly<
+  PODModel & {
+    id: JobId;
+    spec: JobSpec;
 
-  /**
-   * Most recently observed status of the pod. This data may not be up to
-   * date. The data type is a mostly subset of [Kubernetes'
-   * PodStatus](https://www.k8sref.io/docs/workloads/pod-v1/#podstatus).
-   */
-  readonly status: JobStatus;
-};
+    /**
+     * Most recently observed status of the pod. This data may not be up to
+     * date. The data type is a mostly subset of [Kubernetes'
+     * PodStatus](https://www.k8sref.io/docs/workloads/pod-v1/#podstatus).
+     */
+    status: JobStatus;
+  }
+>;
 
 /**
  * An existing, already-submitted job. The job might also be already completed.
  */
 export class Job {
   public readonly id: JobId;
+  public readonly createdAt: Date;
   public readonly spec: JobSpec;
   public readonly status: JobStatus;
 
-  public constructor(pod: PODJob) {
+  public constructor(private readonly client: HttpClient, pod: PODJob) {
     this.id = pod.id;
+    this.createdAt = new Date(pod.createdAt);
     this.spec = pod.spec;
     this.status = pod.status;
   }
@@ -140,18 +145,18 @@ const endpointForId = (id: JobId) => `${JOBS_EP}/${id}`;
 
 export namespace ComputeImpl {
   export async function submitJob(client: HttpClient, spec: JobSpec): Promise<Job> {
-    return client.post<PODJob>(JOBS_EP, spec).then((pod) => new Job(pod));
+    const pod = await client.post<PODJob>(JOBS_EP, spec);
+    return new Job(client, pod);
   }
 
   export async function listJobs(client: HttpClient, filter: PageParams = {}): Promise<Page<Job>> {
-    return client.get<Page<PODJob>>(JOBS_EP, filter).then((podPage) => ({
-      results: podPage.results.map((podJob) => new Job(podJob)),
-      nextPageToken: podPage.nextPageToken,
-    }));
+    const podPage = await client.get<Page<PODJob>>(JOBS_EP, filter);
+    return makePage(Job, podPage, client);
   }
 
   export async function getJob(client: HttpClient, jobId: JobId): Promise<Job> {
-    return client.get<PODJob>(endpointForId(jobId)).then((pod) => new Job(pod));
+    const pod = await client.get<PODJob>(endpointForId(jobId));
+    return new Job(client, pod);
   }
 
   export async function terminateJob(client: HttpClient, jobId: JobId): Promise<void> {

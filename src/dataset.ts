@@ -6,34 +6,37 @@ import type { Opaque, RequireExactlyOne, SetOptional } from 'type-fest';
 import type { HttpClient, Download } from './http.js';
 import type { IdentityId } from './identity.js';
 import type { Model, Page, PageParams, PODModel, ResourceId, WritableExcluding } from './model.js';
+import { makePage } from './model.js';
 
-export type DatasetId = Opaque<ResourceId>;
+export type DatasetId = Opaque<ResourceId, 'DatasetId'>;
 
-export type PODDataset = PODModel & {
-  id: ResourceId;
-  creator: ResourceId;
-  owner: ResourceId;
-  size: number;
-  details: DatasetDetails;
-};
+export type PODDataset = Readonly<
+  PODModel & {
+    id: ResourceId;
+    creator: ResourceId;
+    owner: ResourceId;
+    size: number;
+    details: DatasetDetails;
+  }
+>;
 
-export type PODAccessEvent = {
+export type PODAccessEvent = Readonly<{
   createdAt: string;
   dataset: ResourceId;
   accessor: ResourceId;
-};
+}>;
 
 type DatasetDetails = { title?: string; tags?: string[] };
 
 export class Dataset implements Model {
-  public id: DatasetId;
-  public createdAt: Date;
-  public creator: IdentityId;
-  public size: number;
-  public owner: IdentityId;
+  public readonly id: DatasetId;
+  public readonly createdAt: Date;
+  public readonly creator: IdentityId;
+  public readonly size: number;
+  public readonly owner: IdentityId;
 
   /** Additional, optional information about the dataset. */
-  public details: DatasetDetails;
+  public readonly details: DatasetDetails;
 
   public constructor(private readonly client: HttpClient, pod: PODDataset) {
     this.id = pod.id as DatasetId;
@@ -69,9 +72,8 @@ export class Dataset implements Model {
 
 export namespace DatasetImpl {
   export async function get(client: HttpClient, id: DatasetId): Promise<Dataset> {
-    return client
-      .get<PODDataset>(endpointForId(id))
-      .then((podDataset) => new Dataset(client, podDataset));
+    const podDataset = await client.get<PODDataset>(endpointForId(id));
+    return new Dataset(client, podDataset);
   }
 
   export async function list(
@@ -90,11 +92,7 @@ export namespace DatasetImpl {
       ...filter,
       tags: tagsFilter,
     });
-    const results = podPage.results.map((podDataset) => new Dataset(client, podDataset));
-    return {
-      results,
-      nextPageToken: podPage.nextPageToken,
-    };
+    return makePage(Dataset, podPage, client);
   }
 
   export function upload(client: HttpClient, data: Storable, params?: DatasetUploadParams): Upload {
@@ -136,9 +134,8 @@ export namespace DatasetImpl {
     id: DatasetId,
     params: DatasetUpdateParams,
   ): Promise<Dataset> {
-    return client
-      .update<PODDataset>(endpointForId(id), params)
-      .then((podDataset) => new Dataset(client, podDataset));
+    const podDataset = await client.update<PODDataset>(endpointForId(id), params);
+    return new Dataset(client, podDataset);
   }
 
   export async function delete_(client: HttpClient, id: DatasetId): Promise<void> {
@@ -227,6 +224,7 @@ export class Upload extends EventEmitter {
         headers: 'getHeaders' in form ? /* node */ form.getHeaders() : undefined,
         signal: this.abortController.signal,
       })
+      // eslint-disable-next-line promise/prefer-await-to-then
       .then((podDataset) => {
         this.emit('finish', new Dataset(client, podDataset));
       })

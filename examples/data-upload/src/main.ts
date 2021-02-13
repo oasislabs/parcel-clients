@@ -38,17 +38,16 @@ async function main() {
   // #endregion snippet-dataset-upload
 
   // #region snippet-dataset-download
-  // Let's download the above dataset using its ID.
-  const id = dataset.id;
 
+  // Let's download the above dataset using its ID.
   // By default, the dataset owner can download the data.
-  const download = parcel.downloadDataset(id);
+  const download = parcel.downloadDataset(dataset.id);
   const saver = fs.createWriteStream(`./user_data`);
   try {
     await download.pipeTo(saver);
-    console.log(`Dataset ${id as string} has been downloaded to ./user_data`);
+    console.log(`Dataset ${dataset.id as string} has been downloaded to ./user_data`);
   } catch (error: any) {
-    console.error(`Failed to download dataset ${id as string}`);
+    console.error(`Failed to download dataset ${dataset.id as string}`);
     throw error;
   }
 

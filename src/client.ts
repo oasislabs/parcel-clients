@@ -7,32 +7,34 @@ import type { IdentityId } from './identity.js';
 import type { Model, Page, PageParams, PODModel, ResourceId, WritableExcluding } from './model.js';
 import type { PublicJWK } from './token.js';
 
-export type ClientId = Opaque<ResourceId>;
+export type ClientId = Opaque<ResourceId, 'ClientId'>;
 
-export type PODClient = PODModel & {
-  creator: ResourceId;
-  appId: ResourceId;
-  name: string;
-  redirectUris: string[];
-  postLogoutRedirectUris: string[];
-  publicKeys: PublicJWK[];
-  canHoldSecrets: boolean;
-  canActOnBehalfOfUsers: boolean;
-  isScript: boolean;
-};
+export type PODClient = Readonly<
+  PODModel & {
+    creator: ResourceId;
+    appId: ResourceId;
+    name: string;
+    redirectUris: string[];
+    postLogoutRedirectUris: string[];
+    publicKeys: PublicJWK[];
+    canHoldSecrets: boolean;
+    canActOnBehalfOfUsers: boolean;
+    isScript: boolean;
+  }
+>;
 
 export class Client implements Model {
-  public id: ClientId;
-  public createdAt: Date;
-  public creator: IdentityId;
-  public appId: AppId;
-  public name: string;
-  public redirectUris: string[];
-  public postLogoutRedirectUris: string[];
-  public publicKeys: PublicJWK[];
-  public canHoldSecrets: boolean;
-  public canActOnBehalfOfUsers: boolean;
-  public isScript: boolean;
+  public readonly id: ClientId;
+  public readonly createdAt: Date;
+  public readonly creator: IdentityId;
+  public readonly appId: AppId;
+  public readonly name: string;
+  public readonly redirectUris: string[];
+  public readonly postLogoutRedirectUris: string[];
+  public readonly publicKeys: PublicJWK[];
+  public readonly canHoldSecrets: boolean;
+  public readonly canActOnBehalfOfUsers: boolean;
+  public readonly isScript: boolean;
 
   public constructor(private readonly client: HttpClient, pod: PODClient) {
     this.id = pod.id as ClientId;
@@ -64,15 +66,13 @@ export namespace ClientImpl {
     appId: AppId,
     params: ClientCreateParams,
   ): Promise<Client> {
-    return client
-      .create<PODClient>(endpointForCollection(appId), params)
-      .then((podClient) => new Client(client, podClient));
+    const podClient = await client.create<PODClient>(endpointForCollection(appId), params);
+    return new Client(client, podClient);
   }
 
   export async function get(client: HttpClient, appId: AppId, clientId: ClientId): Promise<Client> {
-    return client
-      .get<PODClient>(endpointForId(appId, clientId))
-      .then((podClient) => new Client(client, podClient));
+    const podClient = await client.get<PODClient>(endpointForId(appId, clientId));
+    return new Client(client, podClient);
   }
 
   export async function list(
@@ -94,9 +94,8 @@ export namespace ClientImpl {
     clientId: ClientId,
     params: ClientUpdateParams,
   ): Promise<Client> {
-    return client
-      .update<PODClient>(endpointForId(appId, clientId), params)
-      .then((podClient) => new Client(client, podClient));
+    const podClient = await client.update<PODClient>(endpointForId(appId, clientId), params);
+    return new Client(client, podClient);
   }
 
   export async function delete_(
