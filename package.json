@@ -91,5 +91,8 @@
     "type-fest": "^0.20.0",
     "web-streams-polyfill": "^3.0.1"
   },
-  "browserslist": ">2%"
+  "browserslist": ">2%",
+  "engines": {
+    "node": ">=14"
+  }
 }
