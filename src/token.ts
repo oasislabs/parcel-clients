@@ -6,6 +6,7 @@ import type { Except, JsonObject } from 'type-fest';
 import type { IdentityId } from './identity.js';
 import './polyfill.js'; // eslint-disable-line import/no-unassigned-import
 
+const DEFAULT_TOKEN_ENDPOINT = 'https://auth.oasislabs.com/oauth/token';
 export const PARCEL_RUNTIME_AUD = 'https://api.oasislabs.com/parcel'; // TODO(#326)
 
 export abstract class TokenProvider {
@@ -57,25 +58,23 @@ export class StaticTokenProvider implements TokenProvider {
 export type RenewingTokenProviderParams = {
   clientId: string;
 
-  privateKey: PrivateJWK;
+  privateKey: string;
 
   /**
    * The identity provider's OAuth token retrieval endpoint.
-   * If left undefined, the access token will be self-signed with the `clientId`
-   * as the issuer.
    */
-  tokenEndpoint: string;
+  tokenEndpoint?: string;
 
   /**
    * The audience to use when using provider's OAuth token retrieval endpoint.
    */
-  audience: string;
+  audience?: string;
 
   /**
    * A list of scopes that will be requested from the identity provider, which
    * may be different from the scopes that the identity provider actually returns.
    */
-  scopes: string[];
+  scopes?: string[];
 };
 
 /** A `TokenProvider` that obtains a new token by re-authenticating to the issuer. */
@@ -91,21 +90,26 @@ export class RenewingTokenProvider extends ExpiringTokenProvider {
 
   public constructor({
     clientId,
-    privateKey: privateJWK,
+    privateKey: clientSecret,
     scopes,
     tokenEndpoint,
     audience,
   }: RenewingTokenProviderParams) {
     super();
 
+    const privateJWK = JSON.parse(clientSecret);
+    if (privateJWK.kty !== 'EC') {
+      throw new Error('Private key should be an ECDSA key.');
+    }
+
     const { privateKey, keyId } = jwkToPem(privateJWK);
     this.privateKey = privateKey;
     this.keyId = keyId;
 
     this.clientId = clientId;
-    this.tokenEndpoint = tokenEndpoint;
-    this.audience = audience;
-    this.scopes = scopes;
+    this.tokenEndpoint = tokenEndpoint ?? DEFAULT_TOKEN_ENDPOINT;
+    this.audience = audience ?? PARCEL_RUNTIME_AUD;
+    this.scopes = scopes ?? ['parcel.temp_api', 'parcel.temp_storage'];
   }
 
   protected async renewToken(): Promise<Token> {
