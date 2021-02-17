@@ -1,6 +1,7 @@
 import Parcel, { IdentityId } from '@oasislabs/parcel';
 import fs from 'fs';
 
+// #region snippet-config
 const tokenSourceAcme = {
   principal: '0d9f279b-a5d8-7260-e090-ff1a7659ba3b' as IdentityId,
   privateKey: {
@@ -27,6 +28,7 @@ const tokenSourceBob = {
     d: 'gXQmoXWOQvh8X4fM0d9b5aVYro3jhCkx0svuez9yMhk',
   },
 } as const;
+// #endregion snippet-config
 
 async function main() {
   // #region snippet-identity-acme-connect
@@ -40,14 +42,14 @@ async function main() {
   // #region snippet-upload
   // Upload a dataset and assign ownership to Bob.
   const data = 'The weather will be sunny tomorrow and cloudy on Tuesday.';
-  const datasetDetails = { title: 'Weather forecast summary', tags: ['weather_forecast'] };
-  console.log(`Uploading data for Bob (owner ID: ${tokenSourceBob.principal as string})`);
+  const datasetDetails = { title: 'Weather forecast summary' };
+  console.log(`Uploading data for Bob (owner ID: ${tokenSourceBob.principal})`);
   const dataset = await parcelAcme.uploadDataset(data, {
     details: datasetDetails,
     owner: tokenSourceBob.principal,
   }).finished;
 
-  console.log(`Created dataset ${dataset.id as string} with owner ${dataset.owner as string}`);
+  console.log(`Created dataset ${dataset.id} with owner ${dataset.owner}`);
   // #endregion snippet-upload
 
   // #region snippet-download-acme-error
@@ -55,12 +57,14 @@ async function main() {
   let download = parcelAcme.downloadDataset(dataset.id);
   let saver = fs.createWriteStream(`./bob_data_by_acme`);
   try {
-    console.log(`Attempting to access Bob's data without permission...`);
+    console.log(`Attempting to access Bob's dataset without permission...`);
     await download.pipeTo(saver);
   } catch (error: any) {
-    console.log(`ACME was not able to access Bob's data (this was expected): ${error as string}`);
+    console.log(`ACME was not able to access Bob's data (this was expected): ${error}`);
   }
   // #endregion snippet-download-acme-error
+
+  console.log();
 
   // #region snippet-download-bob-success
   // Create Bob's parcel instance using his API access token.
@@ -70,15 +74,17 @@ async function main() {
   await parcelBob.getCurrentIdentity();
 
   // Now let's try to download it again, this time as Bob.
-  console.log(`Attempting to access Bob's data by Bob himself...`);
+  console.log(`Attempting to access Bob's dataset by Bob himself...`);
   download = parcelBob.downloadDataset(dataset.id);
   saver = fs.createWriteStream(`./bob_data_by_bob`);
   await download.pipeTo(saver);
-  console.log(`Dataset ${dataset.id as string} has been downloaded to ./bob_data_by_bob`);
+  console.log(`Dataset ${dataset.id} has been downloaded to ./bob_data_by_bob`);
 
   const secretDataByBob = fs.readFileSync('./bob_data_by_bob', 'utf-8');
   console.log(`Here's the data: ${secretDataByBob}`);
   // #endregion snippet-download-bob-success
+
+  console.log();
 
   // #region snippet-create-grant
   // Grant ACME access to Bob's data.
@@ -87,32 +93,71 @@ async function main() {
     filter: { 'dataset.id': { $eq: dataset.id } },
   });
   console.log(
-    `New grant ${grant.id as string} for dataset ${dataset.id as string} and grantee ${
-      tokenSourceAcme.principal as string
-    } has been created`,
+    `New grant ${grant.id} for dataset ${dataset.id} and grantee ${tokenSourceAcme.principal} has been created`,
   );
   // #endregion snippet-create-grant
 
   // #region snippet-download-acme-success
   // ACME is now allowed to download Bob's data.
-  console.log(`Attempting to access Bob's data with granted permission...`);
+  console.log(`Attempting to access Bob's dataset with granted permission...`);
   download = parcelAcme.downloadDataset(dataset.id);
   saver = fs.createWriteStream(`./bob_data_by_acme`);
   await download.pipeTo(saver);
-  console.log(`Dataset ${dataset.id as string} has been downloaded to ./bob_data_by_acme`);
+  console.log(`Dataset ${dataset.id} has been downloaded to ./bob_data_by_acme`);
 
   const secretDataByAcme = fs.readFileSync('./bob_data_by_acme', 'utf-8');
   console.log(`Here's the data: ${secretDataByAcme}`);
   // #endregion snippet-download-acme-success
+
+  console.log();
+
+  // #region snippet-upload-with-tags
+  // Upload a dataset with a specific tag and assign ownership to Bob.
+  const dataWithTags = 'Vreme bo jutri sončno, v torek pa oblačno.';
+  const datasetDetailsWithTags = {
+    title: 'Povzetek vremenske napovedi',
+    tags: ['lang_sl'],
+  };
+  console.log(
+    `Uploading data for Bob with ${datasetDetailsWithTags.tags} tags (owner ID: ${tokenSourceBob.principal})`,
+  );
+  const datasetWithTags = await parcelAcme.uploadDataset(dataWithTags, {
+    details: datasetDetailsWithTags,
+    owner: tokenSourceBob.principal,
+  }).finished;
+
+  console.log(
+    `Created dataset ${datasetWithTags.id} with owner ${datasetWithTags.owner} and tags ${datasetWithTags.details.tags}`,
+  );
+  // #endregion snippet-upload-with-tags
+
+  // #region snippet-create-grant-with-tags
+  // Grant ACME access to any Bob's dataset containing tag 'lang:sl'.
+  const grantWithTags = await parcelBob.createGrant({
+    grantee: tokenSourceAcme.principal,
+    filter: { 'dataset.details.tags': { $any: { $eq: 'lang_sl' } } },
+  });
+  console.log(
+    `New grant ${grantWithTags.id} for datasets with tags 'lang_sl' and grantee ${tokenSourceAcme.principal} has been created`,
+  );
+  // #endregion snippet-create-grant-with-tags
+
+  // #region snippet-download-acme-success-with-tags
+  // ACME is now allowed to download Bob's data.
+  console.log(`Attempting to access Bob's dataset with tags-based grant...`);
+  download = parcelAcme.downloadDataset(datasetWithTags.id);
+  saver = fs.createWriteStream(`./bob_data_by_acme_with_tags`);
+  await download.pipeTo(saver);
+  console.log(`Dataset ${datasetWithTags.id} has been downloaded to ./bob_data_by_acme_with_tags`);
+
+  const secretDataByAcmeWithTags = fs.readFileSync('./bob_data_by_acme_with_tags', 'utf-8');
+  console.log(`Here's the data: ${secretDataByAcmeWithTags}`);
+  // #endregion snippet-download-acme-success-with-tags
 }
 
 main()
   .then(() => console.log('All done!'))
   .catch((error) => {
-    console.error(
-      `Error in main(): ${
-        ((error.response ? error.response.data.error : '') as string) || JSON.stringify(error)
-      }`,
-    );
+    console.error(`Error in main(): ${error}`);
     process.exitCode = 1;
   });

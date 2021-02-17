@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <script src="https://cdn.jsdelivr.net/gh/IdentityModel/oidc-client-js@1.10.1/dist/oidc-client.js"></script>
+  </head>
+  <body>
+    <div class="main">
+      <p>Verifying authorization token...</p>
+    </div>
+    <!-- #region snippet-start -->
+    <script src="/getOidcConfig" type="text/javascript"></script>
+    <script>
+      Oidc.Log.logger = console;
+      Oidc.Log.level = Oidc.Log.DEBUG;
+      const oidcClient = new Oidc.OidcClient(oidcConfig);
+      (async function() {
+        const response = await oidcClient.processSigninResponse(location.href);
+        location.assign(`/finalize_login?access_token=${response.access_token}`);
+      })();
+    </script>
+    <!-- #endregion snippet-start -->
+  </body>
+</html>
