@@ -134,8 +134,8 @@ export class App implements Model {
   /**
    * Returns the consents associated with this app.
    */
-  public async listConsents(): Promise<Page<Consent>> {
-    return ConsentImpl.list(this.client, this.id);
+  public async listConsents(filter?: PageParams): Promise<Page<Consent>> {
+    return ConsentImpl.list(this.client, this.id, filter);
   }
 
   /**

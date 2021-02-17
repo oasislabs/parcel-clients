@@ -564,7 +564,7 @@ describe('Parcel', () => {
           const filterWithPagination = {
             app: fixtureResultsPage.results[0].appId as AppId,
             pageSize: 2,
-            nextPageToken: uuid.v4(),
+            pageToken: uuid.v4(),
           };
           expect(filterWithPagination).toMatchSchema(
             getQueryParametersSchema('GET', '/identities/{identity_id}/consents'),
@@ -760,7 +760,7 @@ describe('Parcel', () => {
           accessor: fixtureDataset.owner as IdentityId,
           dataset: fixtureDataset.id as DatasetId,
           pageSize: 2,
-          nextPageToken: uuid.v4(),
+          pageToken: uuid.v4(),
         };
         expect(filterWithPagination).toMatchSchema(
           getQueryParametersSchema('GET', '/datasets/{dataset_id}/history'),
@@ -832,7 +832,7 @@ describe('Parcel', () => {
           creator: fixtureResultsPage.results[0].creator as IdentityId,
           tags: 'all:tag1,tag2',
           pageSize: 2,
-          nextPageToken: uuid.v4(),
+          pageToken: uuid.v4(),
         };
         expect(filterWithPagination).toMatchSchema(getQueryParametersSchema('GET', '/datasets'));
         scope
@@ -957,7 +957,7 @@ describe('Parcel', () => {
         const filterWithPagination = {
           grantee: createPodApp().id as AppId,
           pageSize: 2,
-          nextPageToken: uuid.v4(),
+          pageToken: uuid.v4(),
         };
         expect(filterWithPagination).toMatchSchema(getQueryParametersSchema('GET', '/grants'));
 
@@ -1060,7 +1060,7 @@ describe('Parcel', () => {
           creator: createIdentityId(),
           participation: 'invited' as const,
           pageSize: 2,
-          nextPageToken: uuid.v4(),
+          pageToken: uuid.v4(),
         };
         expect(filterWithPagination).toMatchSchema(getQueryParametersSchema('GET', '/apps'));
         scope
@@ -1283,7 +1283,7 @@ describe('Parcel', () => {
           const filterWithPagination = {
             creator: createIdentityId(),
             pageSize: 2,
-            nextPageToken: uuid.v4(),
+            pageToken: uuid.v4(),
           };
           expect(filterWithPagination).toMatchSchema(
             getQueryParametersSchema('GET', '/apps/{app_id}/clients'),
@@ -1400,7 +1400,7 @@ describe('Parcel', () => {
         const filterWithPagination = {
           // Only pagination params; listing jobs does not support other filters.
           pageSize: 2,
-          nextPageToken: uuid.v4(),
+          pageToken: uuid.v4(),
         };
         expect(filterWithPagination).toMatchSchema(
           getQueryParametersSchema('GET', '/compute/jobs'),

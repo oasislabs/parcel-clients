@@ -33,7 +33,7 @@ export type Page<T = JsonValue> = {
 
 export type PageParams = Partial<{
   pageSize: number;
-  nextPageToken: string;
+  pageToken: string;
 }>;
 
 export function makePage<Pod extends PODModel, M extends Model>(
