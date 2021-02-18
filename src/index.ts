@@ -8,8 +8,6 @@ import type {
   ListClientsFilter,
 } from './client.js';
 import { ClientImpl } from './client.js';
-import type { Consent, ConsentCreateParams, ConsentId } from './consent.js';
-import { ConsentImpl } from './consent.js';
 import type {
   AccessEvent,
   Dataset,
@@ -42,6 +40,8 @@ import type {
 } from './identity.js';
 import { IdentityImpl } from './identity.js';
 import type { Page, PageParams } from './model.js';
+import type { Permission, PermissionCreateParams, PermissionId } from './permission.js';
+import { PermissionImpl } from './permission.js';
 import type { ClientCredentials, PrivateJWK, PublicJWK, TokenSource } from './token.js';
 import { TokenProvider } from './token.js';
 
@@ -55,9 +55,9 @@ export {
   ClientCreateParams,
   ClientCredentials,
   ClientId,
-  Consent,
-  ConsentCreateParams,
-  ConsentId,
+  Permission,
+  PermissionCreateParams,
+  PermissionId,
   Dataset,
   DatasetId,
   DatasetUpdateParams,
@@ -165,16 +165,16 @@ export default class Parcel {
     return AppImpl.delete_(this.client, id);
   }
 
-  public async createConsent(appId: AppId, params: ConsentCreateParams): Promise<Consent> {
-    return ConsentImpl.create(this.client, appId, params);
+  public async createPermission(appId: AppId, params: PermissionCreateParams): Promise<Permission> {
+    return PermissionImpl.create(this.client, appId, params);
   }
 
-  public async listConsents(appId: AppId, filter: PageParams): Promise<Page<Consent>> {
-    return ConsentImpl.list(this.client, appId, filter);
+  public async listPermissions(appId: AppId, filter: PageParams): Promise<Page<Permission>> {
+    return PermissionImpl.list(this.client, appId, filter);
   }
 
-  public async deleteConsent(appId: AppId, consentId: ConsentId): Promise<void> {
-    return ConsentImpl.delete_(this.client, appId, consentId);
+  public async deletePermission(appId: AppId, permissionId: PermissionId): Promise<void> {
+    return PermissionImpl.delete_(this.client, appId, permissionId);
   }
 
   public async createClient(appId: AppId, params: ClientCreateParams): Promise<Client> {

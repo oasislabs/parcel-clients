@@ -1,11 +1,11 @@
 import type { Opaque, SetOptional } from 'type-fest';
 
 import type { AppId } from './app.js';
-import { Consent } from './consent.js';
-import type { ConsentId, PODConsent } from './consent.js';
 import type { HttpClient } from './http.js';
 import { setExpectedStatus } from './http.js';
 import type { Model, Page, PageParams, PODModel, ResourceId, Writable } from './model.js';
+import { Permission } from './permission.js';
+import type { PermissionId, PODPermission } from './permission.js';
 import type { IdentityTokenClaims, PublicJWK } from './token.js';
 
 export type IdentityId = Opaque<ResourceId, 'IdentityId' | 'AppId'>;
@@ -15,9 +15,9 @@ export type PODIdentity = Readonly<PODModel & IdentityCreateParams>;
 const IDENTITIES_EP = 'identities';
 const IDENTITIES_ME = `${IDENTITIES_EP}/me`;
 const endpointForId = (id: IdentityId) => `${IDENTITIES_EP}/${id}`;
-const endpointForConsents = (id: IdentityId) => `${endpointForId(id)}/consents`;
-const endpointForConsent = (identityId: IdentityId, consentId: ConsentId) =>
-  `${endpointForConsents(identityId)}/${consentId}`;
+const endpointForPermissions = (id: IdentityId) => `${endpointForId(id)}/permissions`;
+const endpointForPermission = (identityId: IdentityId, permissionId: PermissionId) =>
+  `${endpointForPermissions(identityId)}/${permissionId}`;
 
 export class Identity implements Model {
   public readonly id: IdentityId;
@@ -39,24 +39,24 @@ export class Identity implements Model {
     return IdentityImpl.delete_(this.client, this.id);
   }
 
-  public async grantConsent(id: ConsentId): Promise<void> {
-    return IdentityImpl.grantConsent(this.client, this.id, id);
+  public async grantPermission(id: PermissionId): Promise<void> {
+    return IdentityImpl.grantPermission(this.client, this.id, id);
   }
 
-  /** Fetches consents to which this identity has consented.  */
-  public async listGrantedConsents(
-    filter?: ListGrantedConsentsFilter & PageParams,
-  ): Promise<Page<Consent>> {
-    return IdentityImpl.listGrantedConsents(this.client, this.id, filter);
+  /** Fetches permissions to which this identity has permissioned.  */
+  public async listGrantedPermissions(
+    filter?: ListGrantedPermissionsFilter & PageParams,
+  ): Promise<Page<Permission>> {
+    return IdentityImpl.listGrantedPermissions(this.client, this.id, filter);
   }
 
-  /** * Gets a granted consent by id. Useful for checking if a consent has been granted. */
-  public async getGrantedConsent(id: ConsentId): Promise<Consent> {
-    return IdentityImpl.getGrantedConsent(this.client, this.id, id);
+  /** * Gets a granted permission by id. Useful for checking if a permission has been granted. */
+  public async getGrantedPermission(id: PermissionId): Promise<Permission> {
+    return IdentityImpl.getGrantedPermission(this.client, this.id, id);
   }
 
-  public async revokeConsent(id: ConsentId): Promise<void> {
-    return IdentityImpl.revokeConsent(this.client, this.id, id);
+  public async revokePermission(id: PermissionId): Promise<void> {
+    return IdentityImpl.revokePermission(this.client, this.id, id);
   }
 }
 
@@ -92,46 +92,51 @@ export namespace IdentityImpl {
     return client.delete(endpointForId(id));
   }
 
-  export async function grantConsent(
+  export async function grantPermission(
     client: HttpClient,
     identityId: IdentityId,
-    consentId: ConsentId,
+    permissionId: PermissionId,
   ): Promise<void> {
-    await client.post(endpointForConsent(identityId, consentId), undefined, {
+    await client.post(endpointForPermission(identityId, permissionId), undefined, {
       hooks: {
         beforeRequest: [setExpectedStatus(204)],
       },
     });
   }
 
-  export async function listGrantedConsents(
+  export async function listGrantedPermissions(
     client: HttpClient,
     identityId: IdentityId,
-    filter?: ListGrantedConsentsFilter & PageParams,
-  ): Promise<Page<Consent>> {
-    const podPage = await client.get<Page<PODConsent>>(endpointForConsents(identityId), filter);
-    const results = podPage.results.map((podConsent) => new Consent(client, podConsent));
+    filter?: ListGrantedPermissionsFilter & PageParams,
+  ): Promise<Page<Permission>> {
+    const podPage = await client.get<Page<PODPermission>>(
+      endpointForPermissions(identityId),
+      filter,
+    );
+    const results = podPage.results.map((podPermission) => new Permission(client, podPermission));
     return {
       results,
       nextPageToken: podPage.nextPageToken,
     };
   }
 
-  export async function getGrantedConsent(
+  export async function getGrantedPermission(
     client: HttpClient,
     identityId: IdentityId,
-    consentId: ConsentId,
-  ): Promise<Consent> {
-    const podConsent = await client.get<PODConsent>(endpointForConsent(identityId, consentId));
-    return new Consent(client, podConsent);
+    permissionId: PermissionId,
+  ): Promise<Permission> {
+    const podPermission = await client.get<PODPermission>(
+      endpointForPermission(identityId, permissionId),
+    );
+    return new Permission(client, podPermission);
   }
 
-  export async function revokeConsent(
+  export async function revokePermission(
     client: HttpClient,
     identityId: IdentityId,
-    consentId: ConsentId,
+    permissionId: PermissionId,
   ): Promise<void> {
-    await client.delete(endpointForConsent(identityId, consentId));
+    await client.delete(endpointForPermission(identityId, permissionId));
   }
 }
 
@@ -146,7 +151,7 @@ export type IdentityTokenVerifier = IdentityTokenClaims & {
 
 export type IdentityTokenVerifierCreate = SetOptional<IdentityTokenVerifier, 'sub' | 'iss'>;
 
-export type ListGrantedConsentsFilter = Partial<{
-  /** Only return consents granted to this app. */
+export type ListGrantedPermissionsFilter = Partial<{
+  /** Only return permissions granted to this app. */
   app: AppId;
 }>;

@@ -1,11 +1,11 @@
 import type { Except, Opaque } from 'type-fest';
 
-import { Consent, ConsentImpl } from './consent.js';
-import type { ConsentCreateParams, ConsentId } from './consent.js';
 import type { HttpClient } from './http.js';
 import type { IdentityId, IdentityTokenVerifierCreate } from './identity.js';
 import type { Model, Page, PageParams, PODModel, ResourceId, WritableExcluding } from './model.js';
 import { makePage } from './model.js';
+import { Permission, PermissionImpl } from './permission.js';
+import type { PermissionCreateParams, PermissionId } from './permission.js';
 
 export type AppId = Opaque<ResourceId, 'AppId'>;
 
@@ -46,7 +46,7 @@ export class App implements Model {
   /** Identities that can view participation of the app and modify un-privileged fields. */
   public readonly collaborators: IdentityId[];
 
-  /** Whether this app has been published. Consents may not be modified after publishing, */
+  /** Whether this app has been published. Permissions may not be modified after publishing, */
   public readonly published: boolean;
   /** If `true`, only invited Identities may participate in the app. */
   public readonly inviteOnly: boolean;
@@ -124,26 +124,26 @@ export class App implements Model {
   }
 
   /**
-   * Creates a new consent that this app will request from users. The new consent
-   * will be added to `this.consents`.
+   * Creates a new permission that this app will request from users. The new permission
+   * will be added to `this.permissions`.
    */
-  public async createConsent(params: ConsentCreateParams): Promise<Consent> {
-    return ConsentImpl.create(this.client, this.id, params);
+  public async createPermission(params: PermissionCreateParams): Promise<Permission> {
+    return PermissionImpl.create(this.client, this.id, params);
   }
 
   /**
-   * Returns the consents associated with this app.
+   * Returns the permissions associated with this app.
    */
-  public async listConsents(filter?: PageParams): Promise<Page<Consent>> {
-    return ConsentImpl.list(this.client, this.id, filter);
+  public async listPermissions(filter?: PageParams): Promise<Page<Permission>> {
+    return PermissionImpl.list(this.client, this.id, filter);
   }
 
   /**
-   * Deletes a consent from this app, revoking any access made by granting consent.
-   * will be removed from `this.consents`.
+   * Deletes a permission from this app, revoking any access made by granting permission.
+   * will be removed from `this.permissions`.
    */
-  public async deleteConsent(consentId: ConsentId): Promise<void> {
-    return ConsentImpl.delete_(this.client, this.id, consentId);
+  public async deletePermission(permissionId: PermissionId): Promise<void> {
+    return PermissionImpl.delete_(this.client, this.id, permissionId);
   }
 }
 

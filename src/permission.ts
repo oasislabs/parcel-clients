@@ -8,53 +8,53 @@ import type { IdentityId } from './identity.js';
 import type { Model, Page, PageParams, PODModel, ResourceId } from './model.js';
 import { makePage } from './model.js';
 
-export type ConsentId = Opaque<ResourceId, 'ConsentId'>;
+export type PermissionId = Opaque<ResourceId, 'PermissionId'>;
 
-export type PODConsent = Readonly<
+export type PODPermission = Readonly<
   PODModel &
-    ConsentCreateParams & {
+    PermissionCreateParams & {
       appId: ResourceId;
     }
 >;
 
-export type ConsentCreateParams = {
-  /** The Grants to make when the App containing this Consent is joined. */
+export type PermissionCreateParams = {
+  /** The Grants to make when the App containing this Permission is joined. */
   grants: GrantSpec[];
 
-  /** The name of this consent. */
+  /** The name of this permission. */
   name: string;
 
-  /** The description of this consent seen by users when shown in an app. */
+  /** The description of this permission seen by users when shown in an app. */
   description: string;
 
-  /** The text seen by users when accepting this consent. */
+  /** The text seen by users when accepting this permission. */
   allowText: string;
 
-  /** The text seen by users when denying this consent. */
+  /** The text seen by users when denying this permission. */
   denyText: string;
 };
 
-export class Consent implements Model {
-  public readonly id: ConsentId;
+export class Permission implements Model {
+  public readonly id: PermissionId;
   public readonly appId: AppId;
   public readonly createdAt: Date;
 
-  /** The Grants to make when the App containing this Consent is joined. */
+  /** The Grants to make when the App containing this Permission is joined. */
   public readonly grants: GrantSpec[];
 
   public readonly name: string;
 
-  /** The description of this consent seen by users when shown in an app. */
+  /** The description of this permission seen by users when shown in an app. */
   public readonly description: string;
 
-  /** The text seen by users when accepting this consent. */
+  /** The text seen by users when accepting this permission. */
   public readonly allowText: string;
 
-  /** The text seen by users when denying this consent. */
+  /** The text seen by users when denying this permission. */
   public readonly denyText: string;
 
-  public constructor(private readonly client: HttpClient, pod: PODConsent) {
-    this.id = pod.id as ConsentId;
+  public constructor(private readonly client: HttpClient, pod: PODPermission) {
+    this.id = pod.id as PermissionId;
     this.appId = pod.appId as AppId;
     this.createdAt = new Date(pod.createdAt);
     this.grants = pod.grants;
@@ -65,46 +65,46 @@ export class Consent implements Model {
   }
 }
 
-export namespace ConsentImpl {
+export namespace PermissionImpl {
   export async function create(
     client: HttpClient,
     appId: AppId,
-    params: ConsentCreateParams,
-  ): Promise<Consent> {
-    const podConsent = await client.create<PODConsent>(endpointForCollection(appId), params);
-    return new Consent(client, podConsent);
+    params: PermissionCreateParams,
+  ): Promise<Permission> {
+    const podPermission = await client.create<PODPermission>(endpointForCollection(appId), params);
+    return new Permission(client, podPermission);
   }
 
   export async function list(
     client: HttpClient,
     appId: AppId,
     filter?: PageParams,
-  ): Promise<Page<Consent>> {
-    const podPage = await client.get<Page<PODConsent>>(endpointForCollection(appId), filter);
-    return makePage(Consent, podPage, client);
+  ): Promise<Page<Permission>> {
+    const podPage = await client.get<Page<PODPermission>>(endpointForCollection(appId), filter);
+    return makePage(Permission, podPage, client);
   }
 
   export async function get(
     client: HttpClient,
     appId: AppId,
-    consentId: ConsentId,
-  ): Promise<Consent> {
-    const podConsent = await client.get<PODConsent>(endpointForId(appId, consentId));
-    return new Consent(client, podConsent);
+    permissionId: PermissionId,
+  ): Promise<Permission> {
+    const podPermission = await client.get<PODPermission>(endpointForId(appId, permissionId));
+    return new Permission(client, podPermission);
   }
 
   export async function delete_(
     client: HttpClient,
     appId: AppId,
-    consentId: ConsentId,
+    permissionId: PermissionId,
   ): Promise<void> {
-    return client.delete(endpointForId(appId, consentId));
+    return client.delete(endpointForId(appId, permissionId));
   }
 }
 
-const endpointForCollection = (appId: AppId) => `${endpointForApp(appId)}/consents`;
-const endpointForId = (appId: AppId, consentId: ConsentId) =>
-  `${endpointForCollection(appId)}/${consentId}`;
+const endpointForCollection = (appId: AppId) => `${endpointForApp(appId)}/permissions`;
+const endpointForId = (appId: AppId, permissionId: PermissionId) =>
+  `${endpointForCollection(appId)}/${permissionId}`;
 
 export type GrantSpec = {
   /** The symbolic granter. */

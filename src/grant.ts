@@ -1,11 +1,11 @@
 import type { Opaque } from 'type-fest';
 
-import type { ConsentId } from './consent.js';
 import type { Constraints } from './filter.js';
 import type { HttpClient } from './http.js';
 import type { IdentityId } from './identity.js';
 import type { Model, Page, PageParams, PODModel, ResourceId } from './model.js';
 import { makePage } from './model.js';
+import type { PermissionId } from './permission.js';
 
 export type GrantId = Opaque<ResourceId, 'GrantId'>;
 
@@ -13,7 +13,7 @@ export type PODGrant = Readonly<
   PODModel & {
     granter: ResourceId;
     grantee?: ResourceId;
-    consent?: ResourceId;
+    permission?: ResourceId;
     filter?: Constraints;
   }
 >;
@@ -42,8 +42,8 @@ export class Grant implements Model {
   public readonly grantee: IdentityId | 'everyone';
   /** A filter that gives permission to only matching Datasets. */
   public readonly filter?: Constraints;
-  /** The Consent that created this Grant, if any. */
-  public readonly consent?: ConsentId;
+  /** The Permission that created this Grant, if any. */
+  public readonly permission?: PermissionId;
 
   public constructor(private readonly client: HttpClient, pod: PODGrant) {
     this.id = pod.id as GrantId;
@@ -51,7 +51,7 @@ export class Grant implements Model {
     this.granter = pod.granter as IdentityId;
     this.grantee = (pod.grantee as IdentityId) ?? 'everyone';
     this.filter = pod.filter;
-    this.consent = pod.consent as ConsentId;
+    this.permission = pod.permission as PermissionId;
   }
 
   public async delete(): Promise<void> {
