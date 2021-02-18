@@ -169,7 +169,7 @@ export default class Parcel {
     return PermissionImpl.create(this.client, appId, params);
   }
 
-  public async listPermissions(appId: AppId, filter: PageParams): Promise<Page<Permission>> {
+  public async listPermissions(appId: AppId, filter?: PageParams): Promise<Page<Permission>> {
     return PermissionImpl.list(this.client, appId, filter);
   }
 
