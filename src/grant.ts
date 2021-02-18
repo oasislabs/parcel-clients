@@ -1,6 +1,6 @@
 import type { Opaque } from 'type-fest';
 
-import type { Constraints } from './filter.js';
+import type { Conditions } from './conditions.js';
 import type { HttpClient } from './http.js';
 import type { IdentityId } from './identity.js';
 import type { Model, Page, PageParams, PODModel, ResourceId } from './model.js';
@@ -14,7 +14,7 @@ export type PODGrant = Readonly<
     granter: ResourceId;
     grantee?: ResourceId;
     permission?: ResourceId;
-    filter?: Constraints;
+    conditions?: Conditions;
   }
 >;
 
@@ -24,8 +24,8 @@ export type GrantCreateParams = {
    */
   grantee: IdentityId | 'everyone';
 
-  /** A filter that gives permission to only matching Datasets. */
-  filter?: Constraints;
+  /** Conditoins that must be matched to recieve access to one or more Datasets. */
+  conditions?: Conditions;
 };
 
 const GRANTS_EP = 'grants';
@@ -40,8 +40,8 @@ export class Grant implements Model {
    * The Identity to which permission is given or everyone,
    */
   public readonly grantee: IdentityId | 'everyone';
-  /** A filter that gives permission to only matching Datasets. */
-  public readonly filter?: Constraints;
+  /** Condtions that describe Datasets to be shared. */
+  public readonly conditions?: Conditions;
   /** The Permission that created this Grant, if any. */
   public readonly permission?: PermissionId;
 
@@ -50,7 +50,7 @@ export class Grant implements Model {
     this.createdAt = new Date(pod.createdAt);
     this.granter = pod.granter as IdentityId;
     this.grantee = (pod.grantee as IdentityId) ?? 'everyone';
-    this.filter = pod.filter;
+    this.conditions = pod.conditions;
     this.permission = pod.permission as PermissionId;
   }
 

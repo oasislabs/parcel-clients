@@ -2,7 +2,7 @@ import type { Opaque } from 'type-fest';
 
 import type { AppId } from './app.js';
 import { endpointForId as endpointForApp } from './app.js';
-import type { Constraints } from './filter.js';
+import type { Conditions } from './conditions.js';
 import type { HttpClient } from './http.js';
 import type { IdentityId } from './identity.js';
 import type { Model, Page, PageParams, PODModel, ResourceId } from './model.js';
@@ -113,8 +113,8 @@ export type GrantSpec = {
   /** The symbolic grantee */
   grantee?: GranteeRef;
 
-  /** The Grant's filter. @see `Grant.filter`. */
-  filter?: Constraints;
+  /** The Grant's conditions. @see `Grant.conditions`. */
+  conditions?: Conditions;
 };
 
 /** `app` represents the app, `participant` represents the joining identity. */

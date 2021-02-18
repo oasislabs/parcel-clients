@@ -343,7 +343,7 @@ describe('Parcel', () => {
       granter: createIdentityId(),
       grantee: createIdentityId(),
       permission: createPermissionId(),
-      filter: { 'dataset.details.tags': { $any: { $eq: 'mock' } } },
+      conditions: { 'dataset.details.tags': { $any: { $eq: 'mock' } } },
     };
     expect(podGrant).toMatchSchema('Grant');
     return podGrant;
@@ -400,7 +400,7 @@ describe('Parcel', () => {
         {
           granter: 'participant',
           grantee: 'app',
-          filter: { 'dataset.details.tags': { $any: { $eq: 'mock' } } },
+          conditions: { 'dataset.details.tags': { $any: { $eq: 'mock' } } },
         },
       ],
       appId: createAppId(),
@@ -930,7 +930,7 @@ describe('Parcel', () => {
       expect(fixtureGrant).toMatchSchema(getResponseSchema('POST', '/grants', 201));
       const createParams = {
         grantee: createIdentityId(),
-        filter: fixtureGrant.filter,
+        conditions: fixtureGrant.conditions,
       };
       expect(createParams).toMatchSchema(getRequestSchema('POST', '/grants'));
       scope.post('/grants', createParams).reply(201, fixtureGrant);

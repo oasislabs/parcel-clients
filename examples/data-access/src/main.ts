@@ -90,7 +90,7 @@ async function main() {
   // Grant ACME access to Bob's data.
   const grant = await parcelBob.createGrant({
     grantee: tokenSourceAcme.principal,
-    filter: { 'dataset.id': { $eq: dataset.id } },
+    conditions: { 'dataset.id': { $eq: dataset.id } },
   });
   console.log(
     `New grant ${grant.id} for dataset ${dataset.id} and grantee ${tokenSourceAcme.principal} has been created`,
@@ -135,7 +135,7 @@ async function main() {
   // Grant ACME access to any Bob's dataset containing tag 'lang:sl'.
   const grantWithTags = await parcelBob.createGrant({
     grantee: tokenSourceAcme.principal,
-    filter: { 'dataset.details.tags': { $any: { $eq: 'lang_sl' } } },
+    conditions: { 'dataset.details.tags': { $any: { $eq: 'lang_sl' } } },
   });
   console.log(
     `New grant ${grantWithTags.id} for datasets with tags 'lang_sl' and grantee ${tokenSourceAcme.principal} has been created`,

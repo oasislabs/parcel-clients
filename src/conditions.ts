@@ -3,15 +3,15 @@ import type { Primitive } from 'type-fest';
 import type { DatasetId as $DatasetId } from './dataset.js';
 import type { IdentityId } from './identity.js';
 
-export namespace Constraints {
+export namespace Conditions {
   export type And = {
-    $and: Constraints[];
+    $and: Conditions[];
   };
   export type Or = {
-    $or: Constraints[];
+    $or: Conditions[];
   };
   export type Not = {
-    $not: Constraints;
+    $not: Conditions;
   };
   export type DatasetId = {
     'dataset.id': Comparison<$DatasetId>;
@@ -23,13 +23,13 @@ export namespace Constraints {
     'dataset.details.tags': ArrayOp<string>;
   };
 }
-export type Constraints =
-  | Constraints.Or
-  | Constraints.And
-  | Constraints.Not
-  | Constraints.DatasetId
-  | Constraints.DatasetCreator
-  | Constraints.DatasetTags;
+export type Conditions =
+  | Conditions.Or
+  | Conditions.And
+  | Conditions.Not
+  | Conditions.DatasetId
+  | Conditions.DatasetCreator
+  | Conditions.DatasetTags;
 
 export namespace Comparison {
   export type In<T = Primitive> = {
