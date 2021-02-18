@@ -58,7 +58,7 @@ export class StaticTokenProvider implements TokenProvider {
 export type RenewingTokenProviderParams = {
   clientId: string;
 
-  privateKey: string;
+  privateKey: PrivateJWK;
 
   /**
    * The identity provider's OAuth token retrieval endpoint.
@@ -83,27 +83,26 @@ export class RenewingTokenProvider extends ExpiringTokenProvider {
   private readonly tokenEndpoint: string;
   private readonly audience: string;
   private readonly scopes: string[];
-  private readonly privateKey: string; // PKCS8-encoded
+  private readonly privateKeyPEM: string; // PEM is required by jsrsasign.
   private readonly keyId: string;
 
   private readonly clientAssertionLifetime = 1 * 60 * 60; // 1 hour
 
   public constructor({
     clientId,
-    privateKey: clientSecret,
+    privateKey,
     scopes,
     tokenEndpoint,
     audience,
   }: RenewingTokenProviderParams) {
     super();
 
-    const privateJWK = JSON.parse(clientSecret);
-    if (privateJWK.kty !== 'EC') {
+    if (privateKey.kty !== 'EC') {
       throw new Error('Private key should be an ECDSA key.');
     }
 
-    const { privateKey, keyId } = jwkToPem(privateJWK);
-    this.privateKey = privateKey;
+    const { privateKey: privateKeyPEM, keyId } = jwkToPem(privateKey);
+    this.privateKeyPEM = privateKeyPEM;
     this.keyId = keyId;
 
     this.clientId = clientId;
@@ -114,7 +113,7 @@ export class RenewingTokenProvider extends ExpiringTokenProvider {
 
   protected async renewToken(): Promise<Token> {
     const clientAssertion = makeJWT({
-      privateKey: this.privateKey,
+      privateKey: this.privateKeyPEM,
       keyId: this.keyId,
       payload: {
         sub: this.clientId,
@@ -200,21 +199,21 @@ export type SelfIssuedTokenProviderParams = {
 /** A `TokenProvider` that self-signs an access token. */
 export class SelfIssuedTokenProvider extends ExpiringTokenProvider {
   private readonly principal: string;
-  private readonly privateKey: string;
+  private readonly privateKeyPEM: string; // PEM is required by jsrsasign.
   private readonly keyId: string;
   private readonly scopes: string[];
   private readonly tokenLifetime: number;
 
   public constructor({
     principal,
-    privateKey: privateJWK,
+    privateKey,
     scopes,
     tokenLifetime,
   }: SelfIssuedTokenProviderParams) {
     super();
 
-    const { privateKey, keyId } = jwkToPem(privateJWK);
-    this.privateKey = privateKey;
+    const { privateKey: privateKeyPEM, keyId } = jwkToPem(privateKey);
+    this.privateKeyPEM = privateKeyPEM;
     this.keyId = keyId;
 
     this.principal = principal;
@@ -225,7 +224,7 @@ export class SelfIssuedTokenProvider extends ExpiringTokenProvider {
   protected async renewToken(): Promise<Token> {
     const expiry = Date.now() / 1000 + this.tokenLifetime;
     const token = makeJWT({
-      privateKey: this.privateKey,
+      privateKey: this.privateKeyPEM,
       keyId: this.keyId,
       payload: {
         sub: this.principal,

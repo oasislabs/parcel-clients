@@ -43,7 +43,7 @@ describe('Re(new|fresh)ingTokenProvider', () => {
 
   const renewingProviderParams = {
     clientId: 'parcel user',
-    privateKey: JSON.stringify(privateJwk),
+    privateKey: privateJwk,
     tokenEndpoint,
     scopes: ['api', 'storage'],
     audience: PARCEL_RUNTIME_AUD,
