@@ -43,7 +43,7 @@ export class Identity implements Model {
     return IdentityImpl.grantPermission(this.client, this.id, id);
   }
 
-  /** Fetches permissions to which this identity has permissioned.  */
+  /** Fetches permissions to which this identity has agreed.  */
   public async listGrantedPermissions(
     filter?: ListGrantedPermissionsFilter & PageParams,
   ): Promise<Page<Permission>> {

@@ -40,7 +40,7 @@ export class Grant implements Model {
    * The Identity to which permission is given or everyone,
    */
   public readonly grantee: IdentityId | 'everyone';
-  /** Condtions that describe Datasets to be shared. */
+  /** Conditions that describe Datasets to be shared. */
   public readonly conditions?: Conditions;
   /** The Permission that created this Grant, if any. */
   public readonly permission?: PermissionId;
