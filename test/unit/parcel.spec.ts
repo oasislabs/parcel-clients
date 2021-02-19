@@ -726,7 +726,7 @@ describe('Parcel', () => {
         const downloadCollector = new DownloadCollector();
         const downloadComplete = download.pipeTo(downloadCollector);
         setTimeout(() => download.abort(), 10);
-        await expect(downloadComplete).rejects.toThrow('The user aborted a request');
+        await expect(downloadComplete).rejects.toThrow('The operation was aborted');
         expect(download.aborted).toBe(true);
         expect(downloadCollector.collectedDownload).toHaveLength(0);
       });

@@ -2,12 +2,7 @@ import type { WriteStream } from 'fs';
 
 import AbortController from 'abort-controller';
 import FormData from 'form-data';
-import type {
-  BeforeRequestHook,
-  NormalizedOptions,
-  Options as KyOptions,
-  ResponsePromise,
-} from 'ky';
+import type { BeforeRequestHook, NormalizedOptions, Options as KyOptions } from 'ky';
 import ky from 'ky';
 import { paramCase } from 'param-case';
 import type { Readable, Writable } from 'stream';
@@ -174,7 +169,7 @@ export function setExpectedStatus(status: number): BeforeRequestHook {
  * The download may be aborted by calling `download.destroy()`, as with any `Readable`.
  */
 export class Download implements AsyncIterable<Uint8Array> {
-  private res?: ResponsePromise;
+  private res?: Promise<Response>;
   private readonly abortController: AbortController;
 
   public constructor(private readonly client: typeof ky, private readonly endpoint: string) {
@@ -226,8 +221,7 @@ export class Download implements AsyncIterable<Uint8Array> {
     }
 
     // eslint-disable-next-line node/no-unsupported-features/es-syntax
-    const stream = await import('stream'); // This only happens in the browser.
-    const Readable = stream.Readable ?? stream.default.Readable; // Imported differently depending on i-dont-know-what :/
+    const { Readable } = await import('stream'); // This only happens in the browser.
     return new Promise((resolve, reject) => {
       Readable.from(this, { objectMode: false })
         .on('error', reject)
@@ -242,7 +236,7 @@ export class Download implements AsyncIterable<Uint8Array> {
    * fails before a pipe or iterator handler is attached.
    */
   // This funciton returns double promise to make both xo and TS happy. V8 doesn't care.
-  private async makeRequest(): Promise<ResponsePromise> {
+  private async makeRequest(): Promise<Response> {
     if (!this.res) {
       this.res = this.client.get(this.endpoint, {
         signal: this.abortController.signal,
