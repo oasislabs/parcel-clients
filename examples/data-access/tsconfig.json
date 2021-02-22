@@ -5,6 +5,7 @@
         "checkJs": true,
         "esModuleInterop": true,
         "moduleResolution": "node",
+        "module": "esnext",
         "outDir": "bin/",
         "strict": true,
         "target": "es2018"

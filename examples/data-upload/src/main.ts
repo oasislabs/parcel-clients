@@ -19,48 +19,39 @@ const apiCreds = {
 } as const;
 // #endregion snippet-configuration
 
-async function main() {
-  // #region snippet-connect
-  const parcel = new Parcel(apiCreds, {
-    apiUrl: process.env.API_URL,
-  });
-  // #endregion snippet-connect
+// #region snippet-connect
+const parcel = new Parcel(apiCreds, {
+  apiUrl: process.env.API_URL,
+});
+// #endregion snippet-connect
 
-  // #region snippet-dataset-upload
-  const data = 'Hello private world!';
-  const datasetDetails = { title: 'My first dataset', tags: ['greeting', 'english'] };
-  let dataset: Dataset;
-  try {
-    dataset = await parcel.uploadDataset(data, { details: datasetDetails }).finished;
-  } catch (error: any) {
-    console.error('Failed to upload dataset');
-    throw error;
-  }
-
-  console.log(`Created dataset ${dataset.id} with title ${dataset.details.title}`);
-  // #endregion snippet-dataset-upload
-
-  // #region snippet-dataset-download
-  // Let's download the above dataset using its ID.
-  // By default, the dataset owner can download the data.
-  const download = parcel.downloadDataset(dataset.id);
-  const saver = fs.createWriteStream(`./user_data`);
-  try {
-    await download.pipeTo(saver);
-    console.log(`Dataset ${dataset.id} has been downloaded to ./user_data`);
-  } catch (error: any) {
-    console.error(`Failed to download dataset ${dataset.id}`);
-    throw error;
-  }
-
-  const secretData = fs.readFileSync('./user_data', 'utf-8');
-  console.log(`Hey dataset owner! Here's your data: ${secretData}\n`);
-  // #endregion snippet-dataset-download
+// #region snippet-dataset-upload
+const data = 'Hello private world!';
+const datasetDetails = { title: 'My first dataset', tags: ['greeting', 'english'] };
+let dataset: Dataset;
+try {
+  dataset = await parcel.uploadDataset(data, { details: datasetDetails }).finished;
+} catch (error: any) {
+  console.error('Failed to upload dataset');
+  throw error;
 }
 
-main()
-  .then(() => console.log('All done!'))
-  .catch((error) => {
-    console.error(`Error in main(): ${error}`);
-    process.exitCode = 1;
-  });
+console.log(`Created dataset ${dataset.id} with title ${dataset.details.title}`);
+// #endregion snippet-dataset-upload
+
+// #region snippet-dataset-download
+// Let's download the above dataset using its ID.
+// By default, the dataset owner can download the data.
+const download = parcel.downloadDataset(dataset.id);
+const saver = fs.createWriteStream(`./user_data`);
+try {
+  await download.pipeTo(saver);
+  console.log(`Dataset ${dataset.id} has been downloaded to ./user_data`);
+} catch (error: any) {
+  console.error(`Failed to download dataset ${dataset.id}`);
+  throw error;
+}
+
+const secretData = fs.readFileSync('./user_data', 'utf-8');
+console.log(`Hey dataset owner! Here's your data: ${secretData}\n`);
+// #endregion snippet-dataset-download
