@@ -12,15 +12,19 @@ export type JobId = Opaque<ResourceId, 'JobId'>;
  * Input dataset for a compute job.
  */
 export declare type InputDatasetSpec = {
-  mountPath: string;
+  /** ID of the dataset to mount. */
   id: DatasetId;
+  /** Path where the input dataset will be mounted inside the job. Interpreted relative to `/parcel/data/in`. */
+  mountPath: string;
 };
 
 /**
  * Specification for a compute job for outputting a dataset.
  */
 export declare type OutputDatasetSpec = {
+  /** Path to the file that should be uploaded as an output dataset. Interpreted relative to `/parcel/data/out`. */
   mountPath: string;
+  /** Owner to assign to the output dataset. */
   owner?: IdentityId;
 };
 
@@ -66,14 +70,18 @@ export type JobSpec = {
    * not allowed.
    */
   env?: Record<string, string>;
-  inputDatasets?: Array<{
-    mountPath: string;
-    id: DatasetId;
-  }>;
-  outputDatasets?: Array<{
-    mountPath: string;
-    owner: IdentityId;
-  }>;
+
+  /**
+   * Datasets to download and mount into the job's container before `cmd` runs.
+   * If any of these datasets do not exist or you do not have permission to access them, the job will fail.
+   */
+  inputDatasets?: InputDatasetSpec[];
+
+  /**
+   * Files to be uploaded from the job's container as datasets after `cmd` runs.
+   * Files that do not exist will be silently skipped; the job will not fail.
+   */
+  outputDatasets?: OutputDatasetSpec[];
 };
 
 export type JobStatus = {
