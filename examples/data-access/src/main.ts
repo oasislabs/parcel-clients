@@ -28,7 +28,7 @@ const parcel = new Parcel(tokenSource, {
 // By default, datasets are owned by the uploading identity
 // #region snippet-upload-default-owner
 const acmeIdentity = await parcel.getCurrentIdentity();
-console.log(`Uploading data with identity: ${acmeIdentity.id})`);
+console.log(`Uploading data with identity: ${acmeIdentity.id}`);
 
 const data = 'The weather will be sunny tomorrow and cloudy on Tuesday.';
 const datasetDetails = { title: 'Weather forecast summary' };
@@ -52,11 +52,11 @@ console.log(`Here's the data: ${acmeData}`);
 
 // Upload a dataset and assign ownership to a sample end user (e.g. "Bob")
 // #region snippet-upload-user-data
-const bobId = '3cc86186-7093-e71e-c5f1-e95d6d07a3cf'; // REPLACE ME
+const bobId = '6cc5defa-af04-512f-6aa3-c13f64d03a8b'; // REPLACE ME
 console.log(`Uploading data for end user Bob (ID: ${bobId})`);
 const bobDataset = await parcel.uploadDataset(data, {
   details: datasetDetails,
-  owner: bobId,
+  owner: bobId as IdentityId,
 }).finished;
 console.log(`Created dataset ${bobDataset.id} with owner ${bobDataset.owner}`);
 // #endregion snippet-upload-user-data
