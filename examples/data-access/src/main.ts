@@ -20,9 +20,7 @@ const tokenSource = {
 
 // #region snippet-identity-acme-connect
 // Connect to ACME's identity.
-const parcel = new Parcel(tokenSource, {
-  apiUrl: process.env.API_URL,
-});
+const parcel = new Parcel(tokenSource);
 // #endregion snippet-identity-acme-connect
 
 // By default, datasets are owned by the uploading identity
@@ -52,11 +50,11 @@ console.log(`Here's the data: ${acmeData}`);
 
 // Upload a dataset and assign ownership to a sample end user (e.g. "Bob")
 // #region snippet-upload-user-data
-const bobId = '6cc5defa-af04-512f-6aa3-c13f64d03a8b'; // REPLACE ME
+const bobId = '6cc5defa-af04-512f-6aa3-c13f64d03a8b' as IdentityId; // REPLACE ME
 console.log(`Uploading data for end user Bob (ID: ${bobId})`);
 const bobDataset = await parcel.uploadDataset(data, {
   details: datasetDetails,
-  owner: bobId as IdentityId,
+  owner: bobId,
 }).finished;
 console.log(`Created dataset ${bobDataset.id} with owner ${bobDataset.owner}`);
 // #endregion snippet-upload-user-data

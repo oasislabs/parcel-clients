@@ -37,7 +37,7 @@ const tokenSourceBob = {
 
 // --- Upload data as Bob.
 // #region snippet-input-datasets
-const parcelBob = new Parcel(tokenSourceBob, { apiUrl: process.env.API_URL });
+const parcelBob = new Parcel(tokenSourceBob);
 const bobId = (await parcelBob.getCurrentIdentity()).id;
 
 // Upload a datasets and give Acme access to it.

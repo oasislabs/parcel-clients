@@ -11,7 +11,8 @@ import type { JsonObject } from 'type-fest';
 import type { TokenProvider } from './token.js';
 import { ReadableStreamPF } from './polyfill.js';
 
-const DEFAULT_API_URL = 'https://api.oasislabs.com/parcel/v1';
+const DEFAULT_API_URL =
+  globalThis?.process?.env?.PARCEL_API_URL ?? 'https://api.oasislabs.com/parcel/v1';
 
 export type Config = Partial<{
   apiUrl: string;

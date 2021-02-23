@@ -20,9 +20,7 @@ const apiCreds = {
 // #endregion snippet-configuration
 
 // #region snippet-connect
-const parcel = new Parcel(apiCreds, {
-  apiUrl: process.env.API_URL,
-});
+const parcel = new Parcel(apiCreds);
 // #endregion snippet-connect
 
 // #region snippet-dataset-upload

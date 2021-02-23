@@ -17,7 +17,7 @@ const tokenSourceAcme = {
 
 console.log('Here we go...');
 // #region snippet-config
-const parcelAcme = new Parcel(tokenSourceAcme, { apiUrl: process.env.API_URL });
+const parcelAcme = new Parcel(tokenSourceAcme);
 const acmeId = (await parcelAcme.getCurrentIdentity()).id;
 // #endregion snippet-config
 
