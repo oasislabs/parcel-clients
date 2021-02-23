@@ -51,9 +51,11 @@ console.log(`Here's the data: ${acmeData}`);
 // Upload a dataset and assign ownership to a sample end user (e.g. "Bob")
 // #region snippet-upload-user-data
 const bobId = '6cc5defa-af04-512f-6aa3-c13f64d03a8b' as IdentityId; // REPLACE ME
-console.log(`Uploading data for end user Bob (ID: ${bobId})`);
+const appId = '4dfbe279-7335-4a13-8567-a63a2d80b630'; // REPLACE ME
+console.log(`Uploading data for end user Bob (ID: ${bobId}) for your app (ID: ${appId})`);
 const bobDataset = await parcel.uploadDataset(data, {
   details: datasetDetails,
+  tags: [appId],
   owner: bobId,
 }).finished;
 console.log(`Created dataset ${bobDataset.id} with owner ${bobDataset.owner}`);
