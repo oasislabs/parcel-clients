@@ -47,7 +47,7 @@ const recipeDataset = await parcelBob.uploadDataset(
 ).finished;
 await parcelBob.createGrant({
   grantee: tokenSourceAcme.principal as IdentityId,
-  filter: { 'dataset.id': { $eq: recipeDataset.id } },
+  conditions: { 'dataset.id': { $eq: recipeDataset.id } },
 });
 // #endregion snippet-input-datasets
 
