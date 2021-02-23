@@ -1,6 +1,5 @@
 import express from 'express';
 import path from 'path';
-import Parcel from '@oasislabs/parcel';
 
 // #region snippet-oidc-config
 const AUTH_URL = process.env.AUTH_URL ?? 'https://auth.oasislabs.com';
@@ -15,7 +14,7 @@ const oidcConfig = {
     token_endpoint: AUTH_URL + '/oauth/token',
   },
   // Replace with your app's front-end client ID.
-  client_id: '6589cf53-e825-3aca-5bc7-1d00d227c388',
+  client_id: '55579380-d771-38ef-bfd3-0305c52a9881',
   redirect_uri: 'http://localhost:4050/callback',
   response_type: 'code',
   scope: 'openid',
@@ -46,19 +45,6 @@ app.get('/getOidcConfig', (req: express.Request, res: express.Response) => {
 });
 
 // #region snippet-finalize-login
-app.get('/finalize_login', (req: express.Request, res: express.Response) => {
-  const parcel = new Parcel(req.query.access_token as any, {
-    apiUrl: process.env.API_URL,
-  });
-  (async function () {
-    try {
-      const identity = await parcel.getCurrentIdentity();
-      res.send(`Done! Your Parcel ID is ${identity.id}`);
-    } catch (error: any) {
-      res.send(`Error obtaining your Parcel identity: ${error}`);
-    }
-  })();
-});
 // #endregion snippet-finalize-login
 
 app.listen(port, () => {
