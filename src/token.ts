@@ -1,4 +1,4 @@
-import { KEYUTIL, KJUR } from 'jsrsasign';
+import jsrsasign from 'jsrsasign';
 import type { ResponsePromise } from 'ky';
 import ky from 'ky';
 import type { Except, JsonObject } from 'type-fest';
@@ -119,7 +119,7 @@ export class RenewingTokenProvider extends ExpiringTokenProvider {
         sub: this.clientId,
         iss: this.clientId,
         aud: this.tokenEndpoint,
-        jti: KJUR.crypto.Util.getRandomHexOfNbytes(8),
+        jti: jsrsasign.KJUR.crypto.Util.getRandomHexOfNbytes(8),
       },
       lifetime: this.clientAssertionLifetime,
     });
@@ -299,9 +299,12 @@ function jwkToPem(jwk: PrivateJWK): { privateKey: string; keyId: string } {
   }
 
   const kjurJWK = JSON.parse(JSON.stringify(jwk));
-  const keyId = jwk.kid ?? KJUR.jws.JWS.getJWKthumbprint(kjurJWK);
+  const keyId = jwk.kid ?? jsrsasign.KJUR.jws.JWS.getJWKthumbprint(kjurJWK);
   kjurJWK.crv = 'secp256r1'; // KJUR's preferred name for name for P-256
-  const privateKey = (KEYUTIL.getPEM(KEYUTIL.getKey(kjurJWK), 'PKCS8PRV') as unknown) as string; // The type definitions are wrong: they say `void` but it's actually `string`.
+  const privateKey = (jsrsasign.KEYUTIL.getPEM(
+    jsrsasign.KEYUTIL.getKey(kjurJWK),
+    'PKCS8PRV',
+  ) as unknown) as string; // The type definitions are wrong: they say `void` but it's actually `string`.
   return {
     privateKey,
     keyId,
@@ -331,5 +334,5 @@ function makeJWT({
   payload.iat = now;
   payload.exp = now + lifetime;
 
-  return KJUR.jws.JWS.sign(null, header, payload, privateKey);
+  return jsrsasign.KJUR.jws.JWS.sign(null, header, payload, privateKey);
 }

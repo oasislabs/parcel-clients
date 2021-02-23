@@ -10,3 +10,11 @@ yarn
 cd examples/upload-download
 yarn
 ```
+
+## Compute examples
+The compute examples require node version ^14.8. Run the compute examples with 
+
+```sh
+npm i
+npm run start
+```
