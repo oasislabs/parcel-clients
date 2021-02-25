@@ -1,5 +1,6 @@
 import SwaggerParser from '@apidevtools/swagger-parser';
-import Ajv from 'ajv';
+import Ajv, { ValidateFunction } from 'ajv';
+import ajvFormats from 'ajv-formats';
 import nock from 'nock';
 import { paramCase } from 'param-case';
 import { Writable } from 'readable-stream';
@@ -76,26 +77,35 @@ const API_TOKEN =
 
 describe('Parcel', () => {
   let openapiSchema: any;
-  let ajv: Ajv.Ajv;
+  let ajv: Ajv;
 
   let parcel: Parcel;
 
   beforeAll(async () => {
     openapiSchema = await SwaggerParser.validate('../../api/v1/parcel.yaml');
 
-    ajv = new Ajv({
-      formats: {
-        timestamp: (t: any) => typeof t === 'number' && t >= 0 && t <= 18446744073709552000,
-        'RGB hex': /^#[\da-f]{6}$/i,
-        binary: (b: any) => Buffer.isBuffer(b) || b.constructor.name === 'Uint8Array',
-        byte: (b64s: string) => /^(?=(.{4})*$)[-A-Za-z\d/]*={0,2}$/.test(b64s),
-        int32: Number.isInteger,
-        int64: Number.isInteger,
-        path: /[^\0]+/,
-      },
+    ajv = ajvFormats(
+      new Ajv({
+        formats: {
+          'RGB hex': /^#[\da-f]{6}$/i,
+          binary: (b: any) => Buffer.isBuffer(b) || b.constructor.name === 'Uint8Array',
+          byte: (b64s: string) => /^(?=(.{4})*$)[-A-Za-z\d/]*={0,2}$/.test(b64s),
+          int32: Number.isInteger,
+          int64: Number.isInteger,
+          path: /[^\0]+/,
+        },
+      }),
+    );
+
+    ajv.addKeyword({
+      keyword: 'example',
     });
+    ajv.addKeyword({
+      keyword: 'x-go-type',
+      schemaType: 'string',
+    });
+
     Object.entries(openapiSchema.components.schemas).forEach(([name, schema]: [string, any]) => {
-      delete schema.example; // Squelch warnings about ignored schema id
       ajv.addSchema(schema, name);
     });
 
@@ -104,7 +114,7 @@ describe('Parcel', () => {
         received: any,
         schema: string | JsonObject,
       ): { message: () => string; pass: boolean } {
-        let validator: Ajv.ValidateFunction;
+        let validator: ValidateFunction;
         if (typeof schema === 'string') {
           const schemaValidator = ajv.getSchema(schema);
           if (!schemaValidator) {
@@ -124,7 +134,7 @@ describe('Parcel', () => {
           };
         }
 
-        const valid = validator(received) as boolean;
+        const valid = validator(received);
         return {
           pass: valid,
           message: () =>
@@ -158,7 +168,7 @@ describe('Parcel', () => {
     }
 
     schema.additionalProperties = false;
-    ajv.validateSchema(schema);
+    ajv.validateSchema(schema) as boolean;
     expect(ajv.errors).toBeNull();
     return schema;
   }
@@ -206,7 +216,7 @@ describe('Parcel', () => {
 
     if (schema.allOf) schema = mergeAllOf(schema.allOf);
     schema.additionalProperties = false;
-    ajv.validateSchema(schema);
+    ajv.validateSchema(schema) as boolean;
     expect(ajv.errors).toBeNull();
     return schema;
   }
