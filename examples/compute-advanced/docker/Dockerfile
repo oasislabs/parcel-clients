@@ -1,4 +1,4 @@
-FROM tensorflow/tensorflow:2.3.1
+FROM tensorflow/tensorflow:2.4.1
 
 # Prepare work directory.
 RUN mkdir /acme_skin
