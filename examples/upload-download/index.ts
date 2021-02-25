@@ -9,6 +9,7 @@ declare global {
   }
 }
 
+// eslint-disable-next-line import/extensions
 import Parcel, { DatasetId } from '../..';
 import streamSaver from 'streamsaver';
 
@@ -80,7 +81,7 @@ window.listUploadedDatasets = async function () {
   ).results;
 
   while (datasetsList.lastChild) datasetsList.lastChild.remove();
-  uploadedDatasets.forEach((d) => addDatasetToList(d.id, d.details.title));
+  for (const d of uploadedDatasets) addDatasetToList(d.id, d.details.title);
 };
 
 function addDatasetToList(id: string, name?: string) {

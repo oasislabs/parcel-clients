@@ -1,5 +1,5 @@
 import SwaggerParser from '@apidevtools/swagger-parser';
-import Ajv, { ValidateFunction } from 'ajv';
+import Ajv, { SchemaObject, ValidateFunction } from 'ajv';
 import ajvFormats from 'ajv-formats';
 import nock from 'nock';
 import { paramCase } from 'param-case';
@@ -104,10 +104,9 @@ describe('Parcel', () => {
       keyword: 'x-go-type',
       schemaType: 'string',
     });
-
-    Object.entries(openapiSchema.components.schemas).forEach(([name, schema]: [string, any]) => {
-      ajv.addSchema(schema, name);
-    });
+    for (const [name, schema] of Object.entries(openapiSchema.components.schemas)) {
+      ajv.addSchema(schema as SchemaObject, name);
+    }
 
     expect.extend({
       toMatchSchema(
@@ -425,7 +424,9 @@ describe('Parcel', () => {
 
   function createResultsPage<T>(n: number, factory: () => T): Page<T> {
     const page = {
-      results: new Array(n).fill(undefined).map(() => factory()),
+      results: Array.from({ length: n })
+        .fill(undefined)
+        .map(() => factory()),
       nextPageToken: uuid.v4(),
     };
     expect(page).toMatchSchema('ResultsPage');
@@ -505,7 +506,7 @@ describe('Parcel', () => {
     nockItWithCurrentIdentity('delete', async (scope) => {
       scope.delete(`/identities/${fixtureIdentity.id}`).reply(204);
       const identity = await parcel.getCurrentIdentity();
-      expect(await identity.delete()).toBeUndefined();
+      await expect(identity.delete()).resolves.toBeUndefined();
     });
 
     describe('permissions', () => {
@@ -566,7 +567,10 @@ describe('Parcel', () => {
           const identity = await parcel.getCurrentIdentity();
           const { results, nextPageToken } = await identity.listGrantedPermissions();
           expect(results).toHaveLength(numberResults);
-          results.forEach((r, i) => expect(r).toMatchPOD(fixtureResultsPage.results[i]));
+          for (const [i, r] of results.entries()) {
+            expect(r).toMatchPOD(fixtureResultsPage.results[i]);
+          }
+
           expect(nextPageToken).toEqual(fixtureResultsPage.nextPageToken);
         });
 
@@ -600,7 +604,10 @@ describe('Parcel', () => {
             filterWithPagination,
           );
           expect(results).toHaveLength(numberResults);
-          results.forEach((r, i) => expect(r).toMatchPOD(fixtureResultsPage.results[i]));
+          for (const [i, r] of results.entries()) {
+            expect(r).toMatchPOD(fixtureResultsPage.results[i]);
+          }
+
           expect(nextPageToken).toEqual(fixtureResultsPage.nextPageToken);
         });
 
@@ -735,7 +742,9 @@ describe('Parcel', () => {
         const download = parcel.downloadDataset(fixtureDataset.id as DatasetId);
         const downloadCollector = new DownloadCollector();
         const downloadComplete = download.pipeTo(downloadCollector);
-        setTimeout(() => download.abort(), 10);
+        setTimeout(() => {
+          download.abort();
+        }, 10);
         await expect(downloadComplete).rejects.toThrow('The operation was aborted');
         expect(download.aborted).toBe(true);
         expect(downloadCollector.collectedDownload).toHaveLength(0);
@@ -761,7 +770,7 @@ describe('Parcel', () => {
 
         const { results, nextPageToken } = await dataset.history();
         expect(results).toHaveLength(numberResults);
-        results.forEach((r, i) => expect(r).toMatchPOD(fixtureResultsPage.results[i]));
+        for (const [i, r] of results.entries()) expect(r).toMatchPOD(fixtureResultsPage.results[i]);
         expect(nextPageToken).toEqual(fixtureResultsPage.nextPageToken);
       });
 
@@ -796,7 +805,10 @@ describe('Parcel', () => {
 
         const { results, nextPageToken } = await dataset.history(filterWithPagination);
         expect(results).toHaveLength(numberResults);
-        results.forEach((r, i) => expect(r).toMatchPOD(fixtureResultsPage.results[i]));
+        for (const [i, r] of results.entries()) {
+          expect(r).toMatchPOD(fixtureResultsPage.results[i]);
+        }
+
         expect(nextPageToken).toEqual(fixtureResultsPage.nextPageToken);
       });
 
@@ -816,7 +828,10 @@ describe('Parcel', () => {
           fixtureDataset.id as DatasetId,
         );
         expect(results).toHaveLength(numberResults);
-        results.forEach((r, i) => expect(r).toMatchPOD(fixtureResultsPage.results[i]));
+        for (const [i, r] of results.entries()) {
+          expect(r).toMatchPOD(fixtureResultsPage.results[i]);
+        }
+
         expect(nextPageToken).toEqual(fixtureResultsPage.nextPageToken);
       });
     });
@@ -834,7 +849,10 @@ describe('Parcel', () => {
 
         const { results, nextPageToken } = await parcel.listDatasets();
         expect(results).toHaveLength(numberResults);
-        results.forEach((r, i) => expect(r).toMatchPOD(fixtureResultsPage.results[i]));
+        for (const [i, r] of results.entries()) {
+          expect(r).toMatchPOD(fixtureResultsPage.results[i]);
+        }
+
         expect(nextPageToken).toEqual(fixtureResultsPage.nextPageToken);
       });
 
@@ -867,7 +885,10 @@ describe('Parcel', () => {
           tags: { all: ['tag1', 'tag2'] },
         });
         expect(results).toHaveLength(numberResults);
-        results.forEach((r, i) => expect(r).toMatchPOD(fixtureResultsPage.results[i]));
+        for (const [i, r] of results.entries()) {
+          expect(r).toMatchPOD(fixtureResultsPage.results[i]);
+        }
+
         expect(nextPageToken).toEqual(fixtureResultsPage.nextPageToken);
       });
 
@@ -965,7 +986,10 @@ describe('Parcel', () => {
 
         const { results, nextPageToken } = await parcel.listGrants();
         expect(results).toHaveLength(numberResults);
-        results.forEach((r, i) => expect(r).toMatchPOD(fixtureResultsPage.results[i]));
+        for (const [i, r] of results.entries()) {
+          expect(r).toMatchPOD(fixtureResultsPage.results[i]);
+        }
+
         expect(nextPageToken).toEqual(fixtureResultsPage.nextPageToken);
       });
 
@@ -990,7 +1014,10 @@ describe('Parcel', () => {
 
         const { results, nextPageToken } = await parcel.listGrants(filterWithPagination);
         expect(results).toHaveLength(numberResults);
-        results.forEach((r, i) => expect(r).toMatchPOD(fixtureResultsPage.results[i]));
+        for (const [i, r] of results.entries()) {
+          expect(r).toMatchPOD(fixtureResultsPage.results[i]);
+        }
+
         expect(nextPageToken).toEqual(fixtureResultsPage.nextPageToken);
       });
     });
@@ -1066,7 +1093,7 @@ describe('Parcel', () => {
 
         const { results, nextPageToken } = await parcel.listApps();
         expect(results).toHaveLength(numberResults);
-        results.forEach((r, i) => expect(r).toMatchPOD(fixtureResultsPage.results[i]));
+        for (const [i, r] of results.entries()) expect(r).toMatchPOD(fixtureResultsPage.results[i]);
         expect(nextPageToken).toEqual(fixtureResultsPage.nextPageToken);
       });
 
@@ -1092,7 +1119,7 @@ describe('Parcel', () => {
 
         const { results, nextPageToken } = await parcel.listApps(filterWithPagination);
         expect(results).toHaveLength(numberResults);
-        results.forEach((r, i) => expect(r).toMatchPOD(fixtureResultsPage.results[i]));
+        for (const [i, r] of results.entries()) expect(r).toMatchPOD(fixtureResultsPage.results[i]);
         expect(nextPageToken).toEqual(fixtureResultsPage.nextPageToken);
       });
 
@@ -1293,7 +1320,8 @@ describe('Parcel', () => {
 
           const { results, nextPageToken } = await parcel.listClients(fixtureApp.id as AppId);
           expect(results).toHaveLength(numberResults);
-          results.forEach((r, i) => expect(r).toMatchPOD(fixtureResultsPage.results[i]));
+          for (const [i, r] of results.entries())
+            expect(r).toMatchPOD(fixtureResultsPage.results[i]);
           expect(nextPageToken).toEqual(fixtureResultsPage.nextPageToken);
         });
 
@@ -1325,7 +1353,8 @@ describe('Parcel', () => {
             filterWithPagination,
           );
           expect(results).toHaveLength(numberResults);
-          results.forEach((r, i) => expect(r).toMatchPOD(fixtureResultsPage.results[i]));
+          for (const [i, r] of results.entries())
+            expect(r).toMatchPOD(fixtureResultsPage.results[i]);
           expect(nextPageToken).toEqual(fixtureResultsPage.nextPageToken);
         });
 
@@ -1344,7 +1373,7 @@ describe('Parcel', () => {
 
         beforeEach(() => {
           update = {
-            redirectUris: fixtureClient.redirectUris.concat(['https://example.com/new-redirect']),
+            redirectUris: [...fixtureClient.redirectUris, 'https://example.com/new-redirect'],
             postLogoutRedirectUris: [],
             publicKeys: fixtureClient.publicKeys,
             name: fixtureClient.name,
@@ -1412,7 +1441,7 @@ describe('Parcel', () => {
 
         const { results, nextPageToken } = await parcel.listJobs();
         expect(results).toHaveLength(numberResults);
-        results.forEach((r, i) => expect(r).toMatchPOD(fixtureResultsPage.results[i]));
+        for (const [i, r] of results.entries()) expect(r).toMatchPOD(fixtureResultsPage.results[i]);
         expect(nextPageToken).toEqual(fixtureResultsPage.nextPageToken);
       });
 
@@ -1439,7 +1468,7 @@ describe('Parcel', () => {
 
         const { results, nextPageToken } = await parcel.listJobs(filterWithPagination);
         expect(results).toHaveLength(numberResults);
-        results.forEach((r, i) => expect(r).toMatchPOD(fixtureResultsPage.results[i]));
+        for (const [i, r] of results.entries()) expect(r).toMatchPOD(fixtureResultsPage.results[i]);
         expect(nextPageToken).toEqual(fixtureResultsPage.nextPageToken);
       });
 

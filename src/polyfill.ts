@@ -5,7 +5,6 @@ import AbortController from 'abort-controller';
 import FormData from 'form-data';
 import fetch, { Headers, Request as RequestPF, Response as ResponsePF } from 'node-fetch';
 // @ts-expect-error: The package isn't ESM-compatible.
-// eslint-disable-next-line import/extensions
 import * as webStreams from 'web-streams-polyfill/dist/ponyfill.es2018.js';
 
 globalThis.fetch =

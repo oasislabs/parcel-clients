@@ -59,7 +59,7 @@ describe('Re(new|fresh)ingTokenProvider', () => {
     nock.cleanAll();
   });
 
-  [
+  for (const suite of [
     {
       name: 'private key',
       makeProvider: () => new RenewingTokenProvider(renewingProviderParams),
@@ -97,7 +97,7 @@ describe('Re(new|fresh)ingTokenProvider', () => {
         return body.refresh_token === 'refresh token 2' && body.audience === PARCEL_RUNTIME_AUD;
       },
     },
-  ].forEach((suite) => {
+  ]) {
     describe('using ' + suite.name, () => {
       it('provides token', async () => {
         const provider = suite.makeProvider();
@@ -151,7 +151,7 @@ describe('Re(new|fresh)ingTokenProvider', () => {
         scope.done();
       });
     });
-  });
+  }
 });
 
 describe('SelfIssuedTokenProvider', () => {

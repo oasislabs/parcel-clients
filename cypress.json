@@ -1,7 +1,6 @@
 {
     "baseUrl": "http://localhost:4444",
     "defaultCommandTimeout": 10000,
-    "experimentalNetworkStubbing": true,
     "fileServerFolder": "./test/cypress",
     "fixturesFolder": "./test/cypress/fixtures",
     "integrationFolder": "./test/cypress/integration",
