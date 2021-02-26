@@ -30,6 +30,25 @@ const jwkPem = KEYUTIL.getPEM(
   'PKCS8PRV',
 );
 
+const ONE_HOUR = 60 * 60;
+
+const AUTH_URL = 'https://auth.oasislabs.com';
+const TOKEN_ENDPOINT = `${AUTH_URL}/token`;
+
+const RENEWING_PROVIDER_PARAMS = {
+  clientId: 'parcel user',
+  privateKey: privateJwk,
+  tokenEndpoint: TOKEN_ENDPOINT,
+  scopes: ['api', 'storage'],
+  audience: PARCEL_RUNTIME_AUD,
+};
+
+const REFRESHING_PROVIDER_PARAMS = {
+  tokenEndpoint: TOKEN_ENDPOINT,
+  refreshToken: '5BcgyHetfeUlcoeaO0AIA9NtYq1xiIKxlsNAmtHxqE4',
+  audience: PARCEL_RUNTIME_AUD,
+};
+
 describe('StaticTokenProvider', () => {
   it('provides token', async () => {
     const provider = new StaticTokenProvider('token');
@@ -38,23 +57,6 @@ describe('StaticTokenProvider', () => {
 });
 
 describe('Re(new|fresh)ingTokenProvider', () => {
-  const authUrl = 'https://auth.oasislabs.com';
-  const tokenEndpoint = `${authUrl}/token`;
-
-  const renewingProviderParams = {
-    clientId: 'parcel user',
-    privateKey: privateJwk,
-    tokenEndpoint,
-    scopes: ['api', 'storage'],
-    audience: PARCEL_RUNTIME_AUD,
-  };
-
-  const refreshingProviderParams = {
-    tokenEndpoint,
-    refreshToken: '5BcgyHetfeUlcoeaO0AIA9NtYq1xiIKxlsNAmtHxqE4',
-    audience: PARCEL_RUNTIME_AUD,
-  };
-
   afterEach(() => {
     nock.cleanAll();
   });
@@ -62,7 +64,7 @@ describe('Re(new|fresh)ingTokenProvider', () => {
   for (const suite of [
     {
       name: 'private key',
-      makeProvider: () => new RenewingTokenProvider(renewingProviderParams),
+      makeProvider: () => new RenewingTokenProvider(RENEWING_PROVIDER_PARAMS),
       expectedRequest: (body: any) => {
         const { payload: clientAssertion, header } = jwt.verify(
           body.client_assertion,
@@ -70,9 +72,9 @@ describe('Re(new|fresh)ingTokenProvider', () => {
           {
             complete: true,
             algorithms: ['ES256'],
-            issuer: renewingProviderParams.clientId,
-            subject: renewingProviderParams.clientId,
-            audience: tokenEndpoint,
+            issuer: RENEWING_PROVIDER_PARAMS.clientId,
+            subject: RENEWING_PROVIDER_PARAMS.clientId,
+            audience: TOKEN_ENDPOINT,
           },
         ) as any;
         const isGoodJwt = header.kid === privateJwk.kid && typeof clientAssertion.jti === 'string';
@@ -87,10 +89,10 @@ describe('Re(new|fresh)ingTokenProvider', () => {
     },
     {
       name: 'refresh token',
-      makeProvider: () => new RefreshingTokenProvider(refreshingProviderParams),
+      makeProvider: () => new RefreshingTokenProvider(REFRESHING_PROVIDER_PARAMS),
       expectedRequest: {
         grant_type: 'refresh_token',
-        refresh_token: refreshingProviderParams.refreshToken,
+        refresh_token: REFRESHING_PROVIDER_PARAMS.refreshToken,
         audience: PARCEL_RUNTIME_AUD,
       },
       expectedRefreshRequest: (body: any) => {
@@ -102,9 +104,8 @@ describe('Re(new|fresh)ingTokenProvider', () => {
       it('provides token', async () => {
         const provider = suite.makeProvider();
 
-        const ONE_HOUR = 60 * 60;
         const accessToken = makeAccessToken(ONE_HOUR);
-        const scope = nock(authUrl).post('/token', suite.expectedRequest).reply(200, {
+        const scope = nock(AUTH_URL).post('/token', suite.expectedRequest).reply(200, {
           access_token: accessToken,
           expires_in: ONE_HOUR,
         });
@@ -124,7 +125,7 @@ describe('Re(new|fresh)ingTokenProvider', () => {
         const accessToken2 = makeAccessToken(NO_TIME, { seq: 2 });
         const refreshToken2 = 'refresh token 2';
 
-        let scope = nock(authUrl).post('/token').reply(200, {
+        let scope = nock(AUTH_URL).post('/token').reply(200, {
           access_token: accessToken1,
           refresh_token: refreshToken2,
           expires_in: NO_TIME,
@@ -133,7 +134,7 @@ describe('Re(new|fresh)ingTokenProvider', () => {
         await expect(provider.getToken()).resolves.toBe(accessToken1);
         scope.done();
 
-        scope = nock(authUrl)
+        scope = nock(AUTH_URL)
           .post('/token', suite.expectedRefreshRequest ?? (() => true))
           .reply(200, {
             access_token: accessToken2,
@@ -146,12 +147,36 @@ describe('Re(new|fresh)ingTokenProvider', () => {
 
       it('throws', async () => {
         const provider = suite.makeProvider();
-        const scope = nock(authUrl).post('/token').reply(401);
+        const scope = nock(AUTH_URL).post('/token').reply(401);
         await expect(provider.getToken()).rejects.toThrow();
         scope.done();
       });
     });
   }
+});
+
+describe('RenewingTokenProvider', () => {
+  it('does not generate keyId', async () => {
+    const { kid, ...privateKey } = privateJwk;
+    const provider = new RenewingTokenProvider({
+      ...RENEWING_PROVIDER_PARAMS,
+      privateKey,
+    });
+
+    const accessToken = makeAccessToken(ONE_HOUR);
+    const scope = nock(AUTH_URL)
+      .post('/token', (body: any) => {
+        const { header } = insecureDecodeJwt(body.client_assertion);
+        return header.kid === undefined;
+      })
+      .reply(200, {
+        access_token: accessToken,
+        expires_in: ONE_HOUR,
+      });
+
+    await expect(provider.getToken()).resolves.toBe(accessToken);
+    scope.done();
+  });
 });
 
 describe('SelfIssuedTokenProvider', () => {
@@ -171,7 +196,7 @@ describe('SelfIssuedTokenProvider', () => {
       subject: defaultParams.principal,
       audience: PARCEL_RUNTIME_AUD,
     }) as any;
-    expect(header.kid).toBeDefined();
+    expect(header).toHaveProperty('kid');
     expect(payload.exp).toBeGreaterThan(Date.now() / 1000 + 1 * 60 * 60 - 1 * 60);
   });
 
@@ -184,8 +209,26 @@ describe('SelfIssuedTokenProvider', () => {
     const secondToken = await provider.getToken();
     expect(token).not.toEqual(secondToken);
   });
+
+  it('does not generate keyId', async () => {
+    const { kid, ...privateKey } = privateJwk;
+    const provider = new SelfIssuedTokenProvider({
+      ...defaultParams,
+      privateKey,
+    });
+    const { header } = insecureDecodeJwt(await provider.getToken());
+    expect(header).not.toHaveProperty('kid');
+  });
 });
 
 function makeAccessToken(expiry: number, claims: any = {}): string {
   return jwt.sign(claims, 'secret', { expiresIn: expiry });
+}
+
+function insecureDecodeJwt(jwt: string): { header: any; payload: any } {
+  const [header, payload] = jwt
+    .split('.')
+    .slice(0, 2)
+    .map((part) => JSON.parse(Buffer.from(part, 'base64').toString()));
+  return { header, payload };
 }

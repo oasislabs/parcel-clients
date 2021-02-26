@@ -83,8 +83,8 @@ export class RenewingTokenProvider extends ExpiringTokenProvider {
   private readonly tokenEndpoint: string;
   private readonly audience: string;
   private readonly scopes: string[];
+  private readonly privateKey: PrivateJWK;
   private readonly privateKeyPEM: string; // PEM is required by jsrsasign.
-  private readonly keyId: string;
 
   private readonly clientAssertionLifetime = 1 * 60 * 60; // 1 hour
 
@@ -101,9 +101,9 @@ export class RenewingTokenProvider extends ExpiringTokenProvider {
       throw new Error('Private key should be an ECDSA key.');
     }
 
-    const { privateKey: privateKeyPEM, keyId } = jwkToPem(privateKey);
+    this.privateKey = privateKey;
+    const privateKeyPEM = jwkToPem(privateKey);
     this.privateKeyPEM = privateKeyPEM;
-    this.keyId = keyId;
 
     this.clientId = clientId;
     this.tokenEndpoint = tokenEndpoint ?? DEFAULT_TOKEN_ENDPOINT;
@@ -114,7 +114,7 @@ export class RenewingTokenProvider extends ExpiringTokenProvider {
   protected async renewToken(): Promise<Token> {
     const clientAssertion = makeJWT({
       privateKey: this.privateKeyPEM,
-      keyId: this.keyId,
+      keyId: this.privateKey.kid,
       payload: {
         sub: this.clientId,
         iss: this.clientId,
@@ -199,8 +199,8 @@ export type SelfIssuedTokenProviderParams = {
 /** A `TokenProvider` that self-signs an access token. */
 export class SelfIssuedTokenProvider extends ExpiringTokenProvider {
   private readonly principal: string;
+  private readonly privateKey: PrivateJWK;
   private readonly privateKeyPEM: string; // PEM is required by jsrsasign.
-  private readonly keyId: string;
   private readonly scopes: string[];
   private readonly tokenLifetime: number;
 
@@ -212,9 +212,9 @@ export class SelfIssuedTokenProvider extends ExpiringTokenProvider {
   }: SelfIssuedTokenProviderParams) {
     super();
 
-    const { privateKey: privateKeyPEM, keyId } = jwkToPem(privateKey);
+    this.privateKey = privateKey;
+    const privateKeyPEM = jwkToPem(privateKey);
     this.privateKeyPEM = privateKeyPEM;
-    this.keyId = keyId;
 
     this.principal = principal;
     this.scopes = scopes ?? ['parcel.*'];
@@ -225,7 +225,7 @@ export class SelfIssuedTokenProvider extends ExpiringTokenProvider {
     const expiry = Date.now() / 1000 + this.tokenLifetime;
     const token = makeJWT({
       privateKey: this.privateKeyPEM,
-      keyId: this.keyId,
+      keyId: this.privateKey.kid,
       payload: {
         sub: this.principal,
         iss: this.principal,
@@ -293,22 +293,18 @@ export type ClientCredentials = IdentityTokenClaims & {
 };
 
 /** Returns the PKCS8-encoded private key and the JWK"s key id. */
-function jwkToPem(jwk: PrivateJWK): { privateKey: string; keyId: string } {
+function jwkToPem(jwk: PrivateJWK): string {
   if (jwk.kty !== 'EC' || jwk.alg !== 'ES256') {
     throw new Error(`Unsupported private key. Expected \`alg: 'ES256'\` but was \`${jwk.alg}\` }`);
   }
 
   const kjurJWK = JSON.parse(JSON.stringify(jwk));
-  const keyId = jwk.kid ?? jsrsasign.KJUR.jws.JWS.getJWKthumbprint(kjurJWK);
   kjurJWK.crv = 'secp256r1'; // KJUR's preferred name for name for P-256
   const privateKey = (jsrsasign.KEYUTIL.getPEM(
     jsrsasign.KEYUTIL.getKey(kjurJWK),
     'PKCS8PRV',
   ) as unknown) as string; // The type definitions are wrong: they say `void` but it's actually `string`.
-  return {
-    privateKey,
-    keyId,
-  };
+  return privateKey;
 }
 
 function makeJWT({
@@ -319,7 +315,7 @@ function makeJWT({
 }: {
   /** PKCS8 (PEM)-encoded private key */
   privateKey: string;
-  keyId: string;
+  keyId?: string;
   payload: JsonObject;
   /** The token's lifetime in seconds. */
   lifetime: number;
