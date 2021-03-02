@@ -15,6 +15,8 @@ export type PODGrant = Readonly<
     grantee?: ResourceId;
     permission?: ResourceId;
     conditions?: Conditions;
+    capabilities?: string;
+    extends?: ResourceId;
   }
 >;
 
@@ -24,8 +26,17 @@ export type GrantCreateParams = {
    */
   grantee: IdentityId | 'everyone';
 
-  /** Conditoins that must be matched to recieve access to one or more Datasets. */
+  /** Conditions that must be matched to receive access to one or more Datasets. */
   conditions?: Conditions;
+
+  /** The capabilities attached to this grant. The default is `read`. */
+  capabilities?: Capabilities | string;
+
+  /**
+   * The grant to extend by delegation. If you are the extended grant's `grantee` is you, and it
+   * has the `extend` capability, then this grant will have the same `granter` as the parent.
+   */
+  extends?: GrantId;
 };
 
 const GRANTS_EP = 'grants';
@@ -42,8 +53,12 @@ export class Grant implements Model {
   public readonly grantee: IdentityId | 'everyone';
   /** Conditions that describe Datasets to be shared. */
   public readonly conditions?: Conditions;
-  /** The Permission that created this Grant, if any. */
+  /** The permission that created this Grant, if any. */
   public readonly permission?: PermissionId;
+  /** The actions permissible to the grantee on targets selected by the conditions. */
+  public readonly capabilities?: Capabilities;
+  /** The grant that this grant extends by delegation. */
+  public readonly extends?: GrantId;
 
   public constructor(private readonly client: HttpClient, pod: PODGrant) {
     this.id = pod.id as GrantId;
@@ -52,6 +67,8 @@ export class Grant implements Model {
     this.grantee = (pod.grantee as IdentityId) ?? 'everyone';
     this.conditions = pod.conditions;
     this.permission = pod.permission as PermissionId;
+    this.capabilities = pod.capabilities ? parseCaps(pod.capabilities) : undefined;
+    this.extends = pod.extends as GrantId;
   }
 
   public async delete(): Promise<void> {
@@ -90,3 +107,57 @@ export type ListGrantsFilter = Partial<{
   /** Only return grants for the provided app. */
   grantee?: IdentityId;
 }>;
+
+/**
+ * `Capabilities` is a collection of bit flags.
+ * To test if a cability is set, you can do something like
+ * ```
+ * const requiredCaps = (Capabilities.Read | Capabilities.Extend);
+ * caps & requiredCaps === requiredCaps;
+ * ```
+ */
+/* eslint-disable @typescript-eslint/prefer-literal-enum-member */
+export enum Capabilities {
+  None = 0,
+  /** The ability to read/view the target. */
+  Read = 1 << 0, // eslint-disable-line unicorn/prefer-math-trunc
+  // /** The ability to write the target. */
+  // Write = 1 << 1,
+  /** The ability to delegate this grant's capabilities to someone else. */
+  Extend = 1 << 2,
+}
+/* eslint-enable @typescript-eslint/prefer-literal-enum-member */
+
+export function parseCaps(strCaps?: string): Capabilities {
+  if (strCaps === undefined) return Capabilities.None;
+  let caps = Capabilities.None;
+  for (const strCap of strCaps.trim().split(/\s+/)) {
+    switch (strCap) {
+      case 'read':
+        caps |= Capabilities.Read;
+        break;
+      case 'extend':
+        caps |= Capabilities.Extend;
+        break;
+      case '':
+        break;
+      default:
+        throw new Error(`unknown capability "${strCap}"`);
+    }
+  }
+
+  return caps;
+}
+
+export function stringifyCaps(caps?: Capabilities): string {
+  if (caps === undefined) return '';
+  const capsStrs = [];
+  for (const [name, bit] of Object.entries(Capabilities)) {
+    if (typeof bit !== 'number') continue;
+    if ((caps & bit) !== 0) {
+      capsStrs.push(name.toLowerCase());
+    }
+  }
+
+  return capsStrs.join(' ');
+}

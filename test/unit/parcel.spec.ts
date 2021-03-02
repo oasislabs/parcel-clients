@@ -22,6 +22,7 @@ import type { JobId, JobSpec, PODJob } from '@oasislabs/parcel/compute';
 import { JobPhase } from '@oasislabs/parcel/compute';
 import type { DatasetId, PODAccessEvent, PODDataset } from '@oasislabs/parcel/dataset';
 import type { GrantId, PODGrant } from '@oasislabs/parcel/grant';
+import { stringifyCaps } from '@oasislabs/parcel/grant';
 import type { IdentityId, PODIdentity } from '@oasislabs/parcel/identity';
 import type { Page, PODModel } from '@oasislabs/parcel/model';
 import type { PublicJWK } from '@oasislabs/parcel/token';
@@ -359,6 +360,7 @@ describe('Parcel', () => {
       grantee: createIdentityId(),
       permission: createPermissionId(),
       conditions: { 'dataset.details.tags': { $any: { $eq: 'mock' } } },
+      capabilities: 'read',
     };
     expect(podGrant).toMatchSchema('Grant');
     return podGrant;
@@ -972,14 +974,16 @@ describe('Parcel', () => {
       expect(createParams).toMatchSchema(getRequestSchema('POST', '/grants'));
       scope.post('/grants', createParams).reply(201, fixtureGrant);
       const grant = await parcel.createGrant(createParams);
-      expect(grant).toMatchPOD(fixtureGrant);
+      const podGrant = { ...grant, capabilities: stringifyCaps(grant.capabilities) };
+      expect(podGrant).toMatchPOD(fixtureGrant);
     });
 
     nockIt('get', async (scope) => {
       expect(fixtureGrant).toMatchSchema(getResponseSchema('GET', '/grants/{grant_id}', 200));
       scope.get(`/grants/${fixtureGrant.id}`).reply(200, JSON.stringify(fixtureGrant));
       const grant = await parcel.getGrant(fixtureGrant.id as GrantId);
-      expect(grant).toMatchPOD(fixtureGrant);
+      const podGrant = { ...grant, capabilities: stringifyCaps(grant.capabilities) };
+      expect(podGrant).toMatchPOD(fixtureGrant);
     });
 
     describe('list', () => {
@@ -993,7 +997,8 @@ describe('Parcel', () => {
         const { results, nextPageToken } = await parcel.listGrants();
         expect(results).toHaveLength(numberResults);
         for (const [i, r] of results.entries()) {
-          expect(r).toMatchPOD(fixtureResultsPage.results[i]);
+          const podResult = { ...r, capabilities: stringifyCaps(r.capabilities) };
+          expect(podResult).toMatchPOD(fixtureResultsPage.results[i]);
         }
 
         expect(nextPageToken).toEqual(fixtureResultsPage.nextPageToken);
@@ -1021,7 +1026,8 @@ describe('Parcel', () => {
         const { results, nextPageToken } = await parcel.listGrants(filterWithPagination);
         expect(results).toHaveLength(numberResults);
         for (const [i, r] of results.entries()) {
-          expect(r).toMatchPOD(fixtureResultsPage.results[i]);
+          const podResult = { ...r, capabilities: stringifyCaps(r.capabilities) };
+          expect(podResult).toMatchPOD(fixtureResultsPage.results[i]);
         }
 
         expect(nextPageToken).toEqual(fixtureResultsPage.nextPageToken);

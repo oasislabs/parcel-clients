@@ -28,7 +28,7 @@ import {
   OutputDataset,
   OutputDatasetSpec,
 } from './compute.js';
-import type { Grant, GrantCreateParams, GrantId } from './grant.js';
+import type { Capabilities, Grant, GrantCreateParams, GrantId } from './grant.js';
 import { GrantImpl, ListGrantsFilter } from './grant.js';
 import type { Config as ClientConfig, Download } from './http.js';
 import { ApiError, HttpClient } from './http.js';
@@ -51,6 +51,7 @@ export {
   AppCreateParams,
   AppId,
   AppUpdateParams,
+  Capabilities,
   Client,
   ClientCreateParams,
   ClientCredentials,
