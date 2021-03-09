@@ -43,7 +43,7 @@ import type { Page, PageParams } from './model.js';
 import type { Permission, PermissionCreateParams, PermissionId } from './permission.js';
 import { PermissionImpl } from './permission.js';
 import type { ClientCredentials, PrivateJWK, PublicJWK, TokenSource } from './token.js';
-import { TokenProvider } from './token.js';
+import { TokenProvider, PARCEL_RUNTIME_AUD } from './token.js';
 
 export {
   AccessEvent,
@@ -78,6 +78,7 @@ export {
   JobStatus,
   OutputDataset,
   OutputDatasetSpec,
+  PARCEL_RUNTIME_AUD,
   Page,
   PageParams,
   PrivateJWK,
