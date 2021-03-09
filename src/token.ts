@@ -230,7 +230,7 @@ export class SelfIssuedTokenProvider extends ExpiringTokenProvider {
         sub: this.principal,
         iss: this.principal,
         aud: PARCEL_RUNTIME_AUD,
-        scope: this.scopes,
+        scope: this.scopes.join(' '),
       },
       lifetime: this.tokenLifetime,
     });
