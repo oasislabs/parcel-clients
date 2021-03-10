@@ -2,19 +2,19 @@ import Parcel, { IdentityId } from '@oasislabs/parcel';
 import fs from 'fs';
 
 // #region snippet-config
-const acmeId = '0d9f279b-a5d8-7260-e090-ff1a7659ba3b' as IdentityId;
 const tokenSource = {
-  principal: acmeId,
+  clientId: '6589cf53-e825-3aca-5bc7-1d00d227c388',
   privateKey: {
+    kid: 'example-client-1',
     kty: 'EC',
     alg: 'ES256',
     use: 'sig',
     crv: 'P-256',
-    kid: 'DcI1bh_7WW9YujsR3h7dik2rQmYNQPSB3dXV-AJsxgc',
-    x: 'v8c_cPZJndQLe51QhGApDPhT4C6OqteK3e0Ttd1CbxE',
-    y: 'Cbvi7oyrCfX5iDPiFUiJPtpiGbypB5UoxJviXtBXfNQ',
-    d: '9ssmJBm_mDIKpxdB2He-zIMeclYtDGQcBv2glEH7r5k',
+    x: 'ej4slEdbZpwYG-4T-WfLHpMBWPf6FItNNGFEHsjdyK4',
+    y: 'e4Q4ygapmkxku_olSuc-WhSJaWiNCvuPqIWaOV6P9pE',
+    d: '_X2VJCigbOYXOq0ilXATJdh9c2DdaSzZlxXVV6yuCXg',
   },
+  scopes: ['parcel.*'] as string[],
 } as const;
 // #endregion snippet-config
 
@@ -29,7 +29,7 @@ const acmeIdentity = await parcel.getCurrentIdentity();
 console.log(`Uploading data with identity: ${acmeIdentity.id}`);
 
 const data = 'The weather will be sunny tomorrow and cloudy on Tuesday.';
-const datasetDetails = { title: 'Weather forecast summary' };
+const datasetDetails = { title: 'Weather forecast summary', tags: ['english'] };
 const acmeDataset = await parcel.uploadDataset(data, {
   details: datasetDetails,
 }).finished;
@@ -50,12 +50,12 @@ console.log(`Here's the data: ${acmeData}`);
 
 // Upload a dataset and assign ownership to a sample end user (e.g. "Bob")
 // #region snippet-upload-user-data
-const bobId = '6cc5defa-af04-512f-6aa3-c13f64d03a8b' as IdentityId; // REPLACE ME
-const appId = '4dfbe279-7335-4a13-8567-a63a2d80b630'; // REPLACE ME
+const bobId = '3f7d3ca9-85ca-6498-15d1-facebee979cb' as IdentityId; // REPLACE ME
+const appId = '3f7d3ca9-85ca-6498-1429-5a910237e003'; // REPLACE ME
+datasetDetails.tags.push(appId);
 console.log(`Uploading data for end user Bob (ID: ${bobId}) for your app (ID: ${appId})`);
 const bobDataset = await parcel.uploadDataset(data, {
   details: datasetDetails,
-  tags: [appId],
   owner: bobId,
 }).finished;
 console.log(`Created dataset ${bobDataset.id} with owner ${bobDataset.owner}`);

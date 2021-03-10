@@ -2,18 +2,20 @@ import Parcel, { IdentityId, Job, JobSpec, JobPhase } from '@oasislabs/parcel';
 import fs from 'fs';
 
 // #region snippet-configuration
+const acmeId = '3f7d3ca9-85ca-6498-15d1-facebee979cb' as IdentityId;
 const tokenSourceAcme = {
-  principal: '0d9f279b-a5d8-7260-e090-ff1a7659ba3b',
+  clientId: '6589cf53-e825-3aca-5bc7-1d00d227c388',
   privateKey: {
-    kty: 'EC',
-    alg: 'ES256',
+    kid: 'example-client-1',
     use: 'sig',
+    kty: 'EC',
     crv: 'P-256',
-    kid: 'DcI1bh_7WW9YujsR3h7dik2rQmYNQPSB3dXV-AJsxgc',
-    x: 'v8c_cPZJndQLe51QhGApDPhT4C6OqteK3e0Ttd1CbxE',
-    y: 'Cbvi7oyrCfX5iDPiFUiJPtpiGbypB5UoxJviXtBXfNQ',
-    d: '9ssmJBm_mDIKpxdB2He-zIMeclYtDGQcBv2glEH7r5k',
+    alg: 'ES256',
+    x: 'ej4slEdbZpwYG-4T-WfLHpMBWPf6FItNNGFEHsjdyK4',
+    y: 'e4Q4ygapmkxku_olSuc-WhSJaWiNCvuPqIWaOV6P9pE',
+    d: '_X2VJCigbOYXOq0ilXATJdh9c2DdaSzZlxXVV6yuCXg',
   },
+  scopes: ['parcel.*'] as string[],
 } as const;
 
 // In a real-world scenario, these credentials would typically be used in a completely separate script
@@ -21,17 +23,18 @@ const tokenSourceAcme = {
 // This example script, however, performs actions both as Acme and Bob so that the flow is easier to
 // follow.
 const tokenSourceBob = {
-  principal: '6cc5defa-af04-512f-6aa3-c13f64d03a8b',
+  clientId: '55579380-d771-38ef-bfd3-0305c52a9881',
   privateKey: {
+    kid: 'example-client-2',
     kty: 'EC',
     alg: 'ES256',
     use: 'sig',
     crv: 'P-256',
-    kid: 'EA8OhUgQBJ4GNO7hwhr3JiG6L-oKqPqYA_2ZctSBtAw',
-    x: 'L3u92SCDDcsbLpFI2NUmwWtu4Xit26y2lUt8w3Da6g8',
-    y: '857gZPxQiiO3mRSKuK8-42_QG65Q1HVzU__h8n7hLeQ',
-    d: 'gXQmoXWOQvh8X4fM0d9b5aVYro3jhCkx0svuez9yMhk',
+    x: 'kbhoJYKyOgY645Y9t-Vewwhke9ZRfLh6_TBevIA6SnQ',
+    y: 'SEu0xuCzTH95-q_-FSZc-P6hCSnq6qH00MQ52vOVVpA',
+    d: '10sS7lgM_YWxf79x21mWalCkAcZZOmX0ZRE_YwEXcmc',
   },
+  scopes: ['parcel.*'] as string[],
 } as const;
 // #endregion snippet-configuration
 
@@ -46,7 +49,7 @@ const recipeDataset = await parcelBob.uploadDataset(
   Buffer.from('14g butter; 15g chicken sausage; 18g feta; 20g green pepper; 1.5min baking'),
 ).finished;
 await parcelBob.createGrant({
-  grantee: tokenSourceAcme.principal as IdentityId,
+  grantee: acmeId,
   conditions: { 'dataset.id': { $eq: recipeDataset.id } },
 });
 // #endregion snippet-input-datasets
@@ -69,7 +72,7 @@ const jobSpec: JobSpec = {
 // #region snippet-job-submit-wait
 // Submit the job.
 console.log('Running the job as Acme.');
-const parcelAcme = new Parcel(tokenSourceAcme, { apiUrl: process.env.API_URL });
+const parcelAcme = new Parcel(tokenSourceAcme);
 const jobId = (await parcelAcme.submitJob(jobSpec)).id;
 
 // Wait for job to finish.

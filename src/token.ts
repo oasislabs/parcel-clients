@@ -6,7 +6,8 @@ import type { Except, JsonObject } from 'type-fest';
 import type { IdentityId } from './identity.js';
 import './polyfill.js'; // eslint-disable-line import/no-unassigned-import
 
-const DEFAULT_TOKEN_ENDPOINT = 'https://auth.oasislabs.com/oauth/token';
+const DEFAULT_TOKEN_ENDPOINT =
+  globalThis?.process?.env?.PARCEL_TOKEN_ENDPOINT ?? 'https://auth.oasislabs.com/oauth/token';
 export const PARCEL_RUNTIME_AUD = 'https://api.oasislabs.com/parcel'; // TODO(#326)
 
 export abstract class TokenProvider {

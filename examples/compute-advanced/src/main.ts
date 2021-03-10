@@ -2,17 +2,18 @@ import Parcel, { Job, JobSpec, JobPhase } from '@oasislabs/parcel';
 import fs from 'fs';
 
 const tokenSourceAcme = {
-  principal: '0d9f279b-a5d8-7260-e090-ff1a7659ba3b',
+  clientId: '6589cf53-e825-3aca-5bc7-1d00d227c388',
   privateKey: {
-    kty: 'EC',
-    alg: 'ES256',
+    kid: 'example-client-1',
     use: 'sig',
+    kty: 'EC',
     crv: 'P-256',
-    kid: 'DcI1bh_7WW9YujsR3h7dik2rQmYNQPSB3dXV-AJsxgc',
-    x: 'v8c_cPZJndQLe51QhGApDPhT4C6OqteK3e0Ttd1CbxE',
-    y: 'Cbvi7oyrCfX5iDPiFUiJPtpiGbypB5UoxJviXtBXfNQ',
-    d: '9ssmJBm_mDIKpxdB2He-zIMeclYtDGQcBv2glEH7r5k',
+    alg: 'ES256',
+    x: 'ej4slEdbZpwYG-4T-WfLHpMBWPf6FItNNGFEHsjdyK4',
+    y: 'e4Q4ygapmkxku_olSuc-WhSJaWiNCvuPqIWaOV6P9pE',
+    d: '_X2VJCigbOYXOq0ilXATJdh9c2DdaSzZlxXVV6yuCXg',
   },
+  scopes: ['parcel.*'] as string[],
 } as const;
 
 console.log('Here we go...');
