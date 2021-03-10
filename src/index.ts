@@ -42,7 +42,7 @@ import { IdentityImpl } from './identity.js';
 import type { Page, PageParams } from './model.js';
 import type { Permission, PermissionCreateParams, PermissionId } from './permission.js';
 import { PermissionImpl } from './permission.js';
-import type { ClientCredentials, PrivateJWK, PublicJWK, TokenSource } from './token.js';
+import type { ClientCredentials, PrivateJWK, PublicJWK, Scope, TokenSource } from './token.js';
 import { TokenProvider, PARCEL_RUNTIME_AUD } from './token.js';
 
 export {
@@ -84,6 +84,7 @@ export {
   PageParams,
   PrivateJWK,
   PublicJWK,
+  Scope,
   Storable,
   TokenSource,
 };

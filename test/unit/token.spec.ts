@@ -6,6 +6,7 @@ import {
   PARCEL_RUNTIME_AUD,
   RefreshingTokenProvider,
   RenewingTokenProvider,
+  Scope,
   SelfIssuedTokenProvider,
   StaticTokenProvider,
 } from '@oasislabs/parcel/token';
@@ -39,7 +40,7 @@ const RENEWING_PROVIDER_PARAMS = {
   clientId: 'parcel user',
   privateKey: privateJwk,
   tokenEndpoint: TOKEN_ENDPOINT,
-  scopes: ['api', 'storage'],
+  scopes: ['parcel.job.*', 'parcel.*.read'] as Scope[],
   audience: PARCEL_RUNTIME_AUD,
 };
 
@@ -80,7 +81,7 @@ describe('Re(new|fresh)ingTokenProvider', () => {
         const isGoodJwt = header.kid === privateJwk.kid && typeof clientAssertion.jti === 'string';
         return (
           body.grant_type === 'client_credentials' &&
-          body.scope === 'api storage' &&
+          body.scope === 'parcel.job.* parcel.*.read' &&
           body.audience === PARCEL_RUNTIME_AUD &&
           body.client_assertion_type === 'urn:ietf:params:oauth:client-assertion-type:jwt-bearer' &&
           isGoodJwt
@@ -183,7 +184,7 @@ describe('SelfIssuedTokenProvider', () => {
   const defaultParams = {
     principal: 'sovereign',
     privateKey: privateJwk,
-    scopes: ['all', 'of', 'them'],
+    scopes: ['parcel.*'] as Scope[],
   };
 
   it('provides token', async () => {

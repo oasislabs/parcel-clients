@@ -6,9 +6,14 @@ import type { JsonObject, Merge } from 'type-fest';
 import type { IdentityId } from './identity.js';
 import './polyfill.js'; // eslint-disable-line import/no-unassigned-import
 
+type ScopeResource = 'identity' | 'dataset' | 'app' | 'grant' | 'permission' | 'job' | '*';
+type ScopeAction = 'create' | 'read' | 'update' | 'delete' | '*';
+export type Scope = 'parcel.*' | `parcel.${ScopeResource}.${ScopeAction}`;
+
 const DEFAULT_TOKEN_ENDPOINT =
   globalThis?.process?.env?.PARCEL_TOKEN_ENDPOINT ?? 'https://auth.oasislabs.com/oauth/token';
 export const PARCEL_RUNTIME_AUD = 'https://api.oasislabs.com/parcel'; // TODO(#326)
+const DEFAULT_SCOPES: Scope[] = ['parcel.*'];
 
 export abstract class TokenProvider {
   public static fromSource(source: TokenSource): TokenProvider {
@@ -75,7 +80,7 @@ export type RenewingTokenProviderParams = {
    * A list of scopes that will be requested from the identity provider, which
    * may be different from the scopes that the identity provider actually returns.
    */
-  scopes?: string[];
+  scopes?: Scope[];
 };
 
 /** A `TokenProvider` that obtains a new token by re-authenticating to the issuer. */
@@ -83,7 +88,7 @@ export class RenewingTokenProvider extends ExpiringTokenProvider {
   private readonly clientId: string;
   private readonly tokenEndpoint: string;
   private readonly audience: string;
-  private readonly scopes: string[];
+  private readonly scopes: Scope[];
   private readonly privateKey: PrivateJWK;
   private readonly privateKeyPEM: string; // PEM is required by jsrsasign.
 
@@ -109,7 +114,7 @@ export class RenewingTokenProvider extends ExpiringTokenProvider {
     this.clientId = clientId;
     this.tokenEndpoint = tokenEndpoint ?? DEFAULT_TOKEN_ENDPOINT;
     this.audience = audience ?? PARCEL_RUNTIME_AUD;
-    this.scopes = scopes ?? ['parcel.*'];
+    this.scopes = scopes ?? DEFAULT_SCOPES;
   }
 
   protected async renewToken(): Promise<Token> {
@@ -188,7 +193,7 @@ export type SelfIssuedTokenProviderParams = {
    * A list of scopes that will be added as claims.
    * The default is all scopes.
    */
-  scopes?: string[];
+  scopes?: Scope[];
 
   /**
    * Duration for which the issued token is valid, in seconds.
@@ -202,7 +207,7 @@ export class SelfIssuedTokenProvider extends ExpiringTokenProvider {
   private readonly principal: string;
   private readonly privateKey: PrivateJWK;
   private readonly privateKeyPEM: string; // PEM is required by jsrsasign.
-  private readonly scopes: string[];
+  private readonly scopes: Scope[];
   private readonly tokenLifetime: number;
 
   public constructor({
@@ -218,7 +223,7 @@ export class SelfIssuedTokenProvider extends ExpiringTokenProvider {
     this.privateKeyPEM = privateKeyPEM;
 
     this.principal = principal;
-    this.scopes = scopes ?? ['parcel.*'];
+    this.scopes = scopes ?? DEFAULT_SCOPES;
     this.tokenLifetime = tokenLifetime ?? 1 * 60 * 60 /* one hour */;
   }
 
