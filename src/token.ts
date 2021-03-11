@@ -109,7 +109,7 @@ export class RenewingTokenProvider extends ExpiringTokenProvider {
     this.clientId = clientId;
     this.tokenEndpoint = tokenEndpoint ?? DEFAULT_TOKEN_ENDPOINT;
     this.audience = audience ?? PARCEL_RUNTIME_AUD;
-    this.scopes = scopes ?? ['parcel.temp_api', 'parcel.temp_storage'];
+    this.scopes = scopes ?? ['parcel.*'];
   }
 
   protected async renewToken(): Promise<Token> {
