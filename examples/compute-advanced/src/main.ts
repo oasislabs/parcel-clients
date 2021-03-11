@@ -13,7 +13,6 @@ const tokenSourceAcme = {
     y: 'e4Q4ygapmkxku_olSuc-WhSJaWiNCvuPqIWaOV6P9pE',
     d: '_X2VJCigbOYXOq0ilXATJdh9c2DdaSzZlxXVV6yuCXg',
   },
-  scopes: ['parcel.*'] as string[],
 } as const;
 
 console.log('Here we go...');

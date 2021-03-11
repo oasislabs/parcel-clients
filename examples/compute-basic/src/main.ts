@@ -15,7 +15,6 @@ const tokenSourceAcme = {
     y: 'e4Q4ygapmkxku_olSuc-WhSJaWiNCvuPqIWaOV6P9pE',
     d: '_X2VJCigbOYXOq0ilXATJdh9c2DdaSzZlxXVV6yuCXg',
   },
-  scopes: ['parcel.*'] as string[],
 } as const;
 
 // In a real-world scenario, these credentials would typically be used in a completely separate script
@@ -34,7 +33,6 @@ const tokenSourceBob = {
     y: 'SEu0xuCzTH95-q_-FSZc-P6hCSnq6qH00MQ52vOVVpA',
     d: '10sS7lgM_YWxf79x21mWalCkAcZZOmX0ZRE_YwEXcmc',
   },
-  scopes: ['parcel.*'] as string[],
 } as const;
 // #endregion snippet-configuration
 
