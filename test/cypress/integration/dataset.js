@@ -22,7 +22,7 @@ context('Download', () => {
   it('roundtrip', () => {
     const mockDatasetId =
       /** @type { import('../../../src').DatasetId } */
-      ('fad69589-b76c-4cf0-856a-8a05fbda90c2');
+      ('DLPfSu1yGKGpxbD9RAnKEtk');
     const mockData = Buffer.alloc(1024 * 1024 * 2).fill(34);
 
     const downloadUrl = `${API_URL}/datasets/${mockDatasetId}/download`;
@@ -78,7 +78,7 @@ context('Redirect', () => {
   it('redirects', () => {
     const mockIdentityId =
       /** @type { import('../../../src').IdentityId } */
-      ('0d9f279b-a5d8-7260-e090-ff1a7659ba3b');
+      ('IPoxXkdvFsrqzDdU7h3QqSs');
 
     const redirectingUrl = `${API_MOUNT_POINT}/identities/me`;
     const redirectedUrl = `${API_MOUNT_POINT}/identities/${mockIdentityId}`;

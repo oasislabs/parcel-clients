@@ -2,9 +2,9 @@ import Parcel, { IdentityId, Job, JobSpec, JobPhase } from '@oasislabs/parcel';
 import fs from 'fs';
 
 // #region snippet-configuration
-const acmeId = '3f7d3ca9-85ca-6498-15d1-facebee979cb' as IdentityId;
+const acmeId = 'ISmEcSerfVhSspezb44dwLD' as IdentityId;
 const tokenSourceAcme = {
-  clientId: '6589cf53-e825-3aca-5bc7-1d00d227c388',
+  clientId: 'C92EAFfH67w4bGkVMjihvkQ',
   privateKey: {
     kid: 'example-client-1',
     use: 'sig',
@@ -23,7 +23,7 @@ const tokenSourceAcme = {
 // This example script, however, performs actions both as Acme and Bob so that the flow is easier to
 // follow.
 const tokenSourceBob = {
-  clientId: '55579380-d771-38ef-bfd3-0305c52a9881',
+  clientId: 'CErM9iRkfYdAJ9TCbJvV3gQ',
   privateKey: {
     kid: 'example-client-2',
     kty: 'EC',

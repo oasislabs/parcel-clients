@@ -14,7 +14,7 @@ const oidcConfig = {
     token_endpoint: AUTH_URL + '/oauth/token',
   },
   // Replace with your app's front-end client ID.
-  client_id: '55579380-d771-38ef-bfd3-0305c52a9881',
+  client_id: 'CErM9iRkfYdAJ9TCbJvV3gQ', // Client 4.
   redirect_uri: 'http://localhost:4050/callback',
   response_type: 'code',
   scope: 'openid',

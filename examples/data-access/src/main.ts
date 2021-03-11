@@ -3,7 +3,7 @@ import fs from 'fs';
 
 // #region snippet-config
 const tokenSource = {
-  clientId: '6589cf53-e825-3aca-5bc7-1d00d227c388',
+  clientId: 'C92EAFfH67w4bGkVMjihvkQ',
   privateKey: {
     kid: 'example-client-1',
     kty: 'EC',
@@ -50,8 +50,8 @@ console.log(`Here's the data: ${acmeData}`);
 
 // Upload a dataset and assign ownership to a sample end user (e.g. "Bob")
 // #region snippet-upload-user-data
-const bobId = '3f7d3ca9-85ca-6498-15d1-facebee979cb' as IdentityId; // REPLACE ME
-const appId = '3f7d3ca9-85ca-6498-1429-5a910237e003'; // REPLACE ME
+const bobId = 'IJ5kvpUafgext6vuCuCH36L' as IdentityId; // REPLACE ME
+const appId = 'AVNidsM1HR76CFTJvGrrTrd'; // REPLACE ME
 datasetDetails.tags.push(appId);
 console.log(`Uploading data for end user Bob (ID: ${bobId}) for your app (ID: ${appId})`);
 const bobDataset = await parcel.uploadDataset(data, {

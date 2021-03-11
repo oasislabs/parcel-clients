@@ -5,7 +5,7 @@ import * as fs from 'fs';
 // #region snippet-configuration
 const apiCreds = {
   // Client ID
-  clientId: '6589cf53-e825-3aca-5bc7-1d00d227c388',
+  clientId: 'C92EAFfH67w4bGkVMjihvkQ',
   // Client key
   privateKey: {
     // Note: Make sure kid matches the one you added in portal.

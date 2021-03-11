@@ -13,7 +13,7 @@ if (!process.env.PARCEL_API_URL || !process.env.PARCEL_TOKEN_ENDPOINT) {
 
 // Test_identity_1.
 const wrapperCreds = {
-  principal: '0d9f279b-a5d8-7260-e090-ff1a7659ba3b',
+  principal: 'IPoxXkdvFsrqzDdU7h3QqSs',
   privateKey: {
     kty: 'EC',
     alg: 'ES256',

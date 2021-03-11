@@ -2,7 +2,7 @@ import Parcel, { Job, JobSpec, JobPhase } from '@oasislabs/parcel';
 import fs from 'fs';
 
 const tokenSourceAcme = {
-  clientId: '6589cf53-e825-3aca-5bc7-1d00d227c388',
+  clientId: 'C92EAFfH67w4bGkVMjihvkQ',
   privateKey: {
     kid: 'example-client-1',
     use: 'sig',

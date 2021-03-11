@@ -1,11 +1,13 @@
+import { randomBytes } from 'crypto';
+
 import SwaggerParser from '@apidevtools/swagger-parser';
 import Ajv, { SchemaObject, ValidateFunction } from 'ajv';
 import ajvFormats from 'ajv-formats';
+import bs58 from 'bs58';
 import nock from 'nock';
 import { paramCase } from 'param-case';
 import { Writable } from 'readable-stream';
 import type { JsonObject } from 'type-fest';
-import * as uuid from 'uuid';
 
 import Parcel from '@oasislabs/parcel';
 import type { AppId, AppUpdateParams, PODApp } from '@oasislabs/parcel/app';
@@ -226,20 +228,24 @@ describe('Parcel', () => {
     });
   });
 
+  function makeRandomId() {
+    return bs58.encode(randomBytes(8));
+  }
+
   function createPodModel(): PODModel {
     const podModel = {
-      id: uuid.v4(),
+      id: makeRandomId(),
       createdAt: new Date().toISOString(),
     };
     expect(podModel).toMatchSchema('Model');
     return podModel;
   }
 
-  const createIdentityId: () => IdentityId = () => uuid.v4() as IdentityId;
-  const createDatasetId: () => DatasetId = () => uuid.v4() as DatasetId;
-  const createJobId: () => JobId = () => uuid.v4() as JobId;
-  const createAppId: () => AppId = () => uuid.v4() as AppId;
-  const createPermissionId: () => PermissionId = () => uuid.v4() as PermissionId;
+  const createIdentityId: () => IdentityId = () => makeRandomId() as IdentityId;
+  const createDatasetId: () => DatasetId = () => makeRandomId() as DatasetId;
+  const createJobId: () => JobId = () => makeRandomId() as JobId;
+  const createAppId: () => AppId = () => makeRandomId() as AppId;
+  const createPermissionId: () => PermissionId = () => makeRandomId() as PermissionId;
 
   function createPodIdentity(): PODIdentity {
     const podIdentity = {
@@ -427,7 +433,7 @@ describe('Parcel', () => {
       results: Array.from({ length: n })
         .fill(undefined)
         .map(() => factory()),
-      nextPageToken: uuid.v4(),
+      nextPageToken: makeRandomId(),
     };
     expect(page).toMatchSchema('ResultsPage');
     return page;
@@ -584,7 +590,7 @@ describe('Parcel', () => {
           const filterWithPagination = {
             app: fixtureResultsPage.results[0].appId as AppId,
             pageSize: 2,
-            pageToken: uuid.v4(),
+            pageToken: makeRandomId(),
           };
           expect(filterWithPagination).toMatchSchema(
             getQueryParametersSchema('GET', '/identities/{identity_id}/permissions'),
@@ -787,7 +793,7 @@ describe('Parcel', () => {
           accessor: fixtureDataset.owner as IdentityId,
           dataset: fixtureDataset.id as DatasetId,
           pageSize: 2,
-          pageToken: uuid.v4(),
+          pageToken: makeRandomId(),
         };
         expect(filterWithPagination).toMatchSchema(
           getQueryParametersSchema('GET', '/datasets/{dataset_id}/history'),
@@ -868,7 +874,7 @@ describe('Parcel', () => {
           creator: fixtureResultsPage.results[0].creator as IdentityId,
           tags: 'all:tag1,tag2',
           pageSize: 2,
-          pageToken: uuid.v4(),
+          pageToken: makeRandomId(),
         };
         expect(filterWithPagination).toMatchSchema(getQueryParametersSchema('GET', '/datasets'));
         scope
@@ -999,7 +1005,7 @@ describe('Parcel', () => {
         const filterWithPagination = {
           grantee: createPodApp().id as AppId,
           pageSize: 2,
-          pageToken: uuid.v4(),
+          pageToken: makeRandomId(),
         };
         expect(filterWithPagination).toMatchSchema(getQueryParametersSchema('GET', '/grants'));
 
@@ -1105,7 +1111,7 @@ describe('Parcel', () => {
           creator: createIdentityId(),
           participation: 'invited' as const,
           pageSize: 2,
-          pageToken: uuid.v4(),
+          pageToken: makeRandomId(),
         };
         expect(filterWithPagination).toMatchSchema(getQueryParametersSchema('GET', '/apps'));
         scope
@@ -1334,7 +1340,7 @@ describe('Parcel', () => {
           const filterWithPagination = {
             creator: createIdentityId(),
             pageSize: 2,
-            pageToken: uuid.v4(),
+            pageToken: makeRandomId(),
           };
           expect(filterWithPagination).toMatchSchema(
             getQueryParametersSchema('GET', '/apps/{app_id}/clients'),
@@ -1452,7 +1458,7 @@ describe('Parcel', () => {
         const filterWithPagination = {
           // Only pagination params; listing jobs does not support other filters.
           pageSize: 2,
-          pageToken: uuid.v4(),
+          pageToken: makeRandomId(),
         };
         expect(filterWithPagination).toMatchSchema(
           getQueryParametersSchema('GET', '/compute/jobs'),
