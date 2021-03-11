@@ -16,7 +16,7 @@ export type PODGrant = Readonly<
     permission?: ResourceId;
     conditions?: Conditions;
     capabilities?: string;
-    extends?: ResourceId;
+    delegating?: ResourceId;
   }
 >;
 
@@ -33,10 +33,11 @@ export type GrantCreateParams = {
   capabilities?: Capabilities | string;
 
   /**
-   * The grant to extend by delegation. If you are the extended grant's `grantee` is you, and it
-   * has the `extend` capability, then this grant will have the same `granter` as the parent.
+   * The grant to extend by delegation. If you are the delegating grant's `grantee` is you,
+   * and it has the `extend` capability, then this grant will have the same `granter` as
+   * the delegating grant.
    */
-  extends?: GrantId;
+  delegating?: GrantId;
 };
 
 const GRANTS_EP = 'grants';
@@ -58,7 +59,7 @@ export class Grant implements Model {
   /** The actions permissible to the grantee on targets selected by the conditions. */
   public readonly capabilities?: Capabilities;
   /** The grant that this grant extends by delegation. */
-  public readonly extends?: GrantId;
+  public readonly delegating?: GrantId;
 
   public constructor(private readonly client: HttpClient, pod: PODGrant) {
     this.id = pod.id as GrantId;
@@ -68,7 +69,7 @@ export class Grant implements Model {
     this.conditions = pod.conditions;
     this.permission = pod.permission as PermissionId;
     this.capabilities = pod.capabilities ? parseCaps(pod.capabilities) : undefined;
-    this.extends = pod.extends as GrantId;
+    this.delegating = pod.delegating as GrantId;
   }
 
   public async delete(): Promise<void> {
