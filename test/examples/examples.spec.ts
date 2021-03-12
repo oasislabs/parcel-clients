@@ -62,6 +62,7 @@ async function getAppFixture(owner: IdentityId): Promise<AppCreateParams> {
 
 /**
  * Retrieve public keys from Auth and return the first one.
+ * Auth returns the latest key first, and prefers using this key over existing ones.
  * Expects PARCEL_TOKEN_ENDPOINT env variable to be set.
  */
 async function getAuthPublicKey(): Promise<PublicJWK> {
