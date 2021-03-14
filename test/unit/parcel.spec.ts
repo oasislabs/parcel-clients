@@ -1061,21 +1061,25 @@ describe('Parcel', () => {
 
   describe('app', () => {
     let fixtureApp: PODApp;
+    let fixtureIdentity: PODIdentity;
 
     beforeEach(() => {
       fixtureApp = createPodApp();
+      fixtureIdentity = createPodIdentity();
     });
 
     nockIt('create', async (scope) => {
       const createParams: any /* AppCreateParams & PODApp */ = {
         ...clone(fixtureApp),
-        identityTokenVerifiers: [
-          {
-            sub: 'app',
-            iss: 'auth.oasislabs.com',
-            publicKey: API_PUBLIC_KEY,
-          },
-        ],
+        identity: {
+          tokenVerifiers: [
+            {
+              sub: 'app',
+              iss: 'auth.oasislabs.com',
+              publicKey: API_PUBLIC_KEY,
+            },
+          ],
+        },
       };
       delete createParams.id;
       delete createParams.createdAt;
@@ -1098,6 +1102,36 @@ describe('Parcel', () => {
       scope.get(`/apps/${fixtureApp.id}`).reply(200, fixtureApp);
       const app = await parcel.getApp(fixtureApp.id as AppId);
       expect(app).toMatchPOD(fixtureApp);
+    });
+
+    describe('app identity', () => {
+      nockIt('get', async (scope) => {
+        scope.get(`/apps/${fixtureApp.id}`).reply(200, fixtureApp);
+        scope.get(`/identities/${fixtureApp.id}`).reply(200, fixtureIdentity);
+
+        const app = await parcel.getApp(fixtureApp.id as AppId);
+        const appIdentity = await app.getIdentity();
+        expect(appIdentity).toMatchPOD(fixtureIdentity);
+      });
+
+      nockIt('update', async (scope) => {
+        const updatedIdentity = Object.assign(clone(fixtureIdentity), {
+          tokenVerifiers: createPodIdentity().tokenVerifiers,
+        });
+
+        scope.get(`/apps/${fixtureApp.id}`).reply(200, fixtureApp);
+        scope
+          .put(`/identities/${fixtureApp.id}`, {
+            tokenVerifiers: updatedIdentity.tokenVerifiers,
+          })
+          .reply(200, updatedIdentity);
+
+        const app = await parcel.getApp(fixtureApp.id as AppId);
+        const updatedAppIdentity = await app.updateIdentity({
+          tokenVerifiers: updatedIdentity.tokenVerifiers,
+        });
+        expect(updatedAppIdentity).toMatchPOD(updatedIdentity);
+      });
     });
 
     describe('list', () => {

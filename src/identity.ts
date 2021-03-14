@@ -1,4 +1,4 @@
-import type { Opaque, SetOptional } from 'type-fest';
+import type { Merge, Opaque, SetOptional } from 'type-fest';
 
 import type { AppId } from './app.js';
 import type { HttpClient } from './http.js';
@@ -10,7 +10,11 @@ import type { IdentityTokenClaims, PublicJWK } from './token.js';
 
 export type IdentityId = Opaque<ResourceId, 'IdentityId' | 'AppId'>;
 
-export type PODIdentity = Readonly<PODModel & IdentityCreateParams>;
+export type PODIdentity = Readonly<
+  PODModel & {
+    tokenVerifiers: IdentityTokenVerifier[];
+  }
+>;
 
 const IDENTITIES_EP = 'identities';
 const IDENTITIES_ME = `${IDENTITIES_EP}/me`;
@@ -140,9 +144,12 @@ export namespace IdentityImpl {
   }
 }
 
-export type IdentityCreateParams = IdentityUpdateParams & {
-  tokenVerifiers: IdentityTokenVerifierCreate[];
-};
+export type IdentityCreateParams = Merge<
+  IdentityUpdateParams,
+  {
+    tokenVerifiers: IdentityTokenVerifierCreate[];
+  }
+>;
 export type IdentityUpdateParams = Writable<Identity>;
 
 export type IdentityTokenVerifier = IdentityTokenClaims & {

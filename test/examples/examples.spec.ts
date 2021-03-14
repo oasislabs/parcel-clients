@@ -102,12 +102,14 @@ async function getAppFixture(owner: Identity): Promise<AppCreateParams> {
     category: 'testing',
     logoUrl: 'https://logos.gif',
 
-    identityTokenVerifiers: [
-      {
-        publicKey: await getAuthPublicKey(),
-        iss: new URL(process.env.PARCEL_TOKEN_ENDPOINT!).origin,
-      },
-    ],
+    identity: {
+      tokenVerifiers: [
+        {
+          publicKey: await getAuthPublicKey(),
+          iss: new URL(process.env.PARCEL_TOKEN_ENDPOINT!).origin,
+        },
+      ],
+    },
   };
 }
 

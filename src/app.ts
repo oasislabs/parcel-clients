@@ -1,7 +1,8 @@
 import type { Except, Opaque } from 'type-fest';
 
 import type { HttpClient } from './http.js';
-import type { IdentityId, IdentityTokenVerifierCreate } from './identity.js';
+import type { IdentityId, IdentityCreateParams, IdentityUpdateParams } from './identity.js';
+import { Identity, IdentityImpl } from './identity.js';
 import type { Model, Page, PageParams, PODModel, ResourceId, WritableExcluding } from './model.js';
 import { makePage } from './model.js';
 import { Permission, PermissionImpl } from './permission.js';
@@ -114,9 +115,17 @@ export class App implements Model {
     this.trusted = pod.trusted;
   }
 
+  public async getIdentity(): Promise<Identity> {
+    return IdentityImpl.get(this.client, this.id);
+  }
+
   public async update(params: AppUpdateParams): Promise<App> {
     Object.assign(this, await AppImpl.update(this.client, this.id, params));
     return this;
+  }
+
+  public async updateIdentity(params: IdentityUpdateParams): Promise<Identity> {
+    return IdentityImpl.update(this.client, this.id, params);
   }
 
   public async delete(): Promise<void> {
@@ -185,7 +194,7 @@ export const endpointForId = (id: AppId) => `${APPS_EP}/${id}`;
 
 export type AppCreateParams = Except<AppUpdateParams, 'owner'> & {
   /** The credentials used to authorize clients acting as this app. */
-  identityTokenVerifiers: IdentityTokenVerifierCreate[];
+  identity: IdentityCreateParams;
 };
 
 export type AppUpdateParams = WritableExcluding<App, 'participants' | 'trusted'>;
