@@ -10,23 +10,23 @@ import type {
 import { ClientImpl } from './client.js';
 import type {
   AccessEvent,
-  Dataset,
-  DatasetId,
-  DatasetUpdateParams,
-  DatasetUploadParams,
+  Document,
+  DocumentId,
+  DocumentUpdateParams,
+  DocumentUploadParams,
   ListAccessLogFilter,
-  ListDatasetsFilter,
+  ListDocumentsFilter,
   Storable,
   Upload,
-} from './dataset.js';
-import { DatasetImpl } from './dataset.js';
+} from './document.js';
+import { DocumentImpl } from './document.js';
 import type { Job, JobId, JobSpec, JobStatus } from './compute.js';
 import {
   ComputeImpl,
-  InputDatasetSpec,
+  InputDocumentSpec,
   JobPhase,
-  OutputDataset,
-  OutputDatasetSpec,
+  OutputDocument,
+  OutputDocumentSpec,
 } from './compute.js';
 import type { Capabilities, Grant, GrantCreateParams, GrantId } from './grant.js';
 import { GrantImpl, ListGrantsFilter } from './grant.js';
@@ -59,10 +59,10 @@ export {
   Permission,
   PermissionCreateParams,
   PermissionId,
-  Dataset,
-  DatasetId,
-  DatasetUpdateParams,
-  DatasetUploadParams,
+  Document,
+  DocumentId,
+  DocumentUpdateParams,
+  DocumentUploadParams,
   ApiError,
   Grant,
   GrantCreateParams,
@@ -71,14 +71,14 @@ export {
   IdentityCreateParams,
   IdentityId,
   IdentityUpdateParams,
-  InputDatasetSpec,
+  InputDocumentSpec,
   Job,
   JobId,
   JobPhase,
   JobSpec,
   JobStatus,
-  OutputDataset,
-  OutputDatasetSpec,
+  OutputDocument,
+  OutputDocumentSpec,
   PARCEL_RUNTIME_AUD,
   Page,
   PageParams,
@@ -116,35 +116,35 @@ export default class Parcel {
     return this.currentIdentity;
   }
 
-  public uploadDataset(data: Storable, params?: DatasetUploadParams): Upload {
-    return DatasetImpl.upload(this.client, data, params);
+  public uploadDocument(data: Storable, params?: DocumentUploadParams): Upload {
+    return DocumentImpl.upload(this.client, data, params);
   }
 
-  public async getDataset(id: DatasetId): Promise<Dataset> {
-    return DatasetImpl.get(this.client, id);
+  public async getDocument(id: DocumentId): Promise<Document> {
+    return DocumentImpl.get(this.client, id);
   }
 
-  public async listDatasets(filter?: ListDatasetsFilter & PageParams): Promise<Page<Dataset>> {
-    return DatasetImpl.list(this.client, filter);
+  public async listDocuments(filter?: ListDocumentsFilter & PageParams): Promise<Page<Document>> {
+    return DocumentImpl.list(this.client, filter);
   }
 
-  public downloadDataset(id: DatasetId): Download {
-    return DatasetImpl.download(this.client, id);
+  public downloadDocument(id: DocumentId): Download {
+    return DocumentImpl.download(this.client, id);
   }
 
-  public async getDatasetHistory(
-    id: DatasetId,
+  public async getDocumentHistory(
+    id: DocumentId,
     filter?: ListAccessLogFilter & PageParams,
   ): Promise<Page<AccessEvent>> {
-    return DatasetImpl.history(this.client, id, filter);
+    return DocumentImpl.history(this.client, id, filter);
   }
 
-  public async updateDataset(id: DatasetId, update: DatasetUpdateParams): Promise<Dataset> {
-    return DatasetImpl.update(this.client, id, update);
+  public async updateDocument(id: DocumentId, update: DocumentUpdateParams): Promise<Document> {
+    return DocumentImpl.update(this.client, id, update);
   }
 
-  public async deleteDataset(id: DatasetId): Promise<void> {
-    return DatasetImpl.delete_(this.client, id);
+  public async deleteDocument(id: DocumentId): Promise<void> {
+    return DocumentImpl.delete_(this.client, id);
   }
 
   public async createApp(params: AppCreateParams): Promise<App> {

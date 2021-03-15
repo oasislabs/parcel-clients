@@ -20,7 +20,7 @@ import type {
 import type { PermissionId, PODPermission } from '@oasislabs/parcel/permission';
 import type { JobId, JobSpec, PODJob } from '@oasislabs/parcel/compute';
 import { JobPhase } from '@oasislabs/parcel/compute';
-import type { DatasetId, PODAccessEvent, PODDataset } from '@oasislabs/parcel/dataset';
+import type { DocumentId, PODAccessEvent, PODDocument } from '@oasislabs/parcel/document';
 import type { GrantId, PODGrant } from '@oasislabs/parcel/grant';
 import { stringifyCaps } from '@oasislabs/parcel/grant';
 import type { IdentityId, PODIdentity } from '@oasislabs/parcel/identity';
@@ -243,7 +243,7 @@ describe('Parcel', () => {
   }
 
   const createIdentityId: () => IdentityId = () => makeRandomId() as IdentityId;
-  const createDatasetId: () => DatasetId = () => makeRandomId() as DatasetId;
+  const createDocumentId: () => DocumentId = () => makeRandomId() as DocumentId;
   const createJobId: () => JobId = () => makeRandomId() as JobId;
   const createAppId: () => AppId = () => makeRandomId() as AppId;
   const createPermissionId: () => PermissionId = () => makeRandomId() as PermissionId;
@@ -263,28 +263,28 @@ describe('Parcel', () => {
     return podIdentity;
   }
 
-  function createPodDataset(): PODDataset {
-    const podDataset = {
+  function createPodDocument(): PODDocument {
+    const podDocument = {
       ...createPodModel(),
       creator: createIdentityId(),
       owner: createIdentityId(),
       size: 1234,
       details: {
-        tags: ['mock', 'dataset'],
+        tags: ['mock', 'document'],
         key: { value: 42 },
       },
     };
-    expect(podDataset).toMatchSchema('Dataset');
-    return podDataset;
+    expect(podDocument).toMatchSchema('Document');
+    return podDocument;
   }
 
   function createPodAccessEvent(options?: {
-    dataset?: DatasetId;
+    document?: DocumentId;
     accessor?: IdentityId;
   }): PODAccessEvent {
     const podAccessEvent = {
       createdAt: new Date().toISOString(),
-      dataset: options?.dataset ?? createPodDataset().id,
+      document: options?.document ?? createPodDocument().id,
       accessor: options?.accessor ?? createPodIdentity().id,
     };
     expect(podAccessEvent).toMatchSchema('AccessEvent');
@@ -359,7 +359,7 @@ describe('Parcel', () => {
       granter: createIdentityId(),
       grantee: createIdentityId(),
       permission: createPermissionId(),
-      conditions: { 'dataset.details.tags': { $any: { $eq: 'mock' } } },
+      conditions: { 'document.details.tags': { $any: { $eq: 'mock' } } },
       capabilities: 'read',
     };
     expect(podGrant).toMatchSchema('Grant');
@@ -372,13 +372,13 @@ describe('Parcel', () => {
       cmd: ['-v', 'foo,bar'],
       image: 'myrepo:mysha',
       env: { MY_ENV_VAR: 'my value', OTHER_VAR: 'other value' },
-      inputDatasets: [
+      inputDocuments: [
         {
           mountPath: 'myimage.png',
-          id: createDatasetId(),
+          id: createDocumentId(),
         },
       ],
-      outputDatasets: [
+      outputDocuments: [
         {
           mountPath: 'labels.json',
           owner: createIdentityId(),
@@ -398,10 +398,10 @@ describe('Parcel', () => {
         phase: JobPhase.PENDING,
         message: 'foo',
         host: 'http://myworker/',
-        outputDatasets: [
+        outputDocuments: [
           {
             mountPath: 'example.txt',
-            id: createDatasetId(),
+            id: createDocumentId(),
           },
         ],
       },
@@ -417,7 +417,7 @@ describe('Parcel', () => {
         {
           granter: 'participant',
           grantee: 'app',
-          conditions: { 'dataset.details.tags': { $any: { $eq: 'mock' } } },
+          conditions: { 'document.details.tags': { $any: { $eq: 'mock' } } },
         },
       ],
       appId: createAppId(),
@@ -620,9 +620,9 @@ describe('Parcel', () => {
         });
 
         nockIt('no results', async (scope) => {
-          const fixtureResultsPage: Page<PODDataset> = createResultsPage(0, createPodDataset);
-          scope.get('/datasets').reply(200, fixtureResultsPage);
-          const { results, nextPageToken } = await parcel.listDatasets();
+          const fixtureResultsPage: Page<PODDocument> = createResultsPage(0, createPodDocument);
+          scope.get('/documents').reply(200, fixtureResultsPage);
+          const { results, nextPageToken } = await parcel.listDocuments();
           expect(results).toHaveLength(0);
           expect(nextPageToken).toEqual(fixtureResultsPage.nextPageToken);
         });
@@ -640,12 +640,12 @@ describe('Parcel', () => {
     });
   });
 
-  describe('dataset', () => {
-    let fixtureDataset: PODDataset;
+  describe('document', () => {
+    let fixtureDocument: PODDocument;
     const fixtureData = Buffer.from('fixture data');
 
     beforeEach(() => {
-      fixtureDataset = createPodDataset();
+      fixtureDocument = createPodDocument();
     });
 
     class DownloadCollector extends Writable {
@@ -670,84 +670,89 @@ describe('Parcel', () => {
       }
     }
 
-    // Matches the metadata part of a (multipart) dataset upload request
-    const MULTIPART_METADATA_RE = /content-disposition: form-data; name="metadata"\r\ncontent-type: application\/json\r\n\r\n{"details":{"tags":\["mock","dataset"],"key":{"value":42}}}\r\n/gi;
-    // Matches the data part of a (multipart) dataset upload request
+    // Matches the metadata part of a (multipart) document upload request
+    const MULTIPART_METADATA_RE = /content-disposition: form-data; name="metadata"\r\ncontent-type: application\/json\r\n\r\n{"details":{"tags":\["mock","document"],"key":{"value":42}}}\r\n/gi;
+    // Matches the data part of a (multipart) document upload request
     const MULTIPART_DATA_RE = /content-disposition: form-data; name="data"\r\ncontent-type: application\/octet-stream\r\n\r\nfixture data\r\n/gi;
 
     describe('upload', () => {
       nockIt('no params', async (scope) => {
-        expect(fixtureDataset).toMatchSchema(getResponseSchema('POST', '/datasets', 201));
+        expect(fixtureDocument).toMatchSchema(getResponseSchema('POST', '/documents', 201));
         scope
-          .post('/datasets', MULTIPART_DATA_RE)
+          .post('/documents', MULTIPART_DATA_RE)
           .matchHeader('content-type', /^multipart\/form-data; boundary=/)
-          .reply(201, fixtureDataset);
-        const dataset = await parcel.uploadDataset(fixtureData).finished;
-        expect(dataset).toMatchPOD(fixtureDataset);
+          .reply(201, fixtureDocument);
+        const document = await parcel.uploadDocument(fixtureData).finished;
+        expect(document).toMatchPOD(fixtureDocument);
       });
 
       nockIt('with params', async (scope) => {
         scope
           .post(
-            '/datasets',
+            '/documents',
             (body) => MULTIPART_METADATA_RE.test(body) && MULTIPART_DATA_RE.test(body),
           )
           .matchHeader('content-type', /^multipart\/form-data; boundary=/)
-          .reply(201, fixtureDataset);
-        const dataset = await parcel.uploadDataset(fixtureData, {
-          details: fixtureDataset.details,
+          .reply(201, fixtureDocument);
+        const document = await parcel.uploadDocument(fixtureData, {
+          details: fixtureDocument.details,
         }).finished;
-        expect(dataset).toMatchPOD(fixtureDataset);
+        expect(document).toMatchPOD(fixtureDocument);
       });
     });
 
     nockIt('get', async (scope) => {
-      expect(fixtureDataset).toMatchSchema(getResponseSchema('GET', '/datasets/{dataset_id}', 200));
-      scope.get(`/datasets/${fixtureDataset.id}`).reply(200, fixtureDataset);
-      const dataset = await parcel.getDataset(fixtureDataset.id as DatasetId);
-      expect(dataset).toMatchPOD(fixtureDataset);
+      expect(fixtureDocument).toMatchSchema(
+        getResponseSchema('GET', '/documents/{document_id}', 200),
+      );
+      scope.get(`/documents/${fixtureDocument.id}`).reply(200, fixtureDocument);
+      const document = await parcel.getDocument(fixtureDocument.id as DocumentId);
+      expect(document).toMatchPOD(fixtureDocument);
     });
 
     describe('download', () => {
       nockIt('by id', async (scope) => {
-        scope.get(`/datasets/${fixtureDataset.id}/download`).reply(200, fixtureData);
-        const download = parcel.downloadDataset(fixtureDataset.id as DatasetId);
+        scope.get(`/documents/${fixtureDocument.id}/download`).reply(200, fixtureData);
+        const download = parcel.downloadDocument(fixtureDocument.id as DocumentId);
         const downloadCollector = new DownloadCollector();
         await download.pipeTo(downloadCollector);
         expect(downloadCollector.collectedDownload).toEqual(fixtureData);
       });
 
       nockIt('retrieved', async (scope) => {
-        scope.get(`/datasets/${fixtureDataset.id}`).reply(200, fixtureDataset);
-        scope.get(`/datasets/${fixtureDataset.id}/download`).reply(200, fixtureData);
+        scope.get(`/documents/${fixtureDocument.id}`).reply(200, fixtureDocument);
+        scope.get(`/documents/${fixtureDocument.id}/download`).reply(200, fixtureData);
 
-        const dataset = await parcel.getDataset(fixtureDataset.id as DatasetId);
+        const document = await parcel.getDocument(fixtureDocument.id as DocumentId);
 
-        const download = dataset.download();
+        const download = document.download();
         const downloadCollector = new DownloadCollector();
         await download.pipeTo(downloadCollector);
         expect(downloadCollector.collectedDownload).toEqual(fixtureData);
       });
 
       nockIt('not found', async (scope) => {
-        scope.get(`/datasets/${fixtureDataset.id}/download`).reply(404, { error: 'not found' });
-        const download = parcel.downloadDataset(fixtureDataset.id as DatasetId);
+        scope.get(`/documents/${fixtureDocument.id}/download`).reply(404, { error: 'not found' });
+        const download = parcel.downloadDocument(fixtureDocument.id as DocumentId);
         const downloadCollector = new DownloadCollector();
         await expect(download.pipeTo(downloadCollector)).rejects.toThrow(
-          'error in dataset download: not found',
+          'error in document download: not found',
         );
       });
 
       nockIt('write error', async (scope) => {
-        scope.get(`/datasets/${fixtureDataset.id}/download`).reply(200, fixtureData);
-        const download = parcel.downloadDataset(fixtureDataset.id as DatasetId);
+        scope.get(`/documents/${fixtureDocument.id}/download`).reply(200, fixtureData);
+        const download = parcel.downloadDocument(fixtureDocument.id as DocumentId);
         const downloadCollector = new DownloadCollector({ error: new Error('whoops') });
         await expect(download.pipeTo(downloadCollector)).rejects.toThrow('whoops');
       });
 
       nockIt('aborted', async (scope) => {
-        scope.get(`/datasets/${fixtureDataset.id}/download`).delayBody(30).reply(200, fixtureData);
-        const download = parcel.downloadDataset(fixtureDataset.id as DatasetId);
+        scope
+          .get(`/documents/${fixtureDocument.id}/download`)
+          .delayBody(30)
+          .reply(200, fixtureData);
+        const download = parcel.downloadDocument(fixtureDocument.id as DocumentId);
         const downloadCollector = new DownloadCollector();
         const downloadComplete = download.pipeTo(downloadCollector);
         setTimeout(() => {
@@ -761,7 +766,7 @@ describe('Parcel', () => {
 
     describe('history', () => {
       nockIt('no filter', async (scope) => {
-        scope.get(`/datasets/${fixtureDataset.id}`).reply(200, fixtureDataset);
+        scope.get(`/documents/${fixtureDocument.id}`).reply(200, fixtureDocument);
 
         const numberResults = 3;
         const fixtureResultsPage: Page<PODAccessEvent> = createResultsPage(
@@ -769,21 +774,21 @@ describe('Parcel', () => {
           createPodAccessEvent,
         );
         expect(fixtureResultsPage).toMatchSchema(
-          getResponseSchema('GET', '/datasets/{dataset_id}/history', 200),
+          getResponseSchema('GET', '/documents/{document_id}/history', 200),
         );
 
-        const dataset = await parcel.getDataset(fixtureDataset.id as DatasetId);
+        const document = await parcel.getDocument(fixtureDocument.id as DocumentId);
 
-        scope.get(`/datasets/${fixtureDataset.id}/history`).reply(200, fixtureResultsPage);
+        scope.get(`/documents/${fixtureDocument.id}/history`).reply(200, fixtureResultsPage);
 
-        const { results, nextPageToken } = await dataset.history();
+        const { results, nextPageToken } = await document.history();
         expect(results).toHaveLength(numberResults);
         for (const [i, r] of results.entries()) expect(r).toMatchPOD(fixtureResultsPage.results[i]);
         expect(nextPageToken).toEqual(fixtureResultsPage.nextPageToken);
       });
 
       nockIt('with filter and pagination', async (scope) => {
-        scope.get(`/datasets/${fixtureDataset.id}`).reply(200, fixtureDataset);
+        scope.get(`/documents/${fixtureDocument.id}`).reply(200, fixtureDocument);
 
         const numberResults = 1;
         const fixtureResultsPage: Page<PODAccessEvent> = createResultsPage(
@@ -792,16 +797,16 @@ describe('Parcel', () => {
         );
 
         const filterWithPagination = {
-          accessor: fixtureDataset.owner as IdentityId,
-          dataset: fixtureDataset.id as DatasetId,
+          accessor: fixtureDocument.owner as IdentityId,
+          document: fixtureDocument.id,
           pageSize: 2,
           pageToken: makeRandomId(),
         };
         expect(filterWithPagination).toMatchSchema(
-          getQueryParametersSchema('GET', '/datasets/{dataset_id}/history'),
+          getQueryParametersSchema('GET', '/documents/{document_id}/history'),
         );
         scope
-          .get(`/datasets/${fixtureDataset.id}/history`)
+          .get(`/documents/${fixtureDocument.id}/history`)
           .query(
             Object.fromEntries(
               Object.entries(filterWithPagination).map(([k, v]) => [paramCase(k), v]),
@@ -809,9 +814,9 @@ describe('Parcel', () => {
           )
           .reply(200, fixtureResultsPage);
 
-        const dataset = await parcel.getDataset(fixtureDataset.id as DatasetId);
+        const document = await parcel.getDocument(fixtureDocument.id as DocumentId);
 
-        const { results, nextPageToken } = await dataset.history(filterWithPagination);
+        const { results, nextPageToken } = await document.history(filterWithPagination);
         expect(results).toHaveLength(numberResults);
         for (const [i, r] of results.entries()) {
           expect(r).toMatchPOD(fixtureResultsPage.results[i]);
@@ -827,13 +832,13 @@ describe('Parcel', () => {
           createPodAccessEvent,
         );
         expect(fixtureResultsPage).toMatchSchema(
-          getResponseSchema('GET', '/datasets/{dataset_id}/history', 200),
+          getResponseSchema('GET', '/documents/{document_id}/history', 200),
         );
 
-        scope.get(`/datasets/${fixtureDataset.id}/history`).reply(200, fixtureResultsPage);
+        scope.get(`/documents/${fixtureDocument.id}/history`).reply(200, fixtureResultsPage);
 
-        const { results, nextPageToken } = await parcel.getDatasetHistory(
-          fixtureDataset.id as DatasetId,
+        const { results, nextPageToken } = await parcel.getDocumentHistory(
+          fixtureDocument.id as DocumentId,
         );
         expect(results).toHaveLength(numberResults);
         for (const [i, r] of results.entries()) {
@@ -847,15 +852,15 @@ describe('Parcel', () => {
     describe('list', () => {
       nockIt('no filter', async (scope) => {
         const numberResults = 3;
-        const fixtureResultsPage: Page<PODDataset> = createResultsPage(
+        const fixtureResultsPage: Page<PODDocument> = createResultsPage(
           numberResults,
-          createPodDataset,
+          createPodDocument,
         );
-        expect(fixtureResultsPage).toMatchSchema(getResponseSchema('GET', '/datasets', 200));
+        expect(fixtureResultsPage).toMatchSchema(getResponseSchema('GET', '/documents', 200));
 
-        scope.get('/datasets').reply(200, fixtureResultsPage);
+        scope.get('/documents').reply(200, fixtureResultsPage);
 
-        const { results, nextPageToken } = await parcel.listDatasets();
+        const { results, nextPageToken } = await parcel.listDocuments();
         expect(results).toHaveLength(numberResults);
         for (const [i, r] of results.entries()) {
           expect(r).toMatchPOD(fixtureResultsPage.results[i]);
@@ -866,9 +871,9 @@ describe('Parcel', () => {
 
       nockIt('with filter and pagination', async (scope) => {
         const numberResults = 1;
-        const fixtureResultsPage: Page<PODDataset> = createResultsPage(
+        const fixtureResultsPage: Page<PODDocument> = createResultsPage(
           numberResults,
-          createPodDataset,
+          createPodDocument,
         );
 
         const filterWithPagination = {
@@ -878,9 +883,9 @@ describe('Parcel', () => {
           pageSize: 2,
           pageToken: makeRandomId(),
         };
-        expect(filterWithPagination).toMatchSchema(getQueryParametersSchema('GET', '/datasets'));
+        expect(filterWithPagination).toMatchSchema(getQueryParametersSchema('GET', '/documents'));
         scope
-          .get('/datasets')
+          .get('/documents')
           .query(
             Object.fromEntries(
               Object.entries(filterWithPagination).map(([k, v]) => [paramCase(k), v]),
@@ -888,7 +893,7 @@ describe('Parcel', () => {
           )
           .reply(200, fixtureResultsPage);
 
-        const { results, nextPageToken } = await parcel.listDatasets({
+        const { results, nextPageToken } = await parcel.listDocuments({
           ...filterWithPagination,
           tags: { all: ['tag1', 'tag2'] },
         });
@@ -901,9 +906,9 @@ describe('Parcel', () => {
       });
 
       nockIt('no results', async (scope) => {
-        const fixtureResultsPage: Page<PODDataset> = createResultsPage(0, createPodDataset);
-        scope.get('/datasets').reply(200, fixtureResultsPage);
-        const { results, nextPageToken } = await parcel.listDatasets();
+        const fixtureResultsPage: Page<PODDocument> = createResultsPage(0, createPodDocument);
+        scope.get('/documents').reply(200, fixtureResultsPage);
+        const { results, nextPageToken } = await parcel.listDocuments();
         expect(results).toHaveLength(0);
         expect(nextPageToken).toEqual(fixtureResultsPage.nextPageToken);
       });
@@ -915,11 +920,11 @@ describe('Parcel', () => {
           owner: createIdentityId(),
           details: { title: 'newtitle', tags: ['foo', 'bar'] },
         };
-        expect(update).toMatchSchema(getRequestSchema('PUT', '/datasets/{dataset_id}'));
-        const updatedDataset = Object.assign(clone(fixtureDataset), update);
-        scope.put(`/datasets/${fixtureDataset.id}`, update).reply(200, updatedDataset);
-        const updated = await parcel.updateDataset(fixtureDataset.id as DatasetId, update);
-        expect(updated).toMatchPOD(updatedDataset);
+        expect(update).toMatchSchema(getRequestSchema('PUT', '/documents/{document_id}'));
+        const updatedDocument = Object.assign(clone(fixtureDocument), update);
+        scope.put(`/documents/${fixtureDocument.id}`, update).reply(200, updatedDocument);
+        const updated = await parcel.updateDocument(fixtureDocument.id as DocumentId, update);
+        expect(updated).toMatchPOD(updatedDocument);
       });
 
       nockIt('retrieved', async (scope) => {
@@ -927,33 +932,33 @@ describe('Parcel', () => {
           owner: createIdentityId(),
           details: { title: 'newtitle', tags: ['foo', 'bar'] },
         };
-        const updatedDataset = Object.assign(clone(fixtureDataset), update);
+        const updatedDocument = Object.assign(clone(fixtureDocument), update);
 
-        scope.put(`/datasets/${fixtureDataset.id}`, update).reply(200, updatedDataset);
-        scope.get(`/datasets/${fixtureDataset.id}`).reply(200, fixtureDataset);
+        scope.put(`/documents/${fixtureDocument.id}`, update).reply(200, updatedDocument);
+        scope.get(`/documents/${fixtureDocument.id}`).reply(200, fixtureDocument);
 
-        const dataset = await parcel.getDataset(fixtureDataset.id as DatasetId);
-        await dataset.update(update);
-        expect(dataset).toMatchPOD(updatedDataset);
+        const document = await parcel.getDocument(fixtureDocument.id as DocumentId);
+        await document.update(update);
+        expect(document).toMatchPOD(updatedDocument);
       });
     });
 
     describe('delete', () => {
       nockIt('by id', async (scope) => {
-        scope.delete(`/datasets/${fixtureDataset.id}`).reply(204);
-        await parcel.deleteDataset(fixtureDataset.id as DatasetId);
+        scope.delete(`/documents/${fixtureDocument.id}`).reply(204);
+        await parcel.deleteDocument(fixtureDocument.id as DocumentId);
       });
 
       nockIt('retrieved', async (scope) => {
-        scope.get(`/datasets/${fixtureDataset.id}`).reply(200, fixtureDataset);
-        scope.delete(`/datasets/${fixtureDataset.id}`).reply(204);
-        const dataset = await parcel.getDataset(fixtureDataset.id as DatasetId);
-        await dataset.delete();
+        scope.get(`/documents/${fixtureDocument.id}`).reply(200, fixtureDocument);
+        scope.delete(`/documents/${fixtureDocument.id}`).reply(204);
+        const document = await parcel.getDocument(fixtureDocument.id as DocumentId);
+        await document.delete();
       });
 
       nockIt('expect 204', async (scope) => {
-        scope.delete(`/datasets/${fixtureDataset.id}`).reply(200);
-        await expect(parcel.deleteDataset(fixtureDataset.id as DatasetId)).rejects.toThrow();
+        scope.delete(`/documents/${fixtureDocument.id}`).reply(200);
+        await expect(parcel.deleteDocument(fixtureDocument.id as DocumentId)).rejects.toThrow();
       });
     });
   });

@@ -37,20 +37,20 @@ const tokenSourceBob = {
 // #endregion snippet-configuration
 
 // --- Upload data as Bob.
-// #region snippet-input-datasets
+// #region snippet-input-documents
 const parcelBob = new Parcel(tokenSourceBob);
 const bobId = (await parcelBob.getCurrentIdentity()).id;
 
-// Upload a datasets and give Acme access to it.
-console.log('Uploading input dataset as Bob.');
-const recipeDataset = await parcelBob.uploadDataset(
+// Upload a documents and give Acme access to it.
+console.log('Uploading input document as Bob.');
+const recipeDocument = await parcelBob.uploadDocument(
   Buffer.from('14g butter; 15g chicken sausage; 18g feta; 20g green pepper; 1.5min baking'),
 ).finished;
 await parcelBob.createGrant({
   grantee: acmeId,
-  conditions: { 'dataset.id': { $eq: recipeDataset.id } },
+  conditions: { 'document.id': { $eq: recipeDocument.id } },
 });
-// #endregion snippet-input-datasets
+// #endregion snippet-input-documents
 
 // --- Run compute job as Acme.
 // #region snippet-job-request
@@ -58,11 +58,11 @@ await parcelBob.createGrant({
 const jobSpec: JobSpec = {
   name: 'word-count',
   image: 'bash',
-  inputDatasets: [{ mountPath: 'recipe.txt', id: recipeDataset.id }],
-  outputDatasets: [{ mountPath: 'count.txt', owner: bobId }],
+  inputDocuments: [{ mountPath: 'recipe.txt', id: recipeDocument.id }],
+  outputDocuments: [{ mountPath: 'count.txt', owner: bobId }],
   cmd: [
     '-c',
-    'echo "Dataset has $(wc -w </parcel/data/in/recipe.txt) words" >/parcel/data/out/count.txt',
+    'echo "Document has $(wc -w </parcel/data/in/recipe.txt) words" >/parcel/data/out/count.txt',
   ],
 };
 // #endregion snippet-job-request
@@ -82,17 +82,17 @@ do {
 } while (job.status.phase === JobPhase.PENDING || job.status.phase === JobPhase.RUNNING);
 
 console.log(
-  `Job ${jobId} completed with status ${job.status.phase} and ${job.status.outputDatasets.length} output dataset(s).`,
+  `Job ${jobId} completed with status ${job.status.phase} and ${job.status.outputDocuments.length} output document(s).`,
 );
 // #endregion snippet-job-submit-wait
 
 // Obtain compute job output -- again as Bob, because the computation was confidential and Acme
 // does not have access to the output data.
 // #region snippet-job-output
-console.log('Downloading output dataset as Bob.');
-const download = parcelBob.downloadDataset(job.status.outputDatasets[0].id);
-const saver = fs.createWriteStream(`/tmp/output_dataset`);
+console.log('Downloading output document as Bob.');
+const download = parcelBob.downloadDocument(job.status.outputDocuments[0].id);
+const saver = fs.createWriteStream(`/tmp/output_document`);
 await download.pipeTo(saver);
-const outputDataset = fs.readFileSync('/tmp/output_dataset', 'utf-8');
-console.log(`Here's the computed result: "${outputDataset}"`);
+const outputDocument = fs.readFileSync('/tmp/output_document', 'utf-8');
+console.log(`Here's the computed result: "${outputDocument}"`);
 // #endregion snippet-job-output

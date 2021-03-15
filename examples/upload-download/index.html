@@ -19,24 +19,24 @@
             </form>
         </div>
         <header>
-            <h1>Upload &amp; Download Datasets!</h1>
+            <h1>Upload &amp; Download Documents!</h1>
         </header>
         <main>
             <section>
-                <form action="javascript:uploadDataset()">
-                    <h2>Upload dataset</h2>
+                <form action="javascript:uploadDocument()">
+                    <h2>Upload document</h2>
                     <label>
-                        Dataset:
-                        <input type="file" id="dataset-picker" name="dataset-picker" required />
+                        Document:
+                        <input type="file" id="document-picker" name="document-picker" required />
                     </label>
                     <br/>
                     <label>
                         Name:
                         <input
                             type="text"
-                            id="dataset-name"
+                            id="document-name"
                             placeholder="Name"
-                            name="dataset-picker"
+                            name="document-picker"
                             required
                         />
                     </label>
@@ -44,9 +44,9 @@
                 </form>
             </section>
             <section>
-                <h2>Uploaded datasets</h2>
-                <button onclick="javascript:listUploadedDatasets()">Refresh</button>
-                <ul id="uploaded-datasets">
+                <h2>Uploaded documents</h2>
+                <button onclick="javascript:listUploadedDocuments()">Refresh</button>
+                <ul id="uploaded-documents">
                     <li>Loading...</li>
                 </ul>
             </section>

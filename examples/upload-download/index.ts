@@ -3,14 +3,14 @@
 declare global {
   interface Window {
     setApiCredentials: () => Promise<void>;
-    uploadDataset: () => Promise<void>;
-    downloadDataset: (id: string) => Promise<void>;
-    listUploadedDatasets: () => Promise<void>;
+    uploadDocument: () => Promise<void>;
+    downloadDocument: (id: string) => Promise<void>;
+    listUploadedDocuments: () => Promise<void>;
   }
 }
 
 // eslint-disable-next-line import/extensions
-import Parcel, { DatasetId } from '../..';
+import Parcel, { DocumentId } from '../..';
 import streamSaver from 'streamsaver';
 
 import fixtureJWK from '../../../../../runtime/genesis/test_identity_creds.json';
@@ -27,9 +27,9 @@ const $ = <T extends Element = Element>(selector: string) => {
 
 const apiCreds: HTMLTextAreaElement = $('#api-creds');
 const setupErrorSpan = $('#setup-error');
-const datasetPicker: HTMLInputElement = $('#dataset-picker');
-const datasetName: HTMLInputElement = $('#dataset-name');
-const datasetsList = $('#uploaded-datasets');
+const documentPicker: HTMLInputElement = $('#document-picker');
+const documentName: HTMLInputElement = $('#document-name');
+const documentsList = $('#uploaded-documents');
 
 apiCreds.value = JSON.stringify(fixtureJWK, null, 4);
 
@@ -50,7 +50,7 @@ window.setApiCredentials = async function () {
     });
     await parcel.getCurrentIdentity();
     document.body.removeAttribute('pre-auth');
-    void window.listUploadedDatasets();
+    void window.listUploadedDocuments();
   } catch (error: any) {
     console.error(error);
     setupErrorSpan.textContent = error.toString();
@@ -58,41 +58,41 @@ window.setApiCredentials = async function () {
   }
 };
 
-window.uploadDataset = async function () {
-  const datasetFile = datasetPicker.files![0];
-  const dataset = await parcel.uploadDataset(datasetFile, {
-    details: { title: datasetName.value },
+window.uploadDocument = async function () {
+  const documentFile = documentPicker.files![0];
+  const document = await parcel.uploadDocument(documentFile, {
+    details: { title: documentName.value },
   }).finished;
-  addDatasetToList(dataset.id, dataset.details.title);
+  addDocumentToList(document.id, document.details.title);
 };
 
-window.downloadDataset = async function (id: string) {
-  const download = parcel.downloadDataset(id as DatasetId);
-  const saver = streamSaver.createWriteStream(`dataset-${id}`);
+window.downloadDocument = async function (id: string) {
+  const download = parcel.downloadDocument(id as DocumentId);
+  const saver = streamSaver.createWriteStream(`document-${id}`);
   await download.pipeTo(saver);
 };
 
-window.listUploadedDatasets = async function () {
+window.listUploadedDocuments = async function () {
   if (!parcel) return;
-  const uploadedDatasets = (
-    await parcel.listDatasets({
+  const uploadedDocuments = (
+    await parcel.listDocuments({
       creator: (await parcel.getCurrentIdentity()).id,
     })
   ).results;
 
-  while (datasetsList.lastChild) datasetsList.lastChild.remove();
-  for (const d of uploadedDatasets) addDatasetToList(d.id, d.details.title);
+  while (documentsList.lastChild) documentsList.lastChild.remove();
+  for (const d of uploadedDocuments) addDocumentToList(d.id, d.details.title);
 };
 
-function addDatasetToList(id: string, name?: string) {
-  const datasetItem = document.createElement('li');
-  const datasetLink = document.createElement('a');
+function addDocumentToList(id: string, name?: string) {
+  const documentItem = document.createElement('li');
+  const documentLink = document.createElement('a');
 
-  datasetLink.href = `javascript:downloadDataset('${id}')`;
-  datasetLink.textContent = `${name ?? 'Untitled'} (${id})`;
+  documentLink.href = `javascript:downloadDocument('${id}')`;
+  documentLink.textContent = `${name ?? 'Untitled'} (${id})`;
 
-  datasetItem.append(datasetLink);
-  datasetsList.append(datasetItem);
+  documentItem.append(documentLink);
+  documentsList.append(documentItem);
 }
 
 // $('#api-creds-modal form').submit(); // For debugging: auto-login

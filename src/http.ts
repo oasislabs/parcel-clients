@@ -162,7 +162,7 @@ export function setExpectedStatus(status: number): BeforeRequestHook {
 }
 
 /**
- * A `Download` is the result of calling `parcel.downloadDataset` or `dataset.download()`.
+ * A `Download` is the result of calling `parcel.downloadDocument` or `document.download()`.
  *
  * The downloaded data can be read using the Node `stream.Readable` interface, or by
  * calling `await downlad.pipeTo(sink)`.
@@ -242,7 +242,7 @@ export class Download implements AsyncIterable<Uint8Array> {
       this.res = this.client.get(this.endpoint, {
         signal: this.abortController.signal,
         hooks: {
-          beforeRequest: [attachContext('dataset download')],
+          beforeRequest: [attachContext('document download')],
         },
       });
     }

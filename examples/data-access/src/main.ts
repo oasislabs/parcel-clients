@@ -22,50 +22,50 @@ const tokenSource = {
 const parcel = new Parcel(tokenSource);
 // #endregion snippet-identity-acme-connect
 
-// By default, datasets are owned by the uploading identity
+// By default, documents are owned by the uploading identity
 // #region snippet-upload-default-owner
 const acmeIdentity = await parcel.getCurrentIdentity();
 console.log(`Uploading data with identity: ${acmeIdentity.id}`);
 
 const data = 'The weather will be sunny tomorrow and cloudy on Tuesday.';
-const datasetDetails = { title: 'Weather forecast summary', tags: ['english'] };
-const acmeDataset = await parcel.uploadDataset(data, {
-  details: datasetDetails,
+const documentDetails = { title: 'Weather forecast summary', tags: ['english'] };
+const acmeDocument = await parcel.uploadDocument(data, {
+  details: documentDetails,
 }).finished;
-console.log(`Created dataset ${acmeDataset.id} with owner ${acmeDataset.owner}`);
+console.log(`Created document ${acmeDocument.id} with owner ${acmeDocument.owner}`);
 // #endregion snippet-upload-default-owner
 
-// Dataset owners can always download their data
+// Document owners can always download their data
 // #region snippet-download-owner
-console.log(`Downloading dataset ${acmeDataset.id} with identity ${acmeIdentity.id}`);
-let download = parcel.downloadDataset(acmeDataset.id);
-let saver = fs.createWriteStream(`./acme_dataset`);
+console.log(`Downloading document ${acmeDocument.id} with identity ${acmeIdentity.id}`);
+let download = parcel.downloadDocument(acmeDocument.id);
+let saver = fs.createWriteStream(`./acme_document`);
 await download.pipeTo(saver);
-console.log(`Dataset ${acmeDataset.id} downloaded to ./acme_dataset`);
+console.log(`Document ${acmeDocument.id} downloaded to ./acme_document`);
 
-const acmeData = fs.readFileSync('./acme_dataset', 'utf-8');
+const acmeData = fs.readFileSync('./acme_document', 'utf-8');
 console.log(`Here's the data: ${acmeData}`);
 // #endregion snippet-download-owner
 
-// Upload a dataset and assign ownership to a sample end user (e.g. "Bob")
+// Upload a document and assign ownership to a sample end user (e.g. "Bob")
 // #region snippet-upload-user-data
 const bobId = 'IJ5kvpUafgext6vuCuCH36L' as IdentityId; // REPLACE ME
 const appId = 'AVNidsM1HR76CFTJvGrrTrd'; // REPLACE ME
-datasetDetails.tags.push(appId);
+documentDetails.tags.push(appId);
 console.log(`Uploading data for end user Bob (ID: ${bobId}) for your app (ID: ${appId})`);
-const bobDataset = await parcel.uploadDataset(data, {
-  details: datasetDetails,
+const bobDocument = await parcel.uploadDocument(data, {
+  details: documentDetails,
   owner: bobId,
 }).finished;
-console.log(`Created dataset ${bobDataset.id} with owner ${bobDataset.owner}`);
+console.log(`Created document ${bobDocument.id} with owner ${bobDocument.owner}`);
 // #endregion snippet-upload-user-data
 
 // By default, we do not have permission to access data owned by other users
 // #region snippet-download-acme-error
-download = parcel.downloadDataset(bobDataset.id);
+download = parcel.downloadDocument(bobDocument.id);
 saver = fs.createWriteStream(`./bob_data_by_acme`);
 try {
-  console.log(`Attempting to access Bob's dataset without permission...`);
+  console.log(`Attempting to access Bob's document without permission...`);
   await download.pipeTo(saver);
 } catch (error: any) {
   console.log(`ACME was not able to access Bob's data (this was expected): ${error}`);
@@ -81,13 +81,13 @@ console.log();
  *  - Have Bob grant us permission
  */
 
-// Now, accessing the dataset succeeds
+// Now, accessing the document succeeds
 // #region snippet-download-bob-success
-console.log(`Attempting to access Bob's dataset with ACME identity ${acmeIdentity.id}`);
-download = parcel.downloadDataset(bobDataset.id);
+console.log(`Attempting to access Bob's document with ACME identity ${acmeIdentity.id}`);
+download = parcel.downloadDocument(bobDocument.id);
 saver = fs.createWriteStream(`./bob_data_by_acme`);
 await download.pipeTo(saver);
-console.log(`Dataset ${bobDataset.id} has been downloaded to ./bob_data_by_acme`);
+console.log(`Document ${bobDocument.id} has been downloaded to ./bob_data_by_acme`);
 
 const bobData = fs.readFileSync('./bob_data_by_acme', 'utf-8');
 console.log(`Here's the data: ${bobData}`);

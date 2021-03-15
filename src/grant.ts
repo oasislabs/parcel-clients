@@ -26,7 +26,7 @@ export type GrantCreateParams = {
    */
   grantee: IdentityId | 'everyone';
 
-  /** Conditions that must be matched to receive access to one or more Datasets. */
+  /** Conditions that must be matched to receive access to one or more Documents. */
   conditions?: Conditions;
 
   /** The capabilities attached to this grant. The default is `read`. */
@@ -52,7 +52,7 @@ export class Grant implements Model {
    * The Identity to which permission is given or everyone,
    */
   public readonly grantee: IdentityId | 'everyone';
-  /** Conditions that describe Datasets to be shared. */
+  /** Conditions that describe Documents to be shared. */
   public readonly conditions?: Conditions;
   /** The permission that created this Grant, if any. */
   public readonly permission?: PermissionId;
