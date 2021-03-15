@@ -1,4 +1,4 @@
-import Parcel, { Dataset } from '@oasislabs/parcel';
+import Parcel, { Document } from '@oasislabs/parcel';
 
 import * as fs from 'fs';
 
@@ -25,33 +25,33 @@ const apiCreds = {
 const parcel = new Parcel(apiCreds);
 // #endregion snippet-connect
 
-// #region snippet-dataset-upload
+// #region snippet-document-upload
 const data = 'Hello private world!';
-const datasetDetails = { title: 'My first dataset', tags: ['greeting', 'english'] };
-let dataset: Dataset;
+const documentDetails = { title: 'My first document', tags: ['greeting', 'english'] };
+let document: Document;
 try {
-  dataset = await parcel.uploadDataset(data, { details: datasetDetails }).finished;
+  document = await parcel.uploadDocument(data, { details: documentDetails }).finished;
 } catch (error: any) {
-  console.error('Failed to upload dataset');
+  console.error('Failed to upload document');
   throw error;
 }
 
-console.log(`Created dataset ${dataset.id} with title ${dataset.details.title}`);
-// #endregion snippet-dataset-upload
+console.log(`Created document ${document.id} with title ${document.details.title}`);
+// #endregion snippet-document-upload
 
-// #region snippet-dataset-download
-// Let's download the above dataset using its ID.
-// By default, the dataset owner can download the data.
-const download = parcel.downloadDataset(dataset.id);
+// #region snippet-document-download
+// Let's download the above document using its ID.
+// By default, the document owner can download the data.
+const download = parcel.downloadDocument(document.id);
 const saver = fs.createWriteStream(`./user_data`);
 try {
   await download.pipeTo(saver);
-  console.log(`Dataset ${dataset.id} has been downloaded to ./user_data`);
+  console.log(`Document ${document.id} has been downloaded to ./user_data`);
 } catch (error: any) {
-  console.error(`Failed to download dataset ${dataset.id}`);
+  console.error(`Failed to download document ${document.id}`);
   throw error;
 }
 
 const secretData = fs.readFileSync('./user_data', 'utf-8');
-console.log(`Hey dataset owner! Here's your data: ${secretData}\n`);
-// #endregion snippet-dataset-download
+console.log(`Hey document owner! Here's your data: ${secretData}\n`);
+// #endregion snippet-document-download

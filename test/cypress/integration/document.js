@@ -20,12 +20,12 @@ context('Download', () => {
   });
 
   it('roundtrip', () => {
-    const mockDatasetId =
-      /** @type { import('../../../src').DatasetId } */
+    const mockDocumentId =
+      /** @type { import('../../../src').DocumentId } */
       ('DLPfSu1yGKGpxbD9RAnKEtk');
     const mockData = Buffer.alloc(1024 * 1024 * 2).fill(34);
 
-    const downloadUrl = `${API_URL}/datasets/${mockDatasetId}/download`;
+    const downloadUrl = `${API_URL}/documents/${mockDocumentId}/download`;
     cy.route2('OPTIONS', downloadUrl, {
       headers: CORS_HEADERS,
     });
@@ -35,7 +35,7 @@ context('Download', () => {
     cy.window()
       .then(async (window) => {
         const parcel = new window.Parcel('fake api token', { apiUrl: API_URL });
-        const download = parcel.downloadDataset(mockDatasetId);
+        const download = parcel.downloadDocument(mockDocumentId);
         return (async () => {
           const bufs = [];
           for await (const chunk of download) {
@@ -49,8 +49,8 @@ context('Download', () => {
   });
 
   it('not found', () => {
-    const bogusDatasetId = 'totally-bogus-dataset-id';
-    const downloadUrl = `${API_URL}/datasets/${bogusDatasetId}/download`;
+    const bogusDocumentId = 'totally-bogus-document-id';
+    const downloadUrl = `${API_URL}/documents/${bogusDocumentId}/download`;
     cy.route2('OPTIONS', downloadUrl, {
       headers: CORS_HEADERS,
     });
@@ -59,7 +59,7 @@ context('Download', () => {
     });
     cy.window().then(async (window) => {
       const parcel = new window.Parcel('fake api token', { apiUrl: API_URL });
-      const downloadChunks = parcel.downloadDataset(bogusDatasetId)[Symbol.asyncIterator]();
+      const downloadChunks = parcel.downloadDocument(bogusDocumentId)[Symbol.asyncIterator]();
       downloadChunks
         .next()
         .then(() => {

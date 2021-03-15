@@ -1,6 +1,6 @@
 import type { Primitive } from 'type-fest';
 
-import type { DatasetId as $DatasetId } from './dataset.js';
+import type { DocumentId as $DocumentId } from './document.js';
 import type { IdentityId } from './identity.js';
 
 export namespace Conditions {
@@ -13,23 +13,23 @@ export namespace Conditions {
   export type Not = {
     $not: Conditions;
   };
-  export type DatasetId = {
-    'dataset.id': Comparison<$DatasetId>;
+  export type DocumentId = {
+    'document.id': Comparison<$DocumentId>;
   };
-  export type DatasetCreator = {
-    'dataset.creator': Comparison<IdentityId>;
+  export type DocumentCreator = {
+    'document.creator': Comparison<IdentityId>;
   };
-  export type DatasetTags = {
-    'dataset.details.tags': ArrayOp<string>;
+  export type DocumentTags = {
+    'document.details.tags': ArrayOp<string>;
   };
 }
 export type Conditions =
   | Conditions.Or
   | Conditions.And
   | Conditions.Not
-  | Conditions.DatasetId
-  | Conditions.DatasetCreator
-  | Conditions.DatasetTags;
+  | Conditions.DocumentId
+  | Conditions.DocumentCreator
+  | Conditions.DocumentTags;
 
 export namespace Comparison {
   export type In<T = Primitive> = {

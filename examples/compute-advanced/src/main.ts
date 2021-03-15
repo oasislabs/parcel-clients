@@ -21,22 +21,22 @@ const parcelAcme = new Parcel(tokenSourceAcme);
 const acmeId = (await parcelAcme.getCurrentIdentity()).id;
 // #endregion snippet-config
 
-// Set up the datasets
-// #region snippet-input-datasets
-const skinDataset = await parcelAcme.uploadDataset(
+// Set up the documents
+// #region snippet-input-documents
+const skinDocument = await parcelAcme.uploadDocument(
   await fs.promises.readFile('docker/test_workdir/data/in/basal_cell_carcinoma_example.jpg'),
   { details: { title: 'User-provided skin image' } },
 ).finished;
-// #endregion snippet-input-datasets
-console.log('Datasets uploaded.');
+// #endregion snippet-input-documents
+console.log('Documents uploaded.');
 
 // Submit the job.
 // #region snippet-submit-job
 const jobSpec: JobSpec = {
   name: 'word-count',
   image: 'oasislabs/acme-derma-demo',
-  inputDatasets: [{ mountPath: 'skin.jpg', id: skinDataset.id }],
-  outputDatasets: [{ mountPath: 'prediction.txt', owner: acmeId }],
+  inputDocuments: [{ mountPath: 'skin.jpg', id: skinDocument.id }],
+  outputDocuments: [{ mountPath: 'prediction.txt', owner: acmeId }],
   cmd: ['python', 'predict.py', '/parcel/data/in/skin.jpg', '/parcel/data/out/prediction.txt'],
 };
 const jobId = (await parcelAcme.submitJob(jobSpec)).id;

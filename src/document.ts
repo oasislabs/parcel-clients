@@ -8,38 +8,37 @@ import type { IdentityId } from './identity.js';
 import type { Model, Page, PageParams, PODModel, ResourceId, WritableExcluding } from './model.js';
 import { makePage } from './model.js';
 
-export type DatasetId = Opaque<ResourceId, 'DatasetId'>;
+export type DocumentId = Opaque<ResourceId, 'DocumentId'>;
 
-export type PODDataset = Readonly<
+export type PODDocument = Readonly<
   PODModel & {
-    id: ResourceId;
     creator: ResourceId;
     owner: ResourceId;
     size: number;
-    details: DatasetDetails;
+    details: DocumentDetails;
   }
 >;
 
 export type PODAccessEvent = Readonly<{
   createdAt: string;
-  dataset: ResourceId;
+  document: ResourceId;
   accessor: ResourceId;
 }>;
 
-type DatasetDetails = { title?: string; tags?: string[] };
+type DocumentDetails = { title?: string; tags?: string[] };
 
-export class Dataset implements Model {
-  public readonly id: DatasetId;
+export class Document implements Model {
+  public readonly id: DocumentId;
   public readonly createdAt: Date;
   public readonly creator: IdentityId;
   public readonly size: number;
   public readonly owner: IdentityId;
 
-  /** Additional, optional information about the dataset. */
-  public readonly details: DatasetDetails;
+  /** Additional, optional information about the document. */
+  public readonly details: DocumentDetails;
 
-  public constructor(private readonly client: HttpClient, pod: PODDataset) {
-    this.id = pod.id as DatasetId;
+  public constructor(private readonly client: HttpClient, pod: PODDocument) {
+    this.id = pod.id as DocumentId;
     this.createdAt = new Date(pod.createdAt);
     this.creator = pod.creator as IdentityId;
     this.owner = pod.owner as IdentityId;
@@ -48,38 +47,38 @@ export class Dataset implements Model {
   }
 
   /**
-   * Downloads the private data referenced by the dataset if the authorized identity
+   * Downloads the private data referenced by the document if the authorized identity
    * has been granted access.
    * @returns the decrypted data as a stream
    */
   public download(): Download {
-    return DatasetImpl.download(this.client, this.id);
+    return DocumentImpl.download(this.client, this.id);
   }
 
-  public async update(params: DatasetUpdateParams): Promise<Dataset> {
-    Object.assign(this, await DatasetImpl.update(this.client, this.id, params));
+  public async update(params: DocumentUpdateParams): Promise<Document> {
+    Object.assign(this, await DocumentImpl.update(this.client, this.id, params));
     return this;
   }
 
   public async delete(): Promise<void> {
-    return DatasetImpl.delete_(this.client, this.id);
+    return DocumentImpl.delete_(this.client, this.id);
   }
 
   public async history(filter?: ListAccessLogFilter & PageParams): Promise<Page<AccessEvent>> {
-    return DatasetImpl.history(this.client, this.id, filter);
+    return DocumentImpl.history(this.client, this.id, filter);
   }
 }
 
-export namespace DatasetImpl {
-  export async function get(client: HttpClient, id: DatasetId): Promise<Dataset> {
-    const podDataset = await client.get<PODDataset>(endpointForId(id));
-    return new Dataset(client, podDataset);
+export namespace DocumentImpl {
+  export async function get(client: HttpClient, id: DocumentId): Promise<Document> {
+    const podDocument = await client.get<PODDocument>(endpointForId(id));
+    return new Document(client, podDocument);
   }
 
   export async function list(
     client: HttpClient,
-    filter?: ListDatasetsFilter & PageParams,
-  ): Promise<Page<Dataset>> {
+    filter?: ListDocumentsFilter & PageParams,
+  ): Promise<Page<Document>> {
     let tagsFilter;
     if (filter?.tags) {
       const tagsSpec = filter.tags;
@@ -88,24 +87,28 @@ export namespace DatasetImpl {
       tagsFilter = `${prefix}:${tags.join(',')}`;
     }
 
-    const podPage = await client.get<Page<PODDataset>>(DATASETS_EP, {
+    const podPage = await client.get<Page<PODDocument>>(DOCUMENTS_EP, {
       ...filter,
       tags: tagsFilter,
     });
-    return makePage(Dataset, podPage, client);
+    return makePage(Document, podPage, client);
   }
 
-  export function upload(client: HttpClient, data: Storable, params?: DatasetUploadParams): Upload {
+  export function upload(
+    client: HttpClient,
+    data: Storable,
+    params?: DocumentUploadParams,
+  ): Upload {
     return new Upload(client, data, params);
   }
 
-  export function download(client: HttpClient, id: DatasetId): Download {
+  export function download(client: HttpClient, id: DocumentId): Download {
     return client.download(endpointForId(id) + '/download');
   }
 
   export async function history(
     client: HttpClient,
-    id: DatasetId,
+    id: DocumentId,
     filter?: ListAccessLogFilter & PageParams,
   ): Promise<Page<AccessEvent>> {
     const podPage = await client.get<Page<PODAccessEvent>>(endpointForId(id) + '/history', {
@@ -119,7 +122,7 @@ export namespace DatasetImpl {
     const results = podPage.results.map((podAccessEvent) => {
       return {
         createdAt: new Date(podAccessEvent.createdAt),
-        dataset: podAccessEvent.dataset as DatasetId,
+        document: podAccessEvent.document as DocumentId,
         accessor: podAccessEvent.accessor as IdentityId,
       };
     });
@@ -131,27 +134,27 @@ export namespace DatasetImpl {
 
   export async function update(
     client: HttpClient,
-    id: DatasetId,
-    params: DatasetUpdateParams,
-  ): Promise<Dataset> {
-    const podDataset = await client.update<PODDataset>(endpointForId(id), params);
-    return new Dataset(client, podDataset);
+    id: DocumentId,
+    params: DocumentUpdateParams,
+  ): Promise<Document> {
+    const podDocument = await client.update<PODDocument>(endpointForId(id), params);
+    return new Document(client, podDocument);
   }
 
-  export async function delete_(client: HttpClient, id: DatasetId): Promise<void> {
+  export async function delete_(client: HttpClient, id: DocumentId): Promise<void> {
     return client.delete(endpointForId(id));
   }
 }
 
-const DATASETS_EP = 'datasets';
-const endpointForId = (id: DatasetId) => `${DATASETS_EP}/${id}`;
+const DOCUMENTS_EP = 'documents';
+const endpointForId = (id: DocumentId) => `${DOCUMENTS_EP}/${id}`;
 
-export type DatasetUpdateParams = WritableExcluding<Dataset, 'creator' | 'size'>;
-export type DatasetUploadParams = SetOptional<DatasetUpdateParams, 'owner' | 'details'>;
+export type DocumentUpdateParams = WritableExcluding<Document, 'creator' | 'size'>;
+export type DocumentUploadParams = SetOptional<DocumentUpdateParams, 'owner' | 'details'>;
 
 export type Storable = Uint8Array | Readable | Blob | string;
 
-export type ListDatasetsFilter = Partial<{
+export type ListDocumentsFilter = Partial<{
   creator: IdentityId;
   owner: IdentityId;
   sharedWith: IdentityId;
@@ -165,7 +168,7 @@ export type ListDatasetsFilter = Partial<{
 
 export type AccessEvent = {
   createdAt: Date;
-  dataset: DatasetId;
+  document: DocumentId;
   accessor: IdentityId;
 };
 
@@ -176,17 +179,17 @@ export type ListAccessLogFilter = Partial<{
 }>;
 
 /**
- * An `Upload` is the result of calling `parcel.uploadDataset`.
+ * An `Upload` is the result of calling `parcel.uploadDocument`.
  *
  * During upload, emits `progress` events, each with a `ProgressEvent` as its argument.
  *
- * When the dataset has been uploaded, the `finish` event is emitted with the `Dataset`
+ * When the document has been uploaded, the `finish` event is emitted with the `Document`
  * reference as its argument.
  */
 export class Upload extends EventEmitter {
   private readonly abortController: AbortController;
 
-  constructor(client: HttpClient, data: Storable, params?: DatasetUploadParams) {
+  constructor(client: HttpClient, data: Storable, params?: DocumentUploadParams) {
     super();
 
     this.abortController = new AbortController();
@@ -220,13 +223,13 @@ export class Upload extends EventEmitter {
     appendPart('data', data, 'application/octet-stream', (data as any).length);
 
     client
-      .create<PODDataset>(DATASETS_EP, form, {
+      .create<PODDocument>(DOCUMENTS_EP, form, {
         headers: 'getHeaders' in form ? /* node */ form.getHeaders() : undefined,
         signal: this.abortController.signal,
       })
       // eslint-disable-next-line promise/prefer-await-to-then
-      .then((podDataset) => {
-        this.emit('finish', new Dataset(client, podDataset));
+      .then((podDocument) => {
+        this.emit('finish', new Document(client, podDocument));
       })
       .catch((error: any) => {
         this.emit('error', error);
@@ -246,7 +249,7 @@ export class Upload extends EventEmitter {
   /**
    * @returns a `Promise` that resolves when the upload stream has finished.
    */
-  public get finished(): Promise<Dataset> {
+  public get finished(): Promise<Document> {
     return new Promise((resolve, reject) => {
       this.on('finish', resolve);
       this.on('error', reject);

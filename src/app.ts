@@ -54,7 +54,7 @@ export class App implements Model {
   public readonly invites: IdentityId[];
   /** The set of identities that are currently authorizing this app. */
   public readonly participants: IdentityId[];
-  /** Allow non-admin users to upload datasets. */
+  /** Allow non-admin users to upload documents. */
   public readonly allowUserUploads: boolean;
 
   public readonly name: string;
