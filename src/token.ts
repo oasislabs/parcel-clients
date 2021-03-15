@@ -1,7 +1,7 @@
 import jsrsasign from 'jsrsasign';
 import type { ResponsePromise } from 'ky';
 import ky from 'ky';
-import type { Except, JsonObject } from 'type-fest';
+import type { JsonObject, Merge } from 'type-fest';
 
 import type { IdentityId } from './identity.js';
 import './polyfill.js'; // eslint-disable-line import/no-unassigned-import
@@ -276,7 +276,7 @@ export type PrivateES256JWK = BaseJWK & {
   y: string;
   d: string;
 };
-export type PublicES256JWK = Except<PrivateES256JWK, 'd'>;
+export type PublicES256JWK = Merge<PrivateES256JWK, { d?: undefined | null }>;
 
 export type PublicJWK = PublicES256JWK;
 export type PrivateJWK = PrivateES256JWK;

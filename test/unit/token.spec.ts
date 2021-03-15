@@ -9,7 +9,7 @@ import {
   SelfIssuedTokenProvider,
   StaticTokenProvider,
 } from '@oasislabs/parcel/token';
-import type { PrivateJWK } from '@oasislabs/parcel/token';
+import type { PublicJWK, PrivateJWK } from '@oasislabs/parcel/token';
 
 const privateJwk: PrivateJWK = {
   // A random jwk from https://mkjwk.org/.
@@ -232,3 +232,6 @@ function insecureDecodeJwt(jwt: string): { header: any; payload: any } {
     .map((part) => JSON.parse(Buffer.from(part, 'base64').toString()));
   return { header, payload };
 }
+
+// @ts-expect-error
+const BAD_PUBLIC_JWK: PublicJWK = privateJwk; // eslint-disable-line no-unused-vars
