@@ -1,6 +1,6 @@
 import type { Opaque } from 'type-fest';
 
-import type { Conditions } from './conditions.js';
+import type { Condition } from './condition.js';
 import type { HttpClient } from './http.js';
 import type { IdentityId } from './identity.js';
 import type { Model, Page, PageParams, PODModel, ResourceId } from './model.js';
@@ -14,7 +14,7 @@ export type PODGrant = Readonly<
     granter: ResourceId;
     grantee?: ResourceId;
     permission?: ResourceId;
-    conditions?: Conditions;
+    condition?: Condition;
     capabilities?: string;
     delegating?: ResourceId;
   }
@@ -26,8 +26,8 @@ export type GrantCreateParams = {
    */
   grantee: IdentityId | 'everyone';
 
-  /** Conditions that must be matched to receive access to one or more Documents. */
-  conditions?: Conditions;
+  /** The condition that must be matched to receive access to one or more Datasets. */
+  condition?: Condition;
 
   /** The capabilities attached to this grant. The default is `read`. */
   capabilities?: Capabilities | string;
@@ -52,8 +52,8 @@ export class Grant implements Model {
    * The Identity to which permission is given or everyone,
    */
   public readonly grantee: IdentityId | 'everyone';
-  /** Conditions that describe Documents to be shared. */
-  public readonly conditions?: Conditions;
+  /** The condition that describes Documents to be shared. */
+  public readonly condition?: Condition;
   /** The permission that created this Grant, if any. */
   public readonly permission?: PermissionId;
   /** The actions permissible to the grantee on targets selected by the conditions. */
@@ -66,7 +66,7 @@ export class Grant implements Model {
     this.createdAt = new Date(pod.createdAt);
     this.granter = pod.granter as IdentityId;
     this.grantee = (pod.grantee as IdentityId) ?? 'everyone';
-    this.conditions = pod.conditions;
+    this.condition = pod.condition;
     this.permission = pod.permission as PermissionId;
     this.capabilities = pod.capabilities ? parseCaps(pod.capabilities) : undefined;
     this.delegating = pod.delegating as GrantId;

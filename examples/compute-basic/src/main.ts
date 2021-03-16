@@ -48,7 +48,7 @@ const recipeDocument = await parcelBob.uploadDocument(
 ).finished;
 await parcelBob.createGrant({
   grantee: acmeId,
-  conditions: { 'document.id': { $eq: recipeDocument.id } },
+  condition: { 'document.id': { $eq: recipeDocument.id } },
 });
 // #endregion snippet-input-documents
 

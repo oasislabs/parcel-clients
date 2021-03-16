@@ -359,7 +359,7 @@ describe('Parcel', () => {
       granter: createIdentityId(),
       grantee: createIdentityId(),
       permission: createPermissionId(),
-      conditions: { 'document.details.tags': { $any: { $eq: 'mock' } } },
+      condition: { 'document.details.tags': { $any: { $eq: 'mock' } } },
       capabilities: 'read',
     };
     expect(podGrant).toMatchSchema('Grant');
@@ -417,7 +417,7 @@ describe('Parcel', () => {
         {
           granter: 'participant',
           grantee: 'app',
-          conditions: { 'document.details.tags': { $any: { $eq: 'mock' } } },
+          condition: { 'document.details.tags': { $any: { $eq: 'mock' } } },
         },
       ],
       appId: createAppId(),
@@ -974,7 +974,7 @@ describe('Parcel', () => {
       expect(fixtureGrant).toMatchSchema(getResponseSchema('POST', '/grants', 201));
       const createParams = {
         grantee: createIdentityId(),
-        conditions: fixtureGrant.conditions,
+        condition: fixtureGrant.condition,
       };
       expect(createParams).toMatchSchema(getRequestSchema('POST', '/grants'));
       scope.post('/grants', createParams).reply(201, fixtureGrant);
@@ -1169,7 +1169,7 @@ describe('Parcel', () => {
           shortDescription: 'new short description',
           homepageUrl: 'https://example.com',
           privacyPolicy: 'new privacy policy',
-          termsAndConditions: 'new terms and conditions',
+          termsAndConditions: 'new terms and condition',
 
           invitationText: 'new invitation text',
           acceptanceText: 'new acceptance text',
