@@ -1,7 +1,24 @@
 import { spawn } from 'child_process';
 import { dirname, join } from 'path';
+import { CustomConsole, LogType, LogMessage } from '@jest/console';
+import Parcel, {
+  App,
+  Client,
+  AppCreateParams,
+  Identity,
+  PublicJWK,
+  PrivateJWK,
+} from '@oasislabs/parcel';
 
-import Parcel, { AppCreateParams, IdentityId, PublicJWK } from '@oasislabs/parcel';
+// We define a console for the spawner with [SPAWNER] prefix and not as cluttered as the default
+// jest's console wrapper.
+const spwanerConsole = new CustomConsole(
+  process.stdout,
+  process.stderr,
+  (_: LogType, message: LogMessage): string => {
+    return `[SPAWNER] ${message}`;
+  },
+);
 
 const npmPath = join(dirname(process.execPath), 'npm');
 
@@ -12,7 +29,7 @@ if (!process.env.PARCEL_API_URL || !process.env.PARCEL_TOKEN_ENDPOINT) {
 }
 
 // Test_identity_1.
-const wrapperCreds = {
+const spawnerCreds = {
   principal: 'IPoxXkdvFsrqzDdU7h3QqSs',
   privateKey: {
     kty: 'EC',
@@ -26,9 +43,43 @@ const wrapperCreds = {
   },
 } as const;
 
-async function getAppFixture(owner: IdentityId): Promise<AppCreateParams> {
+let acmeApp: App;
+let acmeIdentity: Identity;
+let acmeClient: Client;
+const acmeClientCreds = {
+  clientId: 'C92EAFfH67w4bGkVMjihvkQ',
+  privateKey: {
+    kid: 'acme-client',
+    kty: 'EC',
+    alg: 'ES256',
+    use: 'sig',
+    crv: 'P-256',
+    x: 'ej4slEdbZpwYG-4T-WfLHpMBWPf6FItNNGFEHsjdyK4',
+    y: 'e4Q4ygapmkxku_olSuc-WhSJaWiNCvuPqIWaOV6P9pE',
+    d: '_X2VJCigbOYXOq0ilXATJdh9c2DdaSzZlxXVV6yuCXg',
+  },
+} as const;
+
+let bobApp: App;
+let bobIdentity: Identity;
+let bobClient: Client;
+const bobClientCreds = {
+  clientId: 'CErM9iRkfYdAJ9TCbJvV3gQ',
+  privateKey: {
+    kid: 'bob-client',
+    kty: 'EC',
+    alg: 'ES256',
+    use: 'sig',
+    crv: 'P-256',
+    x: 'kbhoJYKyOgY645Y9t-Vewwhke9ZRfLh6_TBevIA6SnQ',
+    y: 'SEu0xuCzTH95-q_-FSZc-P6hCSnq6qH00MQ52vOVVpA',
+    d: '10sS7lgM_YWxf79x21mWalCkAcZZOmX0ZRE_YwEXcmc',
+  },
+} as const;
+
+async function getAppFixture(owner: Identity): Promise<AppCreateParams> {
   return {
-    admins: [owner],
+    admins: [owner.id],
     collaborators: [],
     published: false,
     inviteOnly: true,
@@ -82,54 +133,54 @@ async function getAuthPublicKey(): Promise<PublicJWK> {
   return keys[0];
 }
 
-let parcel: Parcel;
+/**
+ * Extract and return the public key given the private key.
+ */
+function extractPubKey(privKey: PrivateJWK) {
+  const { d, ...pubKey } = privKey;
+  return pubKey;
+}
 
-// Simulates what a developer following our tutorials is expected to do: Create an app and two OAuth
-// clients for it.
+/**
+ * Simulate what a developer following our tutorials is expected to do: Create two apps and a
+ * server-type OAuth client for each app.
+ */
 beforeAll(async () => {
-  parcel = new Parcel(wrapperCreds);
+  const parcel = new Parcel(spawnerCreds);
   const spawnerIdentity = await parcel.getCurrentIdentity();
 
-  const app = await parcel.createApp(await getAppFixture(spawnerIdentity.id));
-  // Example-client-1 aka ACME Inc.
-  await parcel.createClient(app.id, {
-    name: 'example-client-1',
+  // First app and acme-client.
+  acmeApp = await parcel.createApp(await getAppFixture(spawnerIdentity));
+  spwanerConsole.log(`Created acmeApp, id: ${acmeApp.id}, owner ${acmeApp.owner}`);
+  acmeClient = await parcel.createClient(acmeApp.id, {
+    name: 'acme-client',
     isScript: true,
     redirectUris: [],
     postLogoutRedirectUris: [],
     canHoldSecrets: true,
-    publicKeys: [
-      {
-        kid: 'example-client-1',
-        use: 'sig',
-        kty: 'EC',
-        crv: 'P-256',
-        alg: 'ES256',
-        x: 'ej4slEdbZpwYG-4T-WfLHpMBWPf6FItNNGFEHsjdyK4',
-        y: 'e4Q4ygapmkxku_olSuc-WhSJaWiNCvuPqIWaOV6P9pE',
-      },
-    ],
+    publicKeys: [extractPubKey(acmeClientCreds.privateKey)],
   });
-  // Example-client-2 aka Bob.
-  await parcel.createClient(app.id, {
-    name: 'example-client-2',
+  const parcelAcme = new Parcel(acmeClientCreds);
+  acmeIdentity = await parcelAcme.getCurrentIdentity();
+  spwanerConsole.log(
+    `Created acmeClient, client_id: ${acmeClient.id}, identity: ${acmeIdentity.id}`,
+  );
+
+  // Second app and bob-client.
+  bobApp = await parcel.createApp(await getAppFixture(spawnerIdentity));
+  spwanerConsole.log(`Created bobApp, id: ${bobApp.id}, owner ${bobApp.owner}`);
+  bobClient = await parcel.createClient(bobApp.id, {
+    name: 'bob-client',
     isScript: true,
     redirectUris: [],
     postLogoutRedirectUris: [],
     canHoldSecrets: true,
-    publicKeys: [
-      {
-        kid: 'example-client-2',
-        use: 'sig',
-        kty: 'EC',
-        crv: 'P-256',
-        alg: 'ES256',
-        x: 'kbhoJYKyOgY645Y9t-Vewwhke9ZRfLh6_TBevIA6SnQ',
-        y: 'SEu0xuCzTH95-q_-FSZc-P6hCSnq6qH00MQ52vOVVpA',
-      },
-    ],
+    publicKeys: [extractPubKey(bobClientCreds.privateKey)],
   });
-});
+  const parcelBob = new Parcel(bobClientCreds);
+  bobIdentity = await parcelBob.getCurrentIdentity();
+  spwanerConsole.log(`Created bobClient, client_id: ${bobClient.id}, identity: ${bobIdentity.id}`);
+}, 10 * 1000);
 
 it(
   'data-upload',
@@ -137,6 +188,29 @@ it(
     await runExample('data-upload');
   },
   10 * 1000,
+);
+
+it(
+  'data-access',
+  async () => {
+    await runExample('data-access', (data) => {
+      // Forward example's output to stdout.
+      process.stdout.write(data.toString());
+
+      // Wait for the example until the grant permission is required.
+      if (data.includes("ACME was not able to access Bob's data (this was expected):")) {
+        spwanerConsole.log(
+          `Assigning grant to ${acmeIdentity.id} for documents with tag ${acmeApp.id}`,
+        );
+        const parcelBob = new Parcel(bobClientCreds);
+        void parcelBob.createGrant({
+          grantee: acmeIdentity.id,
+          condition: { 'document.details.tags': { $any: { $eq: acmeApp.id } } },
+        });
+      }
+    });
+  },
+  20 * 1000,
 );
 
 // Compute examples might need to download docker images, set higher timeout.
@@ -156,11 +230,14 @@ it(
   300 * 1000,
 );
 
-async function runExample(name: string): Promise<void> {
+async function runExample(
+  name: string,
+  customStdoutListener?: (chunk: any) => void,
+): Promise<void> {
   return new Promise((resolve, reject) => {
-    spawn(npmPath, ['start'], {
+    const child = spawn(npmPath, ['start'], {
       cwd: `examples/${name}`,
-      stdio: [null, 'inherit', 'inherit'],
+      stdio: [null, customStdoutListener ? 'pipe' : 'inherit', 'inherit'],
     })
       .on('close', (signal) => {
         if (signal === 0) {
@@ -175,5 +252,8 @@ async function runExample(name: string): Promise<void> {
       .on('error', (error) => {
         reject(new Error(`example exited with error ${JSON.stringify(error)}`));
       });
+    if (customStdoutListener) {
+      child.stdout?.on('data', customStdoutListener);
+    }
   });
 }
