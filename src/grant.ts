@@ -26,7 +26,7 @@ export type GrantCreateParams = {
    */
   grantee: IdentityId | 'everyone';
 
-  /** The condition that must be matched to receive access to one or more Datasets. */
+  /** The condition that must be matched to receive access to one or more Documents. */
   condition?: Condition;
 
   /** The capabilities attached to this grant. The default is `read`. */
