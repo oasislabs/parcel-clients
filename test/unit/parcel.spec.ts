@@ -273,6 +273,7 @@ describe('Parcel', () => {
         tags: ['mock', 'document'],
         key: { value: 42 },
       },
+      originatingJob: createJobId(),
     };
     expect(podDocument).toMatchSchema('Document');
     return podDocument;

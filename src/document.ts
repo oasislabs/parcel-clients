@@ -3,6 +3,7 @@ import FormData from 'form-data';
 import type { Readable } from 'readable-stream';
 import type { Opaque, RequireExactlyOne, SetOptional } from 'type-fest';
 
+import type { JobId } from './compute.js';
 import type { HttpClient, Download } from './http.js';
 import type { IdentityId } from './identity.js';
 import type { Model, Page, PageParams, PODModel, ResourceId, WritableExcluding } from './model.js';
@@ -16,6 +17,7 @@ export type PODDocument = Readonly<
     owner: ResourceId;
     size: number;
     details: DocumentDetails;
+    originatingJob?: JobId;
   }
 >;
 
@@ -36,6 +38,7 @@ export class Document implements Model {
 
   /** Additional, optional information about the document. */
   public readonly details: DocumentDetails;
+  public readonly originatingJob?: JobId;
 
   public constructor(private readonly client: HttpClient, pod: PODDocument) {
     this.id = pod.id as DocumentId;
@@ -44,6 +47,7 @@ export class Document implements Model {
     this.owner = pod.owner as IdentityId;
     this.size = pod.size;
     this.details = pod.details;
+    this.originatingJob = pod.originatingJob;
   }
 
   /**
@@ -149,7 +153,10 @@ export namespace DocumentImpl {
 const DOCUMENTS_EP = 'documents';
 const endpointForId = (id: DocumentId) => `${DOCUMENTS_EP}/${id}`;
 
-export type DocumentUpdateParams = WritableExcluding<Document, 'creator' | 'size'>;
+export type DocumentUpdateParams = WritableExcluding<
+  Document,
+  'creator' | 'size' | 'originatingJob'
+>;
 export type DocumentUploadParams = SetOptional<DocumentUpdateParams, 'owner' | 'details'>;
 
 export type Storable = Uint8Array | Readable | Blob | string;
