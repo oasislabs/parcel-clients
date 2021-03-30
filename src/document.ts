@@ -233,6 +233,7 @@ export class Upload extends EventEmitter {
       .create<PODDocument>(DOCUMENTS_EP, form, {
         headers: 'getHeaders' in form ? /* node */ form.getHeaders() : undefined,
         signal: this.abortController.signal,
+        timeout: false,
       })
       // eslint-disable-next-line promise/prefer-await-to-then
       .then((podDocument) => {
