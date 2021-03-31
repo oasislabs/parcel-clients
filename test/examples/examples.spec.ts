@@ -207,7 +207,7 @@ it(
         const parcelBob = new Parcel(bobClientCreds);
         void parcelBob.createGrant({
           grantee: acmeIdentity.id,
-          condition: { 'document.details.tags': { $any: { $eq: acmeApp.id } } },
+          condition: { 'document.details.tags': { $any: { $eq: `to-app-${acmeApp.id}` } } },
         });
       }
     });

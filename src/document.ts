@@ -3,6 +3,7 @@ import FormData from 'form-data';
 import type { Readable } from 'readable-stream';
 import type { Opaque, RequireExactlyOne, SetOptional } from 'type-fest';
 
+import type { AppId } from './app.js';
 import type { JobId } from './compute.js';
 import type { HttpClient, Download } from './http.js';
 import type { IdentityId } from './identity.js';
@@ -101,9 +102,9 @@ export namespace DocumentImpl {
   export function upload(
     client: HttpClient,
     data: Storable,
-    params?: DocumentUploadParams,
+    params: DocumentUploadParams | undefined | null,
   ): Upload {
-    return new Upload(client, data, params);
+    return new Upload(client, data, params ?? undefined);
   }
 
   export function download(client: HttpClient, id: DocumentId): Download {
@@ -157,7 +158,9 @@ export type DocumentUpdateParams = WritableExcluding<
   Document,
   'creator' | 'size' | 'originatingJob'
 >;
-export type DocumentUploadParams = SetOptional<DocumentUpdateParams, 'owner' | 'details'>;
+export type DocumentUploadParams = SetOptional<DocumentUpdateParams, 'owner' | 'details'> & {
+  toApp: AppId | undefined;
+};
 
 export type Storable = Uint8Array | Readable | Blob | string;
 
@@ -196,7 +199,7 @@ export type ListAccessLogFilter = Partial<{
 export class Upload extends EventEmitter {
   private readonly abortController: AbortController;
 
-  constructor(client: HttpClient, data: Storable, params?: DocumentUploadParams) {
+  constructor(client: HttpClient, data: Storable, sdkParams?: DocumentUploadParams) {
     super();
 
     this.abortController = new AbortController();
@@ -222,8 +225,16 @@ export class Upload extends EventEmitter {
       }
     };
 
-    if (params) {
-      const paramsString = JSON.stringify(params);
+    if (sdkParams) {
+      const { toApp, ...parcelParams } = sdkParams;
+      if (toApp) {
+        parcelParams.details = {
+          ...parcelParams.details,
+          tags: [...(parcelParams?.details?.tags ?? []), `to-app-${toApp}`],
+        };
+      }
+
+      const paramsString = JSON.stringify(parcelParams);
       appendPart('metadata', paramsString, 'application/json', paramsString.length);
     }
 

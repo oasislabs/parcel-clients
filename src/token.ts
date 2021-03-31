@@ -276,7 +276,7 @@ export type PrivateES256JWK = BaseJWK & {
   y: string;
   d: string;
 };
-export type PublicES256JWK = Merge<PrivateES256JWK, { d?: undefined | null }>;
+export type PublicES256JWK = Merge<PrivateES256JWK, { d?: void }>;
 
 export type PublicJWK = PublicES256JWK;
 export type PrivateJWK = PrivateES256JWK;

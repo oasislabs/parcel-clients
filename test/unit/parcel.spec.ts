@@ -672,7 +672,7 @@ describe('Parcel', () => {
     }
 
     // Matches the metadata part of a (multipart) document upload request
-    const MULTIPART_METADATA_RE = /content-disposition: form-data; name="metadata"\r\ncontent-type: application\/json\r\n\r\n{"details":{"tags":\["mock","document"],"key":{"value":42}}}\r\n/gi;
+    const MULTIPART_METADATA_RE = /content-disposition: form-data; name="metadata"\r\ncontent-type: application\/json\r\n\r\n{"details":{"tags":\["mock","document","to-app-\w+"],"key":{"value":42}}}\r\n/gi;
     // Matches the data part of a (multipart) document upload request
     const MULTIPART_DATA_RE = /content-disposition: form-data; name="data"\r\ncontent-type: application\/octet-stream\r\n\r\nfixture data\r\n/gi;
 
@@ -683,7 +683,7 @@ describe('Parcel', () => {
           .post('/documents', MULTIPART_DATA_RE)
           .matchHeader('content-type', /^multipart\/form-data; boundary=/)
           .reply(201, fixtureDocument);
-        const document = await parcel.uploadDocument(fixtureData).finished;
+        const document = await parcel.uploadDocument(fixtureData, null /* params */).finished;
         expect(document).toMatchPOD(fixtureDocument);
       });
 
@@ -697,6 +697,7 @@ describe('Parcel', () => {
           .reply(201, fixtureDocument);
         const document = await parcel.uploadDocument(fixtureData, {
           details: fixtureDocument.details,
+          toApp: createAppId(),
         }).finished;
         expect(document).toMatchPOD(fixtureDocument);
       });

@@ -116,7 +116,7 @@ export default class Parcel {
     return this.currentIdentity;
   }
 
-  public uploadDocument(data: Storable, params?: DocumentUploadParams): Upload {
+  public uploadDocument(data: Storable, params: DocumentUploadParams | undefined | null): Upload {
     return DocumentImpl.upload(this.client, data, params);
   }
 
