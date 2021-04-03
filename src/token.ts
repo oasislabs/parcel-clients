@@ -61,6 +61,7 @@ export class StaticTokenProvider implements TokenProvider {
   }
 }
 
+/** Parameters of a token provider that fetches access tokens via OAuth using a client key. */
 export type RenewingTokenProviderParams = {
   clientId: string;
 
@@ -144,6 +145,7 @@ export class RenewingTokenProvider extends ExpiringTokenProvider {
   }
 }
 
+/** Parameters of a token provider that fetches access tokens via OAuth using a refresh token. */
 export type RefreshingTokenProviderParams = {
   refreshToken: string;
   tokenEndpoint: string;
@@ -182,6 +184,7 @@ export class RefreshingTokenProvider extends ExpiringTokenProvider {
   }
 }
 
+/** Parameters of a token provider that signs its own access tokens using a private key. */
 export type SelfIssuedTokenProviderParams = {
   /** The `sub` and `iss` claims of the provided access token. */
   principal: string | IdentityId;
