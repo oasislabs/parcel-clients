@@ -8,6 +8,7 @@ import Parcel, {
   Identity,
   PublicJWK,
   PrivateJWK,
+  RenewingTokenProviderParams,
 } from '@oasislabs/parcel';
 
 // We define a console for the spawner with [SPAWNER] prefix and not as cluttered as the default
@@ -30,7 +31,7 @@ if (!process.env.PARCEL_API_URL || !process.env.PARCEL_TOKEN_ENDPOINT) {
 
 // Test_identity_1.
 const spawnerCreds = {
-  principal: 'IPoxXkdvFsrqzDdU7h3QqSs',
+  principal: 'ISmEcSerfVhSspezb44dwLD',
   privateKey: {
     kty: 'EC',
     alg: 'ES256',
@@ -46,35 +47,29 @@ const spawnerCreds = {
 let acmeApp: App;
 let acmeIdentity: Identity;
 let acmeClient: Client;
-const acmeClientCreds = {
-  clientId: 'C92EAFfH67w4bGkVMjihvkQ',
-  privateKey: {
-    kid: 'acme-client',
-    kty: 'EC',
-    alg: 'ES256',
-    use: 'sig',
-    crv: 'P-256',
-    x: 'ej4slEdbZpwYG-4T-WfLHpMBWPf6FItNNGFEHsjdyK4',
-    y: 'e4Q4ygapmkxku_olSuc-WhSJaWiNCvuPqIWaOV6P9pE',
-    d: '_X2VJCigbOYXOq0ilXATJdh9c2DdaSzZlxXVV6yuCXg',
-  },
+const acmeClientPrivateKey = {
+  kid: 'acme-client',
+  kty: 'EC',
+  alg: 'ES256',
+  use: 'sig',
+  crv: 'P-256',
+  x: 'ej4slEdbZpwYG-4T-WfLHpMBWPf6FItNNGFEHsjdyK4',
+  y: 'e4Q4ygapmkxku_olSuc-WhSJaWiNCvuPqIWaOV6P9pE',
+  d: '_X2VJCigbOYXOq0ilXATJdh9c2DdaSzZlxXVV6yuCXg',
 } as const;
 
 let bobApp: App;
 let bobIdentity: Identity;
 let bobClient: Client;
-const bobClientCreds = {
-  clientId: 'CErM9iRkfYdAJ9TCbJvV3gQ',
-  privateKey: {
-    kid: 'bob-client',
-    kty: 'EC',
-    alg: 'ES256',
-    use: 'sig',
-    crv: 'P-256',
-    x: 'kbhoJYKyOgY645Y9t-Vewwhke9ZRfLh6_TBevIA6SnQ',
-    y: 'SEu0xuCzTH95-q_-FSZc-P6hCSnq6qH00MQ52vOVVpA',
-    d: '10sS7lgM_YWxf79x21mWalCkAcZZOmX0ZRE_YwEXcmc',
-  },
+const bobClientPrivateKey = {
+  kid: 'bob-client',
+  kty: 'EC',
+  alg: 'ES256',
+  use: 'sig',
+  crv: 'P-256',
+  x: 'kbhoJYKyOgY645Y9t-Vewwhke9ZRfLh6_TBevIA6SnQ',
+  y: 'SEu0xuCzTH95-q_-FSZc-P6hCSnq6qH00MQ52vOVVpA',
+  d: '10sS7lgM_YWxf79x21mWalCkAcZZOmX0ZRE_YwEXcmc',
 } as const;
 
 async function getAppFixture(owner: Identity): Promise<AppCreateParams> {
@@ -160,9 +155,12 @@ beforeAll(async () => {
     redirectUris: [],
     postLogoutRedirectUris: [],
     canHoldSecrets: true,
-    publicKeys: [extractPubKey(acmeClientCreds.privateKey)],
+    publicKeys: [extractPubKey(acmeClientPrivateKey)],
   });
-  const parcelAcme = new Parcel(acmeClientCreds);
+  const parcelAcme = new Parcel({
+    clientId: acmeClient.id,
+    privateKey: acmeClientPrivateKey,
+  } as RenewingTokenProviderParams);
   acmeIdentity = await parcelAcme.getCurrentIdentity();
   spwanerConsole.log(
     `Created acmeClient, client_id: ${acmeClient.id}, identity: ${acmeIdentity.id}`,
@@ -177,9 +175,12 @@ beforeAll(async () => {
     redirectUris: [],
     postLogoutRedirectUris: [],
     canHoldSecrets: true,
-    publicKeys: [extractPubKey(bobClientCreds.privateKey)],
+    publicKeys: [extractPubKey(bobClientPrivateKey)],
   });
-  const parcelBob = new Parcel(bobClientCreds);
+  const parcelBob = new Parcel({
+    clientId: bobClient.id,
+    privateKey: bobClientPrivateKey,
+  } as RenewingTokenProviderParams);
   bobIdentity = await parcelBob.getCurrentIdentity();
   spwanerConsole.log(`Created bobClient, client_id: ${bobClient.id}, identity: ${bobIdentity.id}`);
 }, 10 * 1000);
@@ -204,7 +205,10 @@ it(
         spwanerConsole.log(
           `Assigning grant to ${acmeIdentity.id} for documents with tag ${acmeApp.id}`,
         );
-        const parcelBob = new Parcel(bobClientCreds);
+        const parcelBob = new Parcel({
+          clientId: bobClient.id,
+          privateKey: bobClientPrivateKey,
+        } as RenewingTokenProviderParams);
         void parcelBob.createGrant({
           grantee: acmeIdentity.id,
           condition: { 'document.details.tags': { $any: { $eq: `to-app-${acmeApp.id}` } } },
