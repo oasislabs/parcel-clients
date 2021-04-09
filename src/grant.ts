@@ -61,7 +61,10 @@ export class Grant implements Model {
   /** The grant that this grant extends by delegation. */
   public readonly delegating?: GrantId;
 
-  public constructor(private readonly client: HttpClient, pod: PODGrant) {
+  #client: HttpClient;
+
+  public constructor(client: HttpClient, pod: PODGrant) {
+    this.#client = client;
     this.id = pod.id as GrantId;
     this.createdAt = new Date(pod.createdAt);
     this.granter = pod.granter as IdentityId;
@@ -73,7 +76,7 @@ export class Grant implements Model {
   }
 
   public async delete(): Promise<void> {
-    return this.client.delete(endpointForId(this.id));
+    return this.#client.delete(endpointForId(this.id));
   }
 }
 

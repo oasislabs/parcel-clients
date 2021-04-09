@@ -41,7 +41,10 @@ export class Document implements Model {
   public readonly details: DocumentDetails;
   public readonly originatingJob?: JobId;
 
-  public constructor(private readonly client: HttpClient, pod: PODDocument) {
+  #client: HttpClient;
+
+  public constructor(client: HttpClient, pod: PODDocument) {
+    this.#client = client;
     this.id = pod.id as DocumentId;
     this.createdAt = new Date(pod.createdAt);
     this.creator = pod.creator as IdentityId;
@@ -57,20 +60,20 @@ export class Document implements Model {
    * @returns the decrypted data as a stream
    */
   public download(): Download {
-    return DocumentImpl.download(this.client, this.id);
+    return DocumentImpl.download(this.#client, this.id);
   }
 
   public async update(params: DocumentUpdateParams): Promise<Document> {
-    Object.assign(this, await DocumentImpl.update(this.client, this.id, params));
+    Object.assign(this, await DocumentImpl.update(this.#client, this.id, params));
     return this;
   }
 
   public async delete(): Promise<void> {
-    return DocumentImpl.delete_(this.client, this.id);
+    return DocumentImpl.delete_(this.#client, this.id);
   }
 
   public async history(filter?: ListAccessLogFilter & PageParams): Promise<Page<AccessEvent>> {
-    return DocumentImpl.history(this.client, this.id, filter);
+    return DocumentImpl.history(this.#client, this.id, filter);
   }
 }
 

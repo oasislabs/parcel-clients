@@ -88,7 +88,10 @@ export class App implements Model {
   public readonly category?: string;
   public readonly trusted: boolean;
 
-  public constructor(private readonly client: HttpClient, pod: PODApp) {
+  #client: HttpClient;
+
+  public constructor(client: HttpClient, pod: PODApp) {
+    this.#client = client;
     this.acceptanceText = pod.acceptanceText;
     this.admins = pod.admins as IdentityId[];
     this.allowUserUploads = pod.allowUserUploads;
@@ -116,20 +119,20 @@ export class App implements Model {
   }
 
   public async getIdentity(): Promise<Identity> {
-    return IdentityImpl.get(this.client, this.id);
+    return IdentityImpl.get(this.#client, this.id);
   }
 
   public async update(params: AppUpdateParams): Promise<App> {
-    Object.assign(this, await AppImpl.update(this.client, this.id, params));
+    Object.assign(this, await AppImpl.update(this.#client, this.id, params));
     return this;
   }
 
   public async updateIdentity(params: IdentityUpdateParams): Promise<Identity> {
-    return IdentityImpl.update(this.client, this.id, params);
+    return IdentityImpl.update(this.#client, this.id, params);
   }
 
   public async delete(): Promise<void> {
-    return AppImpl.delete_(this.client, this.id);
+    return AppImpl.delete_(this.#client, this.id);
   }
 
   /**
@@ -137,14 +140,14 @@ export class App implements Model {
    * will be added to `this.permissions`.
    */
   public async createPermission(params: PermissionCreateParams): Promise<Permission> {
-    return PermissionImpl.create(this.client, this.id, params);
+    return PermissionImpl.create(this.#client, this.id, params);
   }
 
   /**
    * Returns the permissions associated with this app.
    */
   public async listPermissions(filter?: PageParams): Promise<Page<Permission>> {
-    return PermissionImpl.list(this.client, this.id, filter);
+    return PermissionImpl.list(this.#client, this.id, filter);
   }
 
   /**
@@ -152,7 +155,7 @@ export class App implements Model {
    * will be removed from `this.permissions`.
    */
   public async deletePermission(permissionId: PermissionId): Promise<void> {
-    return PermissionImpl.delete_(this.client, this.id, permissionId);
+    return PermissionImpl.delete_(this.#client, this.id, permissionId);
   }
 }
 

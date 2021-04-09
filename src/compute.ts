@@ -139,7 +139,10 @@ export class Job {
   public readonly spec: JobSpec;
   public readonly status: JobStatus;
 
-  public constructor(private readonly client: HttpClient, pod: PODJob) {
+  #client: HttpClient;
+
+  public constructor(client: HttpClient, pod: PODJob) {
+    this.#client = client;
     this.id = pod.id;
     this.createdAt = new Date(pod.createdAt);
     this.spec = pod.spec;

@@ -53,7 +53,10 @@ export class Permission implements Model {
   /** The text seen by users when denying this permission. */
   public readonly denyText: string;
 
-  public constructor(private readonly client: HttpClient, pod: PODPermission) {
+  #client: HttpClient;
+
+  public constructor(client: HttpClient, pod: PODPermission) {
+    this.#client = client;
     this.id = pod.id as PermissionId;
     this.appId = pod.appId as AppId;
     this.createdAt = new Date(pod.createdAt);

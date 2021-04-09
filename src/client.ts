@@ -36,7 +36,10 @@ export class Client implements Model {
   public readonly canActOnBehalfOfUsers: boolean;
   public readonly isScript: boolean;
 
-  public constructor(private readonly client: HttpClient, pod: PODClient) {
+  #client: HttpClient;
+
+  public constructor(client: HttpClient, pod: PODClient) {
+    this.#client = client;
     this.id = pod.id as ClientId;
     this.createdAt = new Date(pod.createdAt);
     this.creator = pod.creator as IdentityId;
@@ -51,12 +54,12 @@ export class Client implements Model {
   }
 
   public async update(params: ClientUpdateParams): Promise<Client> {
-    Object.assign(this, await ClientImpl.update(this.client, this.appId, this.id, params));
+    Object.assign(this, await ClientImpl.update(this.#client, this.appId, this.id, params));
     return this;
   }
 
   public async delete(): Promise<void> {
-    return this.client.delete(endpointForId(this.appId, this.id));
+    return this.#client.delete(endpointForId(this.appId, this.id));
   }
 }
 

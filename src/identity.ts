@@ -28,39 +28,42 @@ export class Identity implements Model {
   public readonly createdAt: Date;
   public readonly tokenVerifiers: IdentityTokenVerifier[];
 
-  public constructor(private readonly client: HttpClient, pod: PODIdentity) {
+  #client: HttpClient;
+
+  public constructor(client: HttpClient, pod: PODIdentity) {
+    this.#client = client;
     this.id = pod.id as IdentityId;
     this.createdAt = new Date(pod.createdAt);
     this.tokenVerifiers = pod.tokenVerifiers;
   }
 
   public async update(params: IdentityUpdateParams): Promise<Identity> {
-    Object.assign(this, await IdentityImpl.update(this.client, this.id, params));
+    Object.assign(this, await IdentityImpl.update(this.#client, this.id, params));
     return this;
   }
 
   public async delete(): Promise<void> {
-    return IdentityImpl.delete_(this.client, this.id);
+    return IdentityImpl.delete_(this.#client, this.id);
   }
 
   public async grantPermission(id: PermissionId): Promise<void> {
-    return IdentityImpl.grantPermission(this.client, this.id, id);
+    return IdentityImpl.grantPermission(this.#client, this.id, id);
   }
 
   /** Fetches permissions to which this identity has agreed.  */
   public async listGrantedPermissions(
     filter?: ListGrantedPermissionsFilter & PageParams,
   ): Promise<Page<Permission>> {
-    return IdentityImpl.listGrantedPermissions(this.client, this.id, filter);
+    return IdentityImpl.listGrantedPermissions(this.#client, this.id, filter);
   }
 
   /** * Gets a granted permission by id. Useful for checking if a permission has been granted. */
   public async getGrantedPermission(id: PermissionId): Promise<Permission> {
-    return IdentityImpl.getGrantedPermission(this.client, this.id, id);
+    return IdentityImpl.getGrantedPermission(this.#client, this.id, id);
   }
 
   public async revokePermission(id: PermissionId): Promise<void> {
-    return IdentityImpl.revokePermission(this.client, this.id, id);
+    return IdentityImpl.revokePermission(this.#client, this.id, id);
   }
 }
 
