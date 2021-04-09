@@ -14,7 +14,7 @@ import Parcel, { DocumentId } from '../..';
 import streamSaver from 'streamsaver';
 
 // @ts-expect-error
-import testFixture from '../../../../../integration/fixtures/docs-and-examples.yaml';
+import testFixture from '../../../../../integration/fixtures/kind.yaml';
 
 streamSaver.WritableStream = WritableStream;
 
