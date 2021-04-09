@@ -50,8 +50,8 @@ console.log(`Here's the data: ${acmeData}`);
 
 // Upload a document and assign ownership to a sample end user (e.g. "Bob")
 // #region snippet-upload-user-data
-const bobId = 'I32QuMCAFRuKmY3QTH2awAC' as IdentityId; // REPLACE ME
-const appId = 'AVTnpB3U5g4o1TbRUNAG7YQ' as AppId; // REPLACE ME
+const bobId = 'IKUEEv4FCfhC1XfNijxogxL' as IdentityId; // REPLACE ME
+const appId = 'AXstH3HzQoEhESWzTqxup9d' as AppId; // REPLACE ME
 console.log(`Uploading data for end user Bob (ID: ${bobId}) for your app (ID: ${appId})`);
 const bobDocument = await parcel.uploadDocument(data, {
   details: documentDetails,

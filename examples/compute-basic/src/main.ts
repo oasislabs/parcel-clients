@@ -2,7 +2,7 @@ import Parcel, { IdentityId, Job, JobSpec, JobPhase } from '@oasislabs/parcel';
 import fs from 'fs';
 
 // #region snippet-configuration
-const acmeId = 'IJ2UnsgTss9GZw2EXKXagmj' as IdentityId;
+const acmeId = 'I32QuMCAFRuKmY3QTH2awAC' as IdentityId;
 const tokenSourceAcme = {
   clientId: 'C92EAFfH67w4bGkVMjihvkQ',
   privateKey: {
