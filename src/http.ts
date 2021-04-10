@@ -279,5 +279,6 @@ export class ApiError extends ky.HTTPError {
 }
 
 function isApiErrorResponse(response: Response): boolean {
-  return !response.ok && response.headers.get('content-type') === 'application/json';
+  const isJson = response.headers.get('content-type')?.startsWith('application/json') ?? false;
+  return !response.ok && isJson;
 }

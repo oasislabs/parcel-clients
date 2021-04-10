@@ -1,10 +1,44 @@
 import jsrsasign from 'jsrsasign';
-import type { ResponsePromise } from 'ky';
+import type { NormalizedOptions, ResponsePromise } from 'ky';
 import ky from 'ky';
 import type { JsonObject, Merge } from 'type-fest';
 
 import type { IdentityId } from './identity.js';
 import './polyfill.js'; // eslint-disable-line import/no-unassigned-import
+
+export class TokenError extends ky.HTTPError {
+  name = 'TokenError';
+  message = this.responseJson.error_description ?? this.responseJson.error;
+
+  public constructor(
+    request: Request,
+    options: NormalizedOptions,
+    response: Response,
+    // Workaround for https://github.com/sindresorhus/ky/issues/148.
+    public responseJson: {
+      error: string; // Identifier
+      error_description?: string; // Error_verbose \n error_hint
+      error_verbose?: string;
+      error_hint?: string;
+    },
+  ) {
+    super(response, request, options);
+  }
+}
+
+const baseKy: typeof ky = ky.create({
+  hooks: {
+    afterResponse: [
+      async (req, opts, res) => {
+        // Wrap errors, for easier client handling (and maybe better messages).
+        const isJson = res.headers.get('content-type')?.startsWith('application/json') ?? false;
+        if (!res.ok && isJson) {
+          throw new TokenError(req, opts, res, await res.json());
+        }
+      },
+    ],
+  },
+});
 
 type ScopeResource = 'identity' | 'dataset' | 'app' | 'grant' | 'permission' | 'job' | '*';
 type ScopeAction = 'create' | 'read' | 'update' | 'delete' | '*';
@@ -141,7 +175,7 @@ export class RenewingTokenProvider extends ExpiringTokenProvider {
     authParams.append('scope', this.scopes.join(' '));
     authParams.append('audience', this.audience);
 
-    return Token.fromResponse(ky.post(this.tokenEndpoint, { body: authParams }));
+    return Token.fromResponse(baseKy.post(this.tokenEndpoint, { body: authParams }));
   }
 }
 
@@ -171,7 +205,7 @@ export class RefreshingTokenProvider extends ExpiringTokenProvider {
     refreshParams.append('refresh_token', this.refreshToken);
     refreshParams.append('audience', this.audience);
 
-    const res = ky.post(this.tokenEndpoint, { body: refreshParams });
+    const res = baseKy.post(this.tokenEndpoint, { body: refreshParams });
     res
       // eslint-disable-next-line promise/prefer-await-to-then
       .then(async (refreshResponse) => {
