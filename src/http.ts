@@ -33,59 +33,58 @@ export class HttpClient {
 
   public constructor(private readonly tokenProvider: TokenProvider, config?: Config) {
     this.apiUrl = config?.apiUrl?.replace(/\/$/, '') ?? DEFAULT_API_URL;
-    this.ky = ky
-      .create({
-        // Default timeout is 10s, and that might be too short for chain. Upload
-        // request should override this.
-        timeout: 30_000,
-        ...config?.httpClientConfig,
-      })
-      .extend({
-        prefixUrl: this.apiUrl,
-        headers: {
-          'x-requested-with': '@oasislabs/parcel',
-        },
-        hooks: {
-          beforeRequest: [
-            async (req) => {
-              req.headers.set('authorization', `Bearer ${await this.tokenProvider.getToken()}`);
-            },
-          ],
-          afterResponse: [
-            async (req, opts, res) => {
-              // The `authorization` header is not re-sent by the browser, so redirects fail,
-              // and must be retried manually.
-              if (
-                res.redirected &&
-                (res.status === 401 || res.status === 403) &&
-                res.url.startsWith(this.apiUrl)
-              ) {
-                return this.ky(res.url, {
-                  method: req.method,
-                  prefixUrl: '',
-                });
-              }
+    this.ky = ky.create({
+      ...config?.httpClientConfig,
 
-              // Wrap errors, for easier client handling (and maybe better messages).
-              if (isApiErrorResponse(res)) {
-                throw new ApiError(req, opts, res, (await res.json()).error);
-              }
+      // Default timeout is 10s, and that might be too short for chain. Upload
+      // request should override this.
+      timeout: 30_000,
 
-              const expectedStatus: number =
-                (req as any).expectedStatus ?? EXPECTED_RESPONSE_CODES.get(req.method);
-              if (res.ok && expectedStatus && res.status !== expectedStatus) {
-                const endpoint = res.url.replace(this.apiUrl, '');
-                throw new ApiError(
-                  req,
-                  opts,
-                  res,
-                  `${req.method} ${endpoint} returned unexpected status ${expectedStatus}. expected: ${res.status}.`,
-                );
-              }
-            },
-          ],
-        },
-      });
+      prefixUrl: this.apiUrl,
+      headers: {
+        'x-requested-with': '@oasislabs/parcel',
+      },
+      hooks: {
+        beforeRequest: [
+          async (req) => {
+            req.headers.set('authorization', `Bearer ${await this.tokenProvider.getToken()}`);
+          },
+        ],
+        afterResponse: [
+          async (req, opts, res) => {
+            // The `authorization` header is not re-sent by the browser, so redirects fail,
+            // and must be retried manually.
+            if (
+              res.redirected &&
+              (res.status === 401 || res.status === 403) &&
+              res.url.startsWith(this.apiUrl)
+            ) {
+              return this.ky(res.url, {
+                method: req.method,
+                prefixUrl: '',
+              });
+            }
+
+            // Wrap errors, for easier client handling (and maybe better messages).
+            if (isApiErrorResponse(res)) {
+              throw new ApiError(req, opts, res, (await res.json()).error);
+            }
+
+            const expectedStatus: number =
+              (req as any).expectedStatus ?? EXPECTED_RESPONSE_CODES.get(req.method);
+            if (res.ok && expectedStatus && res.status !== expectedStatus) {
+              const endpoint = res.url.replace(this.apiUrl, '');
+              throw new ApiError(
+                req,
+                opts,
+                res,
+                `${req.method} ${endpoint} returned unexpected status ${expectedStatus}. expected: ${res.status}.`,
+              );
+            }
+          },
+        ],
+      },
+    });
   }
 
   public async get<T>(
