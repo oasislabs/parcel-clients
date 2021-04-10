@@ -5,7 +5,7 @@ import * as fs from 'fs';
 // #region snippet-configuration
 const apiCreds = {
   // Client ID
-  clientId: 'C92EAFfH67w4bGkVMjihvkQ',
+  clientId: process.env.ACME_CLIENT_ID!,
   // Client key
   privateKey: {
     // Note: Make sure kid matches the one you added in portal.

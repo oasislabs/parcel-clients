@@ -244,6 +244,13 @@ async function runExample(
     const child = spawn(npmPath, ['start'], {
       cwd: `examples/${name}`,
       stdio: [null, customStdoutListener ? 'pipe' : 'inherit', 'inherit'],
+      env: {
+        ACME_APP_ID: acmeApp.id,
+        ACME_CLIENT_ID: acmeClient.id,
+        BOB_IDENTITY_ID: bobIdentity.id,
+        BOB_CLIENT_ID: bobClient.id,
+        ...process.env,
+      },
     })
       .on('close', (signal) => {
         if (signal === 0) {

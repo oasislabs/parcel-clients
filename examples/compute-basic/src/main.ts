@@ -1,10 +1,10 @@
-import Parcel, { IdentityId, Job, JobSpec, JobPhase } from '@oasislabs/parcel';
+import Parcel, { AppId, Job, JobSpec, JobPhase } from '@oasislabs/parcel';
 import fs from 'fs';
 
 // #region snippet-configuration
-const acmeId = 'I32QuMCAFRuKmY3QTH2awAC' as IdentityId;
+const acmeId = process.env.ACME_APP_ID! as AppId;
 const tokenSourceAcme = {
-  clientId: 'C92EAFfH67w4bGkVMjihvkQ',
+  clientId: process.env.ACME_CLIENT_ID!,
   privateKey: {
     kid: 'acme-client',
     use: 'sig',
@@ -22,7 +22,7 @@ const tokenSourceAcme = {
 // This example script, however, performs actions both as Acme and Bob so that the flow is easier to
 // follow.
 const tokenSourceBob = {
-  clientId: 'CErM9iRkfYdAJ9TCbJvV3gQ',
+  clientId: process.env.BOB_CLIENT_ID!,
   privateKey: {
     kid: 'bob-client',
     kty: 'EC',
