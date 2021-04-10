@@ -258,23 +258,18 @@ export class Download implements AsyncIterable<Uint8Array> {
 }
 
 export class ApiError extends ky.HTTPError {
+  name = 'ApiError';
   public readonly message: string;
 
   public constructor(
-    request: Request,
+    /** @see attachContext */
+    request: Request & { context?: string },
     options: NormalizedOptions,
     response: Response,
     message: string, // Workaround for https://github.com/sindresorhus/ky/issues/148.
   ) {
     super(response, request, options);
-    this.name = 'ApiError';
-
-    const { context }: { context: string } = request as any;
-    if (context) {
-      message = `error in ${context}: ${message}`;
-    }
-
-    this.message = message;
+    this.message = request.context ? `error in ${request.context}: ${message}` : message;
   }
 
   public static async fromHTTPError(error: ky.HTTPError): Promise<ApiError> {
