@@ -319,7 +319,6 @@ describe('Parcel', () => {
       brandingColor: '#abcdef',
       category: 'testing',
       logoUrl: 'https://logos.gif',
-      trusted: false,
     };
     expect(podApp).toMatchSchema('App');
     return podApp;
@@ -1090,7 +1089,6 @@ describe('Parcel', () => {
       delete createParams.admins;
       delete createParams.participants;
       delete createParams.published;
-      delete createParams.trusted;
 
       expect(createParams).toMatchSchema(getRequestSchema('POST', '/apps'));
       scope.post('/apps', createParams).reply(201, fixtureApp);

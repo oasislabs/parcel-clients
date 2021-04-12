@@ -33,7 +33,6 @@ export type PODApp = Readonly<
     shortDescription: string;
     termsAndConditions: string;
     privacyPolicy: string;
-    trusted: boolean;
   }
 >;
 
@@ -86,7 +85,6 @@ export class App implements Model {
    * be used to search for the app.
    */
   public readonly category?: string;
-  public readonly trusted: boolean;
 
   #client: HttpClient;
 
@@ -115,7 +113,6 @@ export class App implements Model {
     this.shortDescription = pod.shortDescription;
     this.termsAndConditions = pod.termsAndConditions;
     this.logoUrl = pod.logoUrl;
-    this.trusted = pod.trusted;
   }
 
   public async getIdentity(): Promise<Identity> {
@@ -200,7 +197,7 @@ export type AppCreateParams = Except<AppUpdateParams, 'owner'> & {
   identity: IdentityCreateParams;
 };
 
-export type AppUpdateParams = WritableExcluding<App, 'participants' | 'trusted'>;
+export type AppUpdateParams = WritableExcluding<App, 'participants'>;
 
 export type ListAppsFilter = Partial<{
   /** Only return Apps owned by the provided Identity. */
