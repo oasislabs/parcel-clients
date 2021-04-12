@@ -26,7 +26,7 @@ export class TokenError extends ky.HTTPError {
   }
 }
 
-const baseKy: typeof ky = ky.create({
+const tokenKy: typeof ky = ky.create({
   hooks: {
     afterResponse: [
       async (req, opts, res) => {
@@ -175,7 +175,7 @@ export class RenewingTokenProvider extends ExpiringTokenProvider {
     authParams.append('scope', this.scopes.join(' '));
     authParams.append('audience', this.audience);
 
-    return Token.fromResponse(baseKy.post(this.tokenEndpoint, { body: authParams }));
+    return Token.fromResponse(tokenKy.post(this.tokenEndpoint, { body: authParams }));
   }
 }
 
@@ -205,7 +205,7 @@ export class RefreshingTokenProvider extends ExpiringTokenProvider {
     refreshParams.append('refresh_token', this.refreshToken);
     refreshParams.append('audience', this.audience);
 
-    const res = baseKy.post(this.tokenEndpoint, { body: refreshParams });
+    const res = tokenKy.post(this.tokenEndpoint, { body: refreshParams });
     res
       // eslint-disable-next-line promise/prefer-await-to-then
       .then(async (refreshResponse) => {

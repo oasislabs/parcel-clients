@@ -29,11 +29,11 @@ const EXPECTED_RESPONSE_CODES = new Map([
 export class HttpClient {
   public readonly apiUrl: string;
 
-  private readonly ky: typeof ky;
+  private readonly apiKy: typeof ky;
 
   public constructor(private readonly tokenProvider: TokenProvider, config?: Config) {
     this.apiUrl = config?.apiUrl?.replace(/\/$/, '') ?? DEFAULT_API_URL;
-    this.ky = ky.create({
+    this.apiKy = ky.create({
       ...config?.httpClientConfig,
 
       // Default timeout is 10s, and that might be too short for chain. Upload
@@ -59,7 +59,7 @@ export class HttpClient {
               (res.status === 401 || res.status === 403) &&
               res.url.startsWith(this.apiUrl)
             ) {
-              return this.ky(res.url, {
+              return this.apiKy(res.url, {
                 method: req.method,
                 prefixUrl: '',
               });
@@ -101,7 +101,7 @@ export class HttpClient {
       }
     }
 
-    return this.ky
+    return this.apiKy
       .get(endpoint, {
         searchParams: hasParams ? kebabCaseParams : undefined,
         ...requestOptions,
@@ -134,7 +134,7 @@ export class HttpClient {
       }
     }
 
-    return this.ky.post(endpoint, opts).json();
+    return this.apiKy.post(endpoint, opts).json();
   }
 
   public async update<T>(endpoint: string, params: JsonObject): Promise<T> {
@@ -142,15 +142,15 @@ export class HttpClient {
   }
 
   public async put<T>(endpoint: string, params: JsonObject): Promise<T> {
-    return this.ky.put(endpoint, { json: params }).json();
+    return this.apiKy.put(endpoint, { json: params }).json();
   }
 
   public async delete(endpoint: string): Promise<void> {
-    await this.ky.delete(endpoint);
+    await this.apiKy.delete(endpoint);
   }
 
   public download(endpoint: string): Download {
-    return new Download(this.ky, endpoint);
+    return new Download(this.apiKy, endpoint);
   }
 }
 
