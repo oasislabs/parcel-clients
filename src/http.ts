@@ -29,63 +29,62 @@ const EXPECTED_RESPONSE_CODES = new Map([
 export class HttpClient {
   public readonly apiUrl: string;
 
-  private readonly ky: typeof ky;
+  private readonly apiKy: typeof ky;
 
   public constructor(private readonly tokenProvider: TokenProvider, config?: Config) {
     this.apiUrl = config?.apiUrl?.replace(/\/$/, '') ?? DEFAULT_API_URL;
-    this.ky = ky
-      .create({
-        // Default timeout is 10s, and that might be too short for chain. Upload
-        // request should override this.
-        timeout: 30_000,
-        ...config?.httpClientConfig,
-      })
-      .extend({
-        prefixUrl: this.apiUrl,
-        headers: {
-          'x-requested-with': '@oasislabs/parcel',
-        },
-        hooks: {
-          beforeRequest: [
-            async (req) => {
-              req.headers.set('authorization', `Bearer ${await this.tokenProvider.getToken()}`);
-            },
-          ],
-          afterResponse: [
-            async (req, opts, res) => {
-              // The `authorization` header is not re-sent by the browser, so redirects fail,
-              // and must be retried manually.
-              if (
-                res.redirected &&
-                (res.status === 401 || res.status === 403) &&
-                res.url.startsWith(this.apiUrl)
-              ) {
-                return this.ky(res.url, {
-                  method: req.method,
-                  prefixUrl: '',
-                });
-              }
+    this.apiKy = ky.create({
+      ...config?.httpClientConfig,
 
-              // Wrap errors, for easier client handling (and maybe better messages).
-              if (isApiErrorResponse(res)) {
-                throw new ApiError(req, opts, res, (await res.json()).error);
-              }
+      // Default timeout is 10s, and that might be too short for chain. Upload
+      // request should override this.
+      timeout: 30_000,
 
-              const expectedStatus: number =
-                (req as any).expectedStatus ?? EXPECTED_RESPONSE_CODES.get(req.method);
-              if (res.ok && expectedStatus && res.status !== expectedStatus) {
-                const endpoint = res.url.replace(this.apiUrl, '');
-                throw new ApiError(
-                  req,
-                  opts,
-                  res,
-                  `${req.method} ${endpoint} returned unexpected status ${expectedStatus}. expected: ${res.status}.`,
-                );
-              }
-            },
-          ],
-        },
-      });
+      prefixUrl: this.apiUrl,
+      headers: {
+        'x-requested-with': '@oasislabs/parcel',
+      },
+      hooks: {
+        beforeRequest: [
+          async (req) => {
+            req.headers.set('authorization', `Bearer ${await this.tokenProvider.getToken()}`);
+          },
+        ],
+        afterResponse: [
+          async (req, opts, res) => {
+            // The `authorization` header is not re-sent by the browser, so redirects fail,
+            // and must be retried manually.
+            if (
+              res.redirected &&
+              (res.status === 401 || res.status === 403) &&
+              res.url.startsWith(this.apiUrl)
+            ) {
+              return this.apiKy(res.url, {
+                method: req.method,
+                prefixUrl: '',
+              });
+            }
+
+            // Wrap errors, for easier client handling (and maybe better messages).
+            if (isApiErrorResponse(res)) {
+              throw new ApiError(req, opts, res, (await res.json()).error);
+            }
+
+            const expectedStatus: number =
+              (req as any).expectedStatus ?? EXPECTED_RESPONSE_CODES.get(req.method);
+            if (res.ok && expectedStatus && res.status !== expectedStatus) {
+              const endpoint = res.url.replace(this.apiUrl, '');
+              throw new ApiError(
+                req,
+                opts,
+                res,
+                `${req.method} ${endpoint} returned unexpected status ${expectedStatus}. expected: ${res.status}.`,
+              );
+            }
+          },
+        ],
+      },
+    });
   }
 
   public async get<T>(
@@ -102,7 +101,7 @@ export class HttpClient {
       }
     }
 
-    return this.ky
+    return this.apiKy
       .get(endpoint, {
         searchParams: hasParams ? kebabCaseParams : undefined,
         ...requestOptions,
@@ -135,7 +134,7 @@ export class HttpClient {
       }
     }
 
-    return this.ky.post(endpoint, opts).json();
+    return this.apiKy.post(endpoint, opts).json();
   }
 
   public async update<T>(endpoint: string, params: JsonObject): Promise<T> {
@@ -143,15 +142,15 @@ export class HttpClient {
   }
 
   public async put<T>(endpoint: string, params: JsonObject): Promise<T> {
-    return this.ky.put(endpoint, { json: params }).json();
+    return this.apiKy.put(endpoint, { json: params }).json();
   }
 
   public async delete(endpoint: string): Promise<void> {
-    await this.ky.delete(endpoint);
+    await this.apiKy.delete(endpoint);
   }
 
   public download(endpoint: string): Download {
-    return new Download(this.ky, endpoint);
+    return new Download(this.apiKy, endpoint);
   }
 }
 
@@ -259,23 +258,18 @@ export class Download implements AsyncIterable<Uint8Array> {
 }
 
 export class ApiError extends ky.HTTPError {
+  name = 'ApiError';
   public readonly message: string;
 
   public constructor(
-    request: Request,
+    /** @see attachContext */
+    request: Request & { context?: string },
     options: NormalizedOptions,
     response: Response,
     message: string, // Workaround for https://github.com/sindresorhus/ky/issues/148.
   ) {
     super(response, request, options);
-    this.name = 'ApiError';
-
-    const { context }: { context: string } = request as any;
-    if (context) {
-      message = `error in ${context}: ${message}`;
-    }
-
-    this.message = message;
+    this.message = request.context ? `error in ${request.context}: ${message}` : message;
   }
 
   public static async fromHTTPError(error: ky.HTTPError): Promise<ApiError> {
@@ -285,5 +279,6 @@ export class ApiError extends ky.HTTPError {
 }
 
 function isApiErrorResponse(response: Response): boolean {
-  return !response.ok && response.headers.get('content-type') === 'application/json';
+  const isJson = response.headers.get('content-type')?.startsWith('application/json') ?? false;
+  return !response.ok && isJson;
 }
