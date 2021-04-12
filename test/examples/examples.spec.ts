@@ -115,7 +115,7 @@ async function getAppFixture(owner: Identity): Promise<AppCreateParams> {
  */
 async function getAuthPublicKey(): Promise<PublicJWK> {
   const authServer = new URL(process.env.PARCEL_TOKEN_ENDPOINT!).origin;
-  const response = await fetch(`${authServer}/oauth/keys`);
+  const response = await fetch(`${authServer}/.well-known/jwks.json`);
   if (!response.ok) {
     const hint = await response.text();
     throw new Error(`${response.statusText}${hint ? `: ${hint}` : ''}`);
