@@ -10,7 +10,7 @@ const oidcConfig = {
   metadata: {
     issuer: AUTH_ISS,
     authorization_endpoint: AUTH_URL + '/oauth/authorize',
-    jwks_uri: AUTH_URL + '/oauth/keys',
+    jwks_uri: AUTH_URL + '/.well-known/jwks.json',
     token_endpoint: AUTH_URL + '/oauth/token',
   },
   // Replace with your app's front-end client ID.
