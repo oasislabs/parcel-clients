@@ -3,9 +3,9 @@ import fs from 'fs';
 
 // #region snippet-config
 const tokenSource = {
-  clientId: process.env.ACME_CLIENT_ID!,
+  clientId: process.env.ACME_SERVICE_CLIENT_ID!,
   privateKey: {
-    kid: 'acme-client',
+    kid: 'acme-service-client',
     kty: 'EC',
     alg: 'ES256',
     use: 'sig',

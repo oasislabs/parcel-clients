@@ -1,4 +1,4 @@
-import { spawn } from 'child_process';
+import { ChildProcess, spawn, execSync } from 'child_process';
 import { dirname, join } from 'path';
 import { CustomConsole, LogType, LogMessage } from '@jest/console';
 import Parcel, {
@@ -13,7 +13,7 @@ import Parcel, {
 
 // We define a console for the spawner with [SPAWNER] prefix and not as cluttered as the default
 // jest's console wrapper.
-const spwanerConsole = new CustomConsole(
+const spawnerConsole = new CustomConsole(
   process.stdout,
   process.stderr,
   (_: LogType, message: LogMessage): string => {
@@ -22,11 +22,10 @@ const spwanerConsole = new CustomConsole(
 );
 
 const npmPath = join(dirname(process.execPath), 'npm');
+const npxPath = join(dirname(process.execPath), 'npx');
 
-if (!process.env.PARCEL_API_URL || !process.env.PARCEL_TOKEN_ENDPOINT) {
-  throw new Error(
-    'PARCEL_API_URL and PARCEL_TOKEN_ENDPOINT env variables must be defined. Aborting.',
-  );
+if (!process.env.PARCEL_API_URL || !process.env.PARCEL_AUTH_URL) {
+  throw new Error('PARCEL_API_URL and PARCEL_AUTH_URL env variables must be defined. Aborting.');
 }
 
 // Test_identity_1.
@@ -46,9 +45,10 @@ const spawnerCreds = {
 
 let acmeApp: App;
 let acmeIdentity: Identity;
-let acmeClient: Client;
-const acmeClientPrivateKey = {
-  kid: 'acme-client',
+let acmeServiceClient: Client;
+let acmeFrontendClient: Client;
+const acmeServiceClientPrivateKey = {
+  kid: 'acme-service-client',
   kty: 'EC',
   alg: 'ES256',
   use: 'sig',
@@ -60,9 +60,9 @@ const acmeClientPrivateKey = {
 
 let bobApp: App;
 let bobIdentity: Identity;
-let bobClient: Client;
-const bobClientPrivateKey = {
-  kid: 'bob-client',
+let bobServiceClient: Client;
+const bobServiceClientPrivateKey = {
+  kid: 'bob-service-client',
   kty: 'EC',
   alg: 'ES256',
   use: 'sig',
@@ -101,7 +101,7 @@ async function getAppFixture(owner: Identity): Promise<AppCreateParams> {
       tokenVerifiers: [
         {
           publicKey: await getAuthPublicKey(),
-          iss: new URL(process.env.PARCEL_TOKEN_ENDPOINT!).origin,
+          iss: process.env.PARCEL_AUTH_URL,
         },
       ],
     },
@@ -111,11 +111,10 @@ async function getAppFixture(owner: Identity): Promise<AppCreateParams> {
 /**
  * Retrieve public keys from Auth and return the first one.
  * Auth returns the latest key first, and prefers using this key over existing ones.
- * Expects PARCEL_TOKEN_ENDPOINT env variable to be set.
+ * Expects PARCEL_AUTH_URL env variable to be set.
  */
 async function getAuthPublicKey(): Promise<PublicJWK> {
-  const authServer = new URL(process.env.PARCEL_TOKEN_ENDPOINT!).origin;
-  const response = await fetch(`${authServer}/.well-known/jwks.json`);
+  const response = await fetch(`${process.env.PARCEL_AUTH_URL}/.well-known/jwks.json`);
   if (!response.ok) {
     const hint = await response.text();
     throw new Error(`${response.statusText}${hint ? `: ${hint}` : ''}`);
@@ -124,7 +123,7 @@ async function getAuthPublicKey(): Promise<PublicJWK> {
   const { keys }: { keys: PublicJWK[] } = await response.json();
 
   if (!keys?.[0]) {
-    throw new Error(`Oasis Auth public key is not available from ${authServer}`);
+    throw new Error(`Oasis Auth public key is not available from ${process.env.PARCEL_AUTH_URL}`);
   }
 
   return keys[0];
@@ -148,47 +147,58 @@ beforeAll(async () => {
 
   // First app and acme-client.
   acmeApp = await parcel.createApp(await getAppFixture(spawnerIdentity));
-  spwanerConsole.log(`Created acmeApp, id: ${acmeApp.id}, owner ${acmeApp.owner}`);
-  acmeClient = await parcel.createClient(acmeApp.id, {
-    name: 'acme-client',
+  spawnerConsole.log(`Created acmeApp, id: ${acmeApp.id}, owner ${acmeApp.owner}`);
+  acmeServiceClient = await parcel.createClient(acmeApp.id, {
+    name: 'acme-service-client',
     isScript: true,
     redirectUris: [],
     postLogoutRedirectUris: [],
     canHoldSecrets: true,
-    publicKeys: [extractPubKey(acmeClientPrivateKey)],
+    publicKeys: [extractPubKey(acmeServiceClientPrivateKey)],
   });
   const parcelAcme = new Parcel({
-    clientId: acmeClient.id,
-    privateKey: acmeClientPrivateKey,
+    clientId: acmeServiceClient.id,
+    privateKey: acmeServiceClientPrivateKey,
   } as RenewingTokenProviderParams);
   acmeIdentity = await parcelAcme.getCurrentIdentity();
-  spwanerConsole.log(
-    `Created acmeClient, client_id: ${acmeClient.id}, identity: ${acmeIdentity.id}`,
+  spawnerConsole.log(
+    `Created acmeServiceClient, client_id: ${acmeServiceClient.id}, identity: ${acmeIdentity.id}`,
   );
+  acmeFrontendClient = await parcel.createClient(acmeApp.id, {
+    name: 'acme-frontend-client',
+    isScript: false,
+    redirectUris: ['http://localhost:4050/callback'],
+    postLogoutRedirectUris: [],
+    canHoldSecrets: false,
+    publicKeys: [],
+  });
+  spawnerConsole.log(`Created acmeFrontendClient, client_id: ${acmeFrontendClient.id}`);
 
   // Second app and bob-client.
   bobApp = await parcel.createApp(await getAppFixture(spawnerIdentity));
-  spwanerConsole.log(`Created bobApp, id: ${bobApp.id}, owner ${bobApp.owner}`);
-  bobClient = await parcel.createClient(bobApp.id, {
-    name: 'bob-client',
+  spawnerConsole.log(`Creaated bobApp, id: ${bobApp.id}, owner ${bobApp.owner}`);
+  bobServiceClient = await parcel.createClient(bobApp.id, {
+    name: 'bob-service-client',
     isScript: true,
     redirectUris: [],
     postLogoutRedirectUris: [],
     canHoldSecrets: true,
-    publicKeys: [extractPubKey(bobClientPrivateKey)],
+    publicKeys: [extractPubKey(bobServiceClientPrivateKey)],
   });
   const parcelBob = new Parcel({
-    clientId: bobClient.id,
-    privateKey: bobClientPrivateKey,
+    clientId: bobServiceClient.id,
+    privateKey: bobServiceClientPrivateKey,
   } as RenewingTokenProviderParams);
   bobIdentity = await parcelBob.getCurrentIdentity();
-  spwanerConsole.log(`Created bobClient, client_id: ${bobClient.id}, identity: ${bobIdentity.id}`);
-}, 10 * 1000);
+  spawnerConsole.log(
+    `Created bobServiceClient, client_id: ${bobServiceClient.id}, identity: ${bobIdentity.id}`,
+  );
+}, 15 * 1000);
 
 it(
   'data-upload',
   async () => {
-    await runExample('data-upload');
+    await runExamplePromisified('data-upload');
   },
   10 * 1000,
 );
@@ -196,18 +206,18 @@ it(
 it(
   'data-access',
   async () => {
-    await runExample('data-access', (data) => {
+    await runExamplePromisified('data-access', (data) => {
       // Forward example's output to stdout.
       process.stdout.write(data.toString());
 
       // Wait for the example until the grant permission is required.
       if (data.includes("ACME was not able to access Bob's data (this was expected):")) {
-        spwanerConsole.log(
+        spawnerConsole.log(
           `Assigning grant to ${acmeIdentity.id} for documents with tag ${acmeApp.id}`,
         );
         const parcelBob = new Parcel({
-          clientId: bobClient.id,
-          privateKey: bobClientPrivateKey,
+          clientId: bobServiceClient.id,
+          privateKey: bobServiceClientPrivateKey,
         } as RenewingTokenProviderParams);
         void parcelBob.createGrant({
           grantee: acmeIdentity.id,
@@ -219,11 +229,48 @@ it(
   20 * 1000,
 );
 
+it(
+  'login-with-oasis',
+  async () => {
+    await new Promise<void>((resolve, reject) => {
+      const example = runExample('login-with-oasis');
+      example.stdout?.on('data', async (data) => {
+        // Forward example's output to stdout.
+        process.stdout.write(data.toString());
+
+        // Wait for Express used in the example to start listening.
+        if (data.includes('listening at http://localhost:4050')) {
+          try {
+            // Launch a front-end test.
+            const cypressCmd = `${npxPath} cypress run --config '{"baseUrl":"http://localhost:4050","integrationFolder":"test/examples","testFiles":["login-with-oasis.spec.js"],"chromeWebSecurity":false,"video":true}'`;
+            execSync(cypressCmd, { stdio: 'inherit' });
+          } finally {
+            // XXX: npm start spawns a sub-subprocess and nodejs doesn't support killing it out of the
+            // box. Writing 0x03 to stdin (ctrl+C) also doesn't work. Kill it by calling external kill
+            // command and obtain the correct child process.
+            const killCmd = `/bin/kill -SIGINT $(pgrep -P $(pgrep -P ${example.pid}))`;
+            execSync(killCmd, { stdio: 'inherit' });
+          }
+        }
+      });
+      example.on('close', (signal) => {
+        if (signal === 130) {
+          // 130 is the expected return code caused by the interrupt.
+          resolve();
+        } else {
+          reject(new Error(`example exited with code ${signal}`));
+        }
+      });
+    });
+  },
+  100 * 1000,
+);
+
 // Compute examples might need to download docker images, set higher timeout.
 it(
   'compute-basic',
   async () => {
-    await runExample('compute-basic');
+    await runExamplePromisified('compute-basic');
   },
   300 * 1000,
 );
@@ -231,27 +278,17 @@ it(
   'compute-advanced',
   async () => {
     // Start the example:
-    await runExample('compute-advanced');
+    await runExamplePromisified('compute-advanced');
   },
   300 * 1000,
 );
 
-async function runExample(
+async function runExamplePromisified(
   name: string,
   customStdoutListener?: (chunk: any) => void,
 ): Promise<void> {
   return new Promise((resolve, reject) => {
-    const child = spawn(npmPath, ['start'], {
-      cwd: `examples/${name}`,
-      stdio: [null, customStdoutListener ? 'pipe' : 'inherit', 'inherit'],
-      env: {
-        ACME_APP_ID: acmeApp.id,
-        ACME_CLIENT_ID: acmeClient.id,
-        BOB_IDENTITY_ID: bobIdentity.id,
-        BOB_CLIENT_ID: bobClient.id,
-        ...process.env,
-      },
-    })
+    runExample(name, customStdoutListener)
       .on('close', (signal) => {
         if (signal === 0) {
           resolve();
@@ -265,8 +302,24 @@ async function runExample(
       .on('error', (error) => {
         reject(new Error(`example exited with error ${JSON.stringify(error)}`));
       });
-    if (customStdoutListener) {
-      child.stdout?.on('data', customStdoutListener);
-    }
   });
+}
+
+function runExample(name: string, customStdoutListener?: (chunk: any) => void): ChildProcess {
+  const child = spawn(npmPath, ['start'], {
+    cwd: `examples/${name}`,
+    env: {
+      ACME_APP_ID: acmeApp.id,
+      ACME_SERVICE_CLIENT_ID: acmeServiceClient.id,
+      ACME_FRONTEND_CLIENT_ID: acmeFrontendClient.id,
+      BOB_IDENTITY_ID: bobIdentity.id,
+      BOB_SERVICE_CLIENT_ID: bobServiceClient.id,
+      ...process.env,
+    },
+  });
+  if (customStdoutListener) {
+    child.stdout?.on('data', customStdoutListener);
+  }
+
+  return child;
 }

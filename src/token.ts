@@ -44,8 +44,9 @@ type ScopeResource = 'identity' | 'dataset' | 'app' | 'grant' | 'permission' | '
 type ScopeAction = 'create' | 'read' | 'update' | 'delete' | '*';
 export type Scope = 'parcel.*' | `parcel.${ScopeResource}.${ScopeAction}`;
 
-const DEFAULT_TOKEN_ENDPOINT =
-  globalThis?.process?.env?.PARCEL_TOKEN_ENDPOINT ?? 'https://auth.oasislabs.com/oauth/token';
+const DEFAULT_TOKEN_ENDPOINT = globalThis?.process?.env?.PARCEL_AUTH_URL
+  ? `${globalThis.process.env.PARCEL_AUTH_URL}/oauth/token`
+  : 'https://auth.oasislabs.com/oauth/token';
 export const PARCEL_RUNTIME_AUD = 'https://api.oasislabs.com/parcel'; // TODO(#326)
 const DEFAULT_SCOPES: Scope[] = ['parcel.*'];
 

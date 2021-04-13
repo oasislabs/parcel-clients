@@ -4,9 +4,9 @@ import fs from 'fs';
 // #region snippet-configuration
 const acmeId = process.env.ACME_APP_ID! as AppId;
 const tokenSourceAcme = {
-  clientId: process.env.ACME_CLIENT_ID!,
+  clientId: process.env.ACME_SERVICE_CLIENT_ID!,
   privateKey: {
-    kid: 'acme-client',
+    kid: 'acme-service-client',
     use: 'sig',
     kty: 'EC',
     crv: 'P-256',
@@ -22,9 +22,9 @@ const tokenSourceAcme = {
 // This example script, however, performs actions both as Acme and Bob so that the flow is easier to
 // follow.
 const tokenSourceBob = {
-  clientId: process.env.BOB_CLIENT_ID!,
+  clientId: process.env.BOB_SERVICE_CLIENT_ID!,
   privateKey: {
-    kid: 'bob-client',
+    kid: 'bob-service-client',
     kty: 'EC',
     alg: 'ES256',
     use: 'sig',
