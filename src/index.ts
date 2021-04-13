@@ -7,6 +7,14 @@ import type {
   ClientUpdateParams,
   ListClientsFilter,
 } from './client.js';
+import type { Job, JobId, JobSpec, JobStatus } from './compute.js';
+import {
+  ComputeImpl,
+  InputDocumentSpec,
+  JobPhase,
+  OutputDocument,
+  OutputDocumentSpec,
+} from './compute.js';
 import { ClientImpl } from './client.js';
 import type {
   AccessEvent,
@@ -20,14 +28,6 @@ import type {
   Upload,
 } from './document.js';
 import { DocumentImpl } from './document.js';
-import type { Job, JobId, JobSpec, JobStatus } from './compute.js';
-import {
-  ComputeImpl,
-  InputDocumentSpec,
-  JobPhase,
-  OutputDocument,
-  OutputDocumentSpec,
-} from './compute.js';
 import type { Capabilities, Grant, GrantCreateParams, GrantId } from './grant.js';
 import { GrantImpl, ListGrantsFilter } from './grant.js';
 import type { Config as ClientConfig, Download } from './http.js';
