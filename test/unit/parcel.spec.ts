@@ -512,7 +512,7 @@ describe('Parcel', () => {
         nockItWithCurrentIdentity('granted', async (scope) => {
           const fixturePermission = createPodPermission();
           expect(fixturePermission).toMatchSchema(
-            getResponseSchema('GET', '/identities/{identity_id}/permissions/{permission_id}', 200),
+            getResponseSchema('GET', '/identities/{identityId}/permissions/{permissionId}', 200),
           );
 
           scope
@@ -547,7 +547,7 @@ describe('Parcel', () => {
             createPodPermission,
           );
           expect(fixtureResultsPage).toMatchSchema(
-            getResponseSchema('GET', '/identities/{identity_id}/permissions', 200),
+            getResponseSchema('GET', '/identities/{identityId}/permissions', 200),
           );
 
           scope.get(`/identities/${fixtureIdentity.id}/permissions`).reply(200, fixtureResultsPage);
@@ -575,7 +575,7 @@ describe('Parcel', () => {
             pageToken: makeRandomId(),
           };
           expect(filterWithPagination).toMatchSchema(
-            getQueryParametersSchema('GET', '/identities/{identity_id}/permissions'),
+            getQueryParametersSchema('GET', '/identities/{identityId}/permissions'),
           );
 
           scope
@@ -684,7 +684,7 @@ describe('Parcel', () => {
 
     nockIt('get', async (scope) => {
       expect(fixtureDocument).toMatchSchema(
-        getResponseSchema('GET', '/documents/{document_id}', 200),
+        getResponseSchema('GET', '/documents/{documentId}', 200),
       );
       scope.get(`/documents/${fixtureDocument.id}`).reply(200, fixtureDocument);
       const document = await parcel.getDocument(fixtureDocument.id as DocumentId);
@@ -755,7 +755,7 @@ describe('Parcel', () => {
           createPodAccessEvent,
         );
         expect(fixtureResultsPage).toMatchSchema(
-          getResponseSchema('GET', '/documents/{document_id}/history', 200),
+          getResponseSchema('GET', '/documents/{documentId}/history', 200),
         );
 
         const document = await parcel.getDocument(fixtureDocument.id as DocumentId);
@@ -784,7 +784,7 @@ describe('Parcel', () => {
           pageToken: makeRandomId(),
         };
         expect(filterWithPagination).toMatchSchema(
-          getQueryParametersSchema('GET', '/documents/{document_id}/history'),
+          getQueryParametersSchema('GET', '/documents/{documentId}/history'),
         );
         scope
           .get(`/documents/${fixtureDocument.id}/history`)
@@ -813,7 +813,7 @@ describe('Parcel', () => {
           createPodAccessEvent,
         );
         expect(fixtureResultsPage).toMatchSchema(
-          getResponseSchema('GET', '/documents/{document_id}/history', 200),
+          getResponseSchema('GET', '/documents/{documentId}/history', 200),
         );
 
         scope.get(`/documents/${fixtureDocument.id}/history`).reply(200, fixtureResultsPage);
@@ -901,7 +901,7 @@ describe('Parcel', () => {
           owner: createIdentityId(),
           details: { title: 'newtitle', tags: ['foo', 'bar'] },
         };
-        expect(update).toMatchSchema(getRequestSchema('PUT', '/documents/{document_id}'));
+        expect(update).toMatchSchema(getRequestSchema('PUT', '/documents/{documentId}'));
         const updatedDocument = Object.assign(clone(fixtureDocument), update);
         scope.put(`/documents/${fixtureDocument.id}`, update).reply(200, updatedDocument);
         const updated = await parcel.updateDocument(fixtureDocument.id as DocumentId, update);
@@ -965,7 +965,7 @@ describe('Parcel', () => {
     });
 
     nockIt('get', async (scope) => {
-      expect(fixtureGrant).toMatchSchema(getResponseSchema('GET', '/grants/{grant_id}', 200));
+      expect(fixtureGrant).toMatchSchema(getResponseSchema('GET', '/grants/{grantId}', 200));
       scope.get(`/grants/${fixtureGrant.id}`).reply(200, JSON.stringify(fixtureGrant));
       const grant = await parcel.getGrant(fixtureGrant.id as GrantId);
       const podGrant = { ...grant, capabilities: stringifyCaps(grant.capabilities) };
@@ -1078,7 +1078,7 @@ describe('Parcel', () => {
     });
 
     nockIt('get', async (scope) => {
-      expect(fixtureApp).toMatchSchema(getResponseSchema('GET', '/apps/{app_id}', 200));
+      expect(fixtureApp).toMatchSchema(getResponseSchema('GET', '/apps/{appId}', 200));
       scope.get(`/apps/${fixtureApp.id}`).reply(200, fixtureApp);
       const app = await parcel.getApp(fixtureApp.id as AppId);
       expect(app).toMatchPOD(fixtureApp);
@@ -1245,7 +1245,7 @@ describe('Parcel', () => {
 
       nockIt('create', async (scope) => {
         expect(fixturePermission).toMatchSchema(
-          getResponseSchema('POST', '/apps/{app_id}/permissions', 201),
+          getResponseSchema('POST', '/apps/{appId}/permissions', 201),
         );
 
         const createParams: any = {
@@ -1255,7 +1255,7 @@ describe('Parcel', () => {
         delete createParams.appId;
         delete createParams.createdAt;
 
-        expect(createParams).toMatchSchema(getRequestSchema('POST', '/apps/{app_id}/permissions'));
+        expect(createParams).toMatchSchema(getRequestSchema('POST', '/apps/{appId}/permissions'));
 
         scope.get(`/apps/${fixtureApp.id}`).reply(200, fixtureApp);
         scope.post(fixturePermissionsEndpoint).reply(201, fixturePermission);
@@ -1268,7 +1268,7 @@ describe('Parcel', () => {
 
       it('get', () => {
         expect(fixturePermission).toMatchSchema(
-          getResponseSchema('GET', '/apps/{app_id}/permissions/{permission_id}', 200),
+          getResponseSchema('GET', '/apps/{appId}/permissions/{permissionId}', 200),
         );
       });
 
@@ -1319,10 +1319,10 @@ describe('Parcel', () => {
           return createParams;
         })();
 
-        expect(createParams).toMatchSchema(getRequestSchema('POST', '/apps/{app_id}/clients'));
+        expect(createParams).toMatchSchema(getRequestSchema('POST', '/apps/{appId}/clients'));
         scope.post(`/apps/${fixtureApp.id}/clients`, createParams).reply(201, fixtureClient);
         expect(fixtureClient).toMatchSchema(
-          getResponseSchema('POST', '/apps/{app_id}/clients', 201),
+          getResponseSchema('POST', '/apps/{appId}/clients', 201),
         );
         const client = await parcel.createClient(fixtureApp.id as AppId, createParams);
         expect(client).toMatchPOD(fixtureClient);
@@ -1330,7 +1330,7 @@ describe('Parcel', () => {
 
       nockIt('get', async (scope) => {
         expect(fixtureClient).toMatchSchema(
-          getResponseSchema('GET', '/apps/{app_id}/clients/{client_id}', 200),
+          getResponseSchema('GET', '/apps/{appId}/clients/{clientId}', 200),
         );
         scope.get(`/apps/${fixtureApp.id}/clients/${fixtureClient.id}`).reply(200, fixtureClient);
         const client = await parcel.getClient(fixtureApp.id as AppId, fixtureClient.id as ClientId);
@@ -1344,7 +1344,7 @@ describe('Parcel', () => {
             createPodClient({ appId: fixtureApp.id as AppId }),
           );
           expect(fixtureResultsPage).toMatchSchema(
-            getResponseSchema('GET', '/apps/{app_id}/clients', 200),
+            getResponseSchema('GET', '/apps/{appId}/clients', 200),
           );
 
           scope.get(`/apps/${fixtureApp.id}/clients`).reply(200, fixtureResultsPage);
@@ -1368,7 +1368,7 @@ describe('Parcel', () => {
             pageToken: makeRandomId(),
           };
           expect(filterWithPagination).toMatchSchema(
-            getQueryParametersSchema('GET', '/apps/{app_id}/clients'),
+            getQueryParametersSchema('GET', '/apps/{appId}/clients'),
           );
           scope
             .get(`/apps/${fixtureApp.id}/clients`)
@@ -1514,7 +1514,7 @@ describe('Parcel', () => {
 
     nockIt('get', async (scope) => {
       const fixtureJob = createPodJob();
-      expect(fixtureJob).toMatchSchema(getResponseSchema('GET', '/compute/jobs/{job_id}', 200));
+      expect(fixtureJob).toMatchSchema(getResponseSchema('GET', '/compute/jobs/{jobId}', 200));
       scope.get(`/compute/jobs/${fixtureJob.id}`).reply(200, JSON.stringify(fixtureJob));
       const job = await parcel.getJob(fixtureJob.id);
       expect(job).toMatchPOD(fixtureJob);
