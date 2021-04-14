@@ -1,3 +1,5 @@
+import type { ReadStream } from 'fs';
+
 import EventEmitter from 'eventemitter3';
 import FormData from 'form-data';
 import type { Readable } from 'readable-stream';
@@ -165,7 +167,7 @@ export type DocumentUploadParams = SetOptional<DocumentUpdateParams, 'owner' | '
   toApp: AppId | undefined;
 };
 
-export type Storable = Uint8Array | Readable | Blob | string;
+export type Storable = Uint8Array | Readable | ReadStream | Blob | string;
 
 export type ListDocumentsFilter = Partial<{
   creator: IdentityId;
