@@ -125,9 +125,10 @@ export class HttpClient {
   ): Promise<T> {
     const opts = requestOptions ?? {};
     if (data !== undefined) {
-      if ('getBuffer' in data && typeof data.getBuffer === 'function') {
-        opts.body = data.getBuffer(); // It's the polyfill.
-      } else if (data instanceof FormData) {
+      if (
+        ('getBuffer' in data && typeof data.getBuffer === 'function') /* form-data polyfill */ ||
+        data instanceof FormData
+      ) {
         opts.body = data as any;
       } else {
         opts.json = data;

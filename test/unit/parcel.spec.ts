@@ -9,7 +9,7 @@ import { paramCase } from 'param-case';
 import { Writable } from 'readable-stream';
 import type { JsonObject } from 'type-fest';
 
-import Parcel from '@oasislabs/parcel';
+import type Parcel from '@oasislabs/parcel';
 import type { AppId, AppUpdateParams, PODApp } from '@oasislabs/parcel/app';
 import type {
   ClientCreateParams,
@@ -27,26 +27,7 @@ import type { IdentityId, PODIdentity } from '@oasislabs/parcel/identity';
 import type { Page, PODModel } from '@oasislabs/parcel/model';
 import type { PublicJWK } from '@oasislabs/parcel/token';
 
-const API_BASE_URL = 'https://api.oasislabs.com/parcel/v1';
-function nockIt(testName: string, test: (scope: nock.Scope) => Promise<void>): void {
-  it(testName, async () => {
-    const scope = nock(API_BASE_URL)
-      .defaultReplyHeaders({
-        'content-type': 'application/json',
-      })
-      .replyContentLength()
-      .matchHeader(
-        'authorization',
-        /^Bearer [\w-=]+\.[\w-=]+\.?[\w-.+/=]*$/, // JWT regex
-      );
-    await test(scope);
-    scope.done();
-  });
-}
-
-function clone<T = JsonObject>(object: T): T {
-  return JSON.parse(JSON.stringify(object));
-}
+import { clone, makeParcel, nockIt } from './helpers';
 
 declare global {
   namespace jest {
@@ -58,7 +39,7 @@ declare global {
   }
 }
 
-const API_KEY = {
+export const API_KEY = {
   kty: 'EC',
   d: '0fI_f6qv9MPkzvDged2YYEgYz9q1zTcHoNJl_vhLyeM',
   use: 'sig',
@@ -70,13 +51,10 @@ const API_KEY = {
 } as const;
 // The public key is a copy of the private key, but without the "d" key.
 // We use slightly awkward syntax to make typescript type inference happy.
-const API_PUBLIC_KEY: PublicJWK = (() => {
+export const API_PUBLIC_KEY: PublicJWK = (() => {
   const { d: _, ...pub } = API_KEY;
   return pub;
 })();
-
-const API_TOKEN =
-  'eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJwYXJjZWwiLCJpc3MiOiJhdXRoLm9hc2lzbGFicy5jb20ifQ.foQOs-KXhOP6Vlwfs1sYqW1whbG-QW29Ex4Xa_mNNXaT4T2xtCwghhYGurkVUYSlo4cRxoaQYKo_foC2KysaDQ';
 
 describe('Parcel', () => {
   let openapiSchema: any;
@@ -224,9 +202,11 @@ describe('Parcel', () => {
   }
 
   beforeEach(() => {
-    parcel = new Parcel(API_TOKEN, {
-      apiUrl: API_BASE_URL,
-    });
+    parcel = makeParcel();
+  });
+
+  afterAll(() => {
+    nock.restore(); // https://github.com/nock/nock#memory-issues-with-jest
   });
 
   function makeRandomId() {
@@ -690,7 +670,7 @@ describe('Parcel', () => {
         scope
           .post(
             '/documents',
-            (body) => MULTIPART_METADATA_RE.test(body) && MULTIPART_DATA_RE.test(body),
+            (body: string) => MULTIPART_METADATA_RE.test(body) && MULTIPART_DATA_RE.test(body),
           )
           .matchHeader('content-type', /^multipart\/form-data; boundary=/)
           .reply(201, fixtureDocument);
