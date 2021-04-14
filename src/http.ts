@@ -229,7 +229,7 @@ export class Download implements AsyncIterable<Uint8Array> {
     }
 
     // eslint-disable-next-line node/no-unsupported-features/es-syntax
-    const { Readable } = await import('stream'); // This only happens in the browser.
+    const { Readable } = (await import('stream')).default; // This only happens in node.
     return new Promise((resolve, reject) => {
       Readable.from(this, { objectMode: false })
         .on('error', reject)
