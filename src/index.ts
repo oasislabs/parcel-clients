@@ -28,8 +28,8 @@ import type {
   Upload,
 } from './document.js';
 import { DocumentImpl } from './document.js';
-import type { Capabilities, Grant, GrantCreateParams, GrantId } from './grant.js';
-import { GrantImpl, ListGrantsFilter } from './grant.js';
+import type { Grant, GrantCreateParams, GrantId } from './grant.js';
+import { Capabilities, GrantImpl, ListGrantsFilter } from './grant.js';
 import type { Config as ClientConfig, Download } from './http.js';
 import { ApiError, HttpClient } from './http.js';
 import type {
