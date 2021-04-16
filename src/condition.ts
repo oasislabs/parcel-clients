@@ -37,7 +37,7 @@ export namespace Selectors {
     'job.spec.outputs': RelationalOp<$OutputDatsetSpec>;
   };
   export type AccessTime = {
-    access_time: number; // TODO: This should be a Date, but Date is not currently serializable as a JsonObject.
+    accessTime: RelationalOp<string>; // TODO: This should be a Date, but Date is not currently serializable as a JsonObject.
   };
   // Environment-based selectors.
   export type WorkerId = {
