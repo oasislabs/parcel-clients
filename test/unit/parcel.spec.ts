@@ -22,7 +22,7 @@ import type { JobId, JobSpec, PODJob } from '@oasislabs/parcel/compute';
 import { JobPhase } from '@oasislabs/parcel/compute';
 import type { DocumentId, PODAccessEvent, PODDocument } from '@oasislabs/parcel/document';
 import type { GrantId, PODGrant } from '@oasislabs/parcel/grant';
-import { stringifyCaps } from '@oasislabs/parcel/grant';
+import { Capabilities, stringifyCaps } from '@oasislabs/parcel/grant';
 import type { IdentityId, PODIdentity } from '@oasislabs/parcel/identity';
 import type { Page, PODModel } from '@oasislabs/parcel/model';
 import type { PublicJWK } from '@oasislabs/parcel/token';
@@ -499,13 +499,19 @@ describe('Parcel', () => {
 
     describe('permissions', () => {
       nockItWithCurrentIdentity('grant', async (scope) => {
+        const fixtureCreatedGrant = { grants: [createPodGrant()] };
+        expect(fixtureCreatedGrant).toMatchSchema(
+          getResponseSchema('POST', '/identities/{identityId}/permissions/{permissionId}', 201),
+        );
+
         const fixturePermission = createPodPermission();
         scope
           .post(`/identities/${fixtureIdentity.id}/permissions/${fixturePermission.id}`)
-          .reply(204);
+          .reply(201, fixtureCreatedGrant);
 
         const identity = await parcel.getCurrentIdentity();
-        await identity.grantPermission(fixturePermission.id as PermissionId);
+        const createdGrant = await identity.grantPermission(fixturePermission.id as PermissionId);
+        expect(createdGrant.grants[0].capabilities).toEqual(Capabilities.Read);
       });
 
       describe('get', () => {

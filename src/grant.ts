@@ -15,7 +15,7 @@ export type PODGrant = Readonly<
     grantee?: ResourceId;
     permission?: ResourceId;
     condition?: Condition;
-    capabilities?: string;
+    capabilities: string;
     delegating?: ResourceId;
   }
 >;

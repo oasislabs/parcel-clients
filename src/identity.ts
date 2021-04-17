@@ -1,8 +1,9 @@
 import type { Merge, Opaque, SetOptional } from 'type-fest';
 
 import type { AppId } from './app.js';
+import type { PODGrant } from './grant.js';
+import { Grant } from './grant.js';
 import type { HttpClient } from './http.js';
-import { setExpectedStatus } from './http.js';
 import type { Model, Page, PageParams, PODModel, ResourceId, Writable } from './model.js';
 import { Permission } from './permission.js';
 import type { PermissionId, PODPermission } from './permission.js';
@@ -46,7 +47,7 @@ export class Identity implements Model {
     return IdentityImpl.delete_(this.#client, this.id);
   }
 
-  public async grantPermission(id: PermissionId): Promise<void> {
+  public async grantPermission(id: PermissionId): Promise<GrantedPermission> {
     return IdentityImpl.grantPermission(this.#client, this.id, id);
   }
 
@@ -99,16 +100,19 @@ export namespace IdentityImpl {
     return client.delete(endpointForId(id));
   }
 
+  /** Grants permission to an app. */
   export async function grantPermission(
     client: HttpClient,
     identityId: IdentityId,
     permissionId: PermissionId,
-  ): Promise<void> {
-    await client.post(endpointForPermission(identityId, permissionId), undefined, {
-      hooks: {
-        beforeRequest: [setExpectedStatus(204)],
-      },
-    });
+  ): Promise<GrantedPermission> {
+    const { grants } = await client.create<PODGrantedPermission>(
+      endpointForPermission(identityId, permissionId),
+      {},
+    );
+    return {
+      grants: grants.map((g) => new Grant(client, g)),
+    };
   }
 
   export async function listGrantedPermissions(
@@ -165,3 +169,13 @@ export type ListGrantedPermissionsFilter = Partial<{
   /** Only return permissions granted to this app. */
   app: AppId;
 }>;
+
+type PODGrantedPermission = {
+  grants: PODGrant[];
+};
+
+/** The outcome of granting a permission to an app. */
+export type GrantedPermission = {
+  /** The actual grants created as a result of accepting the permission. */
+  grants: Grant[];
+};
