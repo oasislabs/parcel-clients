@@ -308,6 +308,7 @@ async function runExamplePromisified(
 function runExample(name: string, customStdoutListener?: (chunk: any) => void): ChildProcess {
   const child = spawn(npmPath, ['start'], {
     cwd: `examples/${name}`,
+    stdio: ['inherit', customStdoutListener ? 'pipe' : 'inherit', 'inherit'],
     env: {
       ACME_APP_ID: acmeApp.id,
       ACME_SERVICE_CLIENT_ID: acmeServiceClient.id,

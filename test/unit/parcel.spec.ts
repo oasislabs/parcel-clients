@@ -723,7 +723,7 @@ describe('Parcel', () => {
         const download = parcel.downloadDocument(fixtureDocument.id as DocumentId);
         const downloadCollector = new DownloadCollector();
         await expect(download.pipeTo(downloadCollector)).rejects.toThrow(
-          'error in document download: not found',
+          /error.*download.*: not found/,
         );
       });
 
@@ -1487,7 +1487,7 @@ describe('Parcel', () => {
         const fixtureResultsPage: Page<PODJob> = createResultsPage(numberResults, createPodJob);
 
         const filterWithPagination = {
-          // Only pagination params; listing jobs does not support other filters.
+          submitter: createIdentityId(),
           pageSize: 2,
           pageToken: makeRandomId(),
         };

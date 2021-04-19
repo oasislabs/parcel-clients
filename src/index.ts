@@ -7,11 +7,12 @@ import type {
   ClientUpdateParams,
   ListClientsFilter,
 } from './client.js';
-import type { Job, JobId, JobSpec, JobStatus } from './compute.js';
+import type { Job, JobId, JobSpec, JobStatus, JobStatusReport } from './compute.js';
 import {
   ComputeImpl,
   InputDocumentSpec,
   JobPhase,
+  ListJobsFilter,
   OutputDocument,
   OutputDocumentSpec,
 } from './compute.js';
@@ -86,6 +87,7 @@ export {
   JobPhase,
   JobSpec,
   JobStatus,
+  JobStatusReport,
   OutputDocument,
   OutputDocumentSpec,
   PARCEL_RUNTIME_AUD,
@@ -248,11 +250,11 @@ export default class Parcel {
   }
 
   /**
-   * Lists all known jobs owned by the current user. The dispatcher keeps track of jobs for at most 24h after they complete.
+   * Lists all known jobs visible to the current user.
    * @param filter Controls pagination.
    * @result Job Lists known jobs. Includes recently completed jobs.
    */
-  public async listJobs(filter: PageParams = {}): Promise<Page<Job>> {
+  public async listJobs(filter: ListJobsFilter & PageParams = {}): Promise<Page<Job>> {
     return ComputeImpl.listJobs(this.client, filter);
   }
 
@@ -261,6 +263,14 @@ export default class Parcel {
    */
   public async getJob(jobId: JobId): Promise<Job> {
     return ComputeImpl.getJob(this.client, jobId);
+  }
+
+  /**
+   * Returns the status of the job. This method is faster than `getJob()` and throws if the
+   * job status is unknown. This makes it well suited for status polling.
+   */
+  public async getJobStatus(jobId: JobId): Promise<JobStatusReport> {
+    return ComputeImpl.getJobStatus(this.client, jobId);
   }
 
   /**

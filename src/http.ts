@@ -67,7 +67,12 @@ export class HttpClient {
 
             // Wrap errors, for easier client handling (and maybe better messages).
             if (isApiErrorResponse(res)) {
-              throw new ApiError(req, opts, res, (await res.json()).error);
+              throw new ApiError(
+                req,
+                opts,
+                res,
+                `Error from ${req.url}: ${(await res.json()).error}`,
+              );
             }
 
             const expectedStatus: number =

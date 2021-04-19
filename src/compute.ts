@@ -9,6 +9,14 @@ import { makePage, ResourceId } from './model.js';
 export type JobId = Opaque<ResourceId, 'JobId'>;
 
 /**
+ * Filters for specifying the subset of jobs to be listed/fetched.
+ */
+export type ListJobsFilter = {
+  /** Selects jobs that were submitted by this identity. */
+  submitter?: IdentityId;
+};
+
+/**
  * Input document for a compute job.
  */
 export declare type InputDocumentSpec = {
@@ -122,10 +130,19 @@ export type PODJob = Readonly<
     spec: JobSpec;
 
     /**
-     * Most recently observed status of the pod. This data may not be up to
-     * date. The data type is a mostly subset of [Kubernetes'
-     * PodStatus](https://www.k8sref.io/docs/workloads/pod-v1/#podstatus).
+     * Most recently observed status of the pod. May be missing if the job is no
+     * longer tracked by the system; this will typically happen for older jobs.
+     * This data may not be up to date. The data type is a mostly subset of
+     * [Kubernetes' PodStatus](https://www.k8sref.io/docs/workloads/pod-v1/#podstatus).
      */
+    status?: JobStatus;
+  }
+>;
+
+export type PODJobStatusReport = Readonly<
+  PODModel & {
+    id: JobId;
+    /** Most recently observed status of the pod. */
     status: JobStatus;
   }
 >;
@@ -137,7 +154,7 @@ export class Job {
   public readonly id: JobId;
   public readonly createdAt: Date;
   public readonly spec: JobSpec;
-  public readonly status: JobStatus;
+  public readonly status?: JobStatus;
 
   #client: HttpClient;
 
@@ -150,9 +167,26 @@ export class Job {
   }
 }
 
+/**
+ * An existing, already-submitted job. The job might also be already completed.
+ */
+export class JobStatusReport {
+  public readonly id: JobId;
+  public readonly status: JobStatus;
+
+  #client: HttpClient;
+
+  public constructor(client: HttpClient, pod: PODJobStatusReport) {
+    this.#client = client;
+    this.id = pod.id;
+    this.status = pod.status;
+  }
+}
+
 const COMPUTE_EP = 'compute';
 const JOBS_EP = `${COMPUTE_EP}/jobs`;
 const endpointForId = (id: JobId) => `${JOBS_EP}/${id}`;
+const statusEndpointForId = (id: JobId) => `${JOBS_EP}/${id}/status`;
 
 export namespace ComputeImpl {
   export async function submitJob(client: HttpClient, spec: JobSpec): Promise<Job> {
@@ -168,6 +202,11 @@ export namespace ComputeImpl {
   export async function getJob(client: HttpClient, jobId: JobId): Promise<Job> {
     const pod = await client.get<PODJob>(endpointForId(jobId));
     return new Job(client, pod);
+  }
+
+  export async function getJobStatus(client: HttpClient, jobId: JobId): Promise<JobStatusReport> {
+    const pod = await client.get<PODJobStatusReport>(statusEndpointForId(jobId));
+    return new JobStatusReport(client, pod);
   }
 
   export async function terminateJob(client: HttpClient, jobId: JobId): Promise<void> {
