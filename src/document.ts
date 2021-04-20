@@ -59,7 +59,7 @@ export class Document implements Model {
   /**
    * Downloads the private data referenced by the document if the authorized identity
    * has been granted access.
-   * @returns the decrypted data as a stream
+   * @returns the decrypted data as a pipeable stream and AsyncIterable
    */
   public download(): Download {
     return DocumentImpl.download(this.#client, this.id);

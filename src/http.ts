@@ -176,8 +176,8 @@ export function setExpectedStatus(status: number): BeforeRequestHook {
 /**
  * A `Download` is the result of calling `parcel.downloadDocument` or `document.download()`.
  *
- * The downloaded data can be read using the Node `stream.Readable` interface, or by
- * calling `await downlad.pipeTo(sink)`.
+ * The downloaded data can be read using async iterable `for await (const chunk of download)`,
+ * or by calling `await downlad.pipeTo(sink)`.
  *
  * The download may be aborted by calling `download.destroy()`, as with any `Readable`.
  */
