@@ -189,7 +189,7 @@ export class Download implements AsyncIterable<Uint8Array> {
     this.abortController = new AbortController();
   }
 
-  public async *[Symbol.asyncIterator]() {
+  public async *[Symbol.asyncIterator](): AsyncIterator<Uint8Array> {
     const body = (await this.makeRequest())?.body;
     if (!body) return;
 
