@@ -12,7 +12,7 @@ yarn
 ```
 
 ## Compute examples
-The compute examples require node version ^14.8. Run the compute examples with 
+The compute examples require node version ^14.13. Run the compute examples with
 
 ```sh
 npm i
