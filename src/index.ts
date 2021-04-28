@@ -1,3 +1,9 @@
+/**
+ * See main class {@link Parcel}
+ *
+ * @category Main
+ * @module Parcel
+ */
 import type { App, AppCreateParams, AppId, AppUpdateParams, ListAppsFilter } from './app.js';
 import { AppImpl } from './app.js';
 import type {
@@ -106,7 +112,20 @@ export {
   TokenSource,
 };
 
-export default class Parcel {
+/**
+ * Example:
+ * ```ts
+ * import Parcel from '@oasislabs/parcel';
+ * const parcel = new Parcel({
+ *   clientId: serviceClientId,
+ *   privateKey: serviceClientPrivateKey,
+ * });
+ * console.log(await parcel.listDocuments());
+ * ```
+ *
+ * @category Main
+ */
+export class Parcel {
   private currentIdentity?: Identity;
   private readonly client: HttpClient;
 
@@ -283,4 +302,5 @@ export default class Parcel {
   }
 }
 
+export default Parcel;
 export type Config = ClientConfig;
