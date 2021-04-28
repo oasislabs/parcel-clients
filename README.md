@@ -1,20 +1,15 @@
 # @oasislabs/parcel
 
-Published to [npm @oasislabs/parcel](https://www.npmjs.com/package/@oasislabs/parcel)
+This package contains the official TypeScript client for the
+Oasis Labs Parcel platform. It works in Node LTS and the browser.
 
-## Setup
+Check out the [tutorial][] and [examples][] for information on getting started.
 
-```sh
-yarn
+You may also want to peruse the [generated TypeDoc][] to
+discover the TS client APIs, and the [OpenAPI spec][]
+to learn what's going on under the hood.
 
-cd examples/upload-download
-yarn
-```
-
-## Compute examples
-The compute examples require node version ^14.13. Run the compute examples with
-
-```sh
-npm i
-npm run start
-```
+[examples]: https://github.com/oasislabs/parcel-examples/tree/latest
+[tutorial]: https://docs.oasislabs.com/latest/
+[generated TypeDoc]: https://docs.oasislabs.com/latest/typedoc/classes/index.default.html#constructor
+[OpenAPI spec]: https://docs.oasislabs.com/latest/parcel-api.html
