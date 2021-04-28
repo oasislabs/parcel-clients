@@ -2,7 +2,7 @@
 /// <reference types="cypress" />
 
 // Set window.Parcel type
-import Parcel from '../../../src';
+import { Parcel } from '../../../src';
 type ParcelClass = typeof Parcel;
 declare global {
   interface Window {
