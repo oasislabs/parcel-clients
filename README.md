@@ -11,5 +11,5 @@ to learn what's going on under the hood.
 
 [examples]: https://github.com/oasislabs/parcel-examples/tree/latest
 [tutorial]: https://docs.oasislabs.com/latest/
-[generated TypeDoc]: https://docs.oasislabs.com/latest/typedoc/classes/index.default.html#constructor
+[generated TypeDoc]: https://docs.oasislabs.com/latest/typedoc/classes/parcel.parcel-1.html
 [OpenAPI spec]: https://docs.oasislabs.com/latest/parcel-api.html
