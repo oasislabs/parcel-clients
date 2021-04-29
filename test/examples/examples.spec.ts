@@ -176,7 +176,7 @@ beforeAll(async () => {
 
   // Second app and bob-client.
   bobApp = await parcel.createApp(await getAppFixture(spawnerIdentity));
-  spawnerConsole.log(`Creaated bobApp, id: ${bobApp.id}, owner ${bobApp.owner}`);
+  spawnerConsole.log(`Created bobApp, id: ${bobApp.id}, owner ${bobApp.owner}`);
   bobServiceClient = await parcel.createClient(bobApp.id, {
     name: 'bob-service-client',
     isScript: true,
@@ -221,10 +221,17 @@ it(
         } as RenewingTokenProviderParams);
         void parcelBob.createGrant({
           grantee: acmeIdentity.id,
-          condition: { 'document.details.tags': { $any: { $eq: `to-app-${acmeApp.id}` } } },
+          condition: { 'document.tags': { $any: { $eq: `to-app-${acmeApp.id}` } } },
         });
       }
     });
+  },
+  20 * 1000,
+);
+it(
+  'grants-advanced',
+  async () => {
+    await runExamplePromisified('grants-advanced');
   },
   20 * 1000,
 );
