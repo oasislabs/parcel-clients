@@ -21,10 +21,10 @@ export namespace Selectors {
     'document.creator': RelationalOp<$IdentityId>;
   };
   export type DocumentTitle = {
-    'document.details.title': RelationalOp<string>;
+    'document.title': RelationalOp<string>;
   };
   export type DocumentTags = {
-    'document.details.tags': ArrayOp<string>;
+    'document.tags': ArrayOp<string>;
   };
   // Action-based selectors.
   export type JobImage = {

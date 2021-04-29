@@ -339,7 +339,7 @@ describe('Parcel', () => {
       granter: createIdentityId(),
       grantee: createIdentityId(),
       permission: createPermissionId(),
-      condition: { 'document.details.tags': { $any: { $eq: 'mock' } } },
+      condition: { 'document.tags': { $any: { $eq: 'mock' } } },
       capabilities: 'read',
     };
     expect(podGrant).toMatchSchema('Grant');
@@ -397,7 +397,7 @@ describe('Parcel', () => {
         {
           granter: 'participant',
           grantee: 'app',
-          condition: { 'document.details.tags': { $any: { $eq: 'mock' } } },
+          condition: { 'document.tags': { $any: { $eq: 'mock' } } },
         },
       ],
       appId: createAppId(),
