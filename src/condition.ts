@@ -67,12 +67,15 @@ export namespace LogicalOps {
   export type Or = {
     $or: Condition[];
   };
+  export type Nor = {
+    $nor: Condition[];
+  };
   export type Not = {
     $not: Condition;
   };
 }
 // A LogicalOp is an internal node in the boolean expression tree for a condition.
-type LogicalOp = LogicalOps.And | LogicalOps.Or | LogicalOps.Not;
+type LogicalOp = LogicalOps.And | LogicalOps.Or | LogicalOps.Nor | LogicalOps.Not;
 
 export type Condition = Selector | LogicalOp;
 
@@ -83,11 +86,11 @@ export namespace RelationalOp {
   };
 
   export type Neq<T = Primitive> = {
-    $neq: T;
+    $ne: T;
   };
 
   export type Geq<T = Comparable> = {
-    $geq: T;
+    $gte: T;
   };
 
   export type Gt<T = Comparable> = {
@@ -95,7 +98,7 @@ export namespace RelationalOp {
   };
 
   export type Leq<T = Comparable> = {
-    $leq: T;
+    $lte: T;
   };
 
   export type Lt<T = Comparable> = {
@@ -104,6 +107,10 @@ export namespace RelationalOp {
 
   export type In<T = Primitive> = {
     $in: T[];
+  };
+
+  export type Nin<T = Primitive> = {
+    $nin: T[];
   };
 }
 type Comparable = number | Date;
@@ -114,7 +121,8 @@ type RelationalOp<T> =
   | RelationalOp.Gt<T>
   | RelationalOp.Leq<T>
   | RelationalOp.Lt<T>
-  | RelationalOp.In<T>;
+  | RelationalOp.In<T>
+  | RelationalOp.Nin<T>;
 
 // Array operators enabled by the conditions DSL.
 export namespace ArrayOps {
@@ -127,7 +135,7 @@ export namespace ArrayOps {
   };
 
   export type Len<T = Primitive> = {
-    $len: RelationalOp<T>;
+    $size: RelationalOp<T>;
   };
 }
 type ArrayOp<T> = ArrayOps.Any<T> | ArrayOps.All<T> | ArrayOps.Len<T>;
