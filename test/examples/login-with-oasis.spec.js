@@ -1,12 +1,12 @@
-// This a cypress test for login-with-oasis example.
+// This a cypress test for the login-with-oasis example (either the backend or the frontend version).
 // You can execute it with
 // $ cd gateway/clients/typescript && cypress run --config '{"baseUrl":"http://localhost:4050","integrationFolder":"test/examples","testFiles":["login-with-oasis.spec.js"],"chromeWebSecurity":false}'
 
-// This test assumes a fresh instance of parcel-gateway, auth backend and frontend with reverse proxy,
-// and a running login-with-oasis example in the background.
+// This test assumes the login-with-oasis example is already configured and listening on the baseUrl
+// configured above.
 
-it('login-with-oasis', () => {
-  // Visit the base URL of the login-with-oasis example.
+it('login-with-oasis-frontend', () => {
+  // Visit the base URL of the login-with-oasis-frontend example.
   cy.visit('/');
   cy.contains('Get started with Oasis').click();
 
@@ -23,7 +23,7 @@ it('login-with-oasis', () => {
   cy.contains('Share and continue').click();
 
   // If token authorization succeeds, a div "Your user id is <button with user identity>" is shown.
-  cy.get('#user-id')
+  cy.get('#parcel-id')
     .invoke('text')
     .should('match', /^I[A-Za-z\d]{10,}$/);
 });

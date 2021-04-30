@@ -57,6 +57,17 @@ const acmeServiceClientPrivateKey = {
   y: 'e4Q4ygapmkxku_olSuc-WhSJaWiNCvuPqIWaOV6P9pE',
   d: '_X2VJCigbOYXOq0ilXATJdh9c2DdaSzZlxXVV6yuCXg',
 } as const;
+let acmeBackendClient: Client;
+const acmeBackendClientPrivateKey = {
+  kid: 'acme-backend-client',
+  use: 'sig',
+  kty: 'EC',
+  crv: 'P-256',
+  alg: 'ES256',
+  x: 'mqlepd4Gr5L4zEauL2V-3x46cvXFTP10LY4AfOyCjd4',
+  y: 'iTMKFMDJVqDDf-Tbt3fVxVs4F84_6nSpMji9uDCE3hY',
+  d: 'SjSlVeiDxJ9wFBLIky2WSoUTI3NBJgm2YpbxBpfPQr0',
+} as const;
 
 let bobApp: App;
 let bobIdentity: Identity;
@@ -81,21 +92,24 @@ async function getAppFixture(owner: Identity): Promise<AppCreateParams> {
     invites: [],
     allowUserUploads: true,
 
-    name: 'test app',
-    organization: 'Oasis Labs',
-    shortDescription: 'shrt dscrptn',
+    name: 'Rate Your S@ndwich',
+    organization: 'ACME ltd.',
+    shortDescription: 'Sharing and rating of food recipes',
     homepageUrl: 'https://example.com',
     privacyPolicy: 'https://example.com/privacy',
     termsAndConditions: 'https://example.com/terms',
 
-    invitationText: 'plz give data',
-    acceptanceText: 'thanks for the data!',
-    rejectionText: '🙁',
+    invitationText: 'Allow recording of sandwich creation',
+    acceptanceText:
+      'Great! By allowing video recording of your sandwich creation, we will automagically compose a recipe for you!',
+    rejectionText:
+      'No problem. You will still be able to use Rate your S@andwich, but you will need to type the recipe for your sandwich manually.',
 
-    extendedDescription: 'looooong description',
+    extendedDescription:
+      'Rate your S@andwich can make a video recording of yourself while making a sandwich. Then, with our smart deep hamster AI we will compose a recipe including a list of all the ingredients you used.',
     brandingColor: '#abcdef',
-    category: 'testing',
-    logoUrl: 'https://logos.gif',
+    category: 'food',
+    logoUrl: 'http://localhost:4050/images/Egg_Sandwich.jpg',
 
     identity: {
       tokenVerifiers: [
@@ -174,6 +188,16 @@ beforeAll(async () => {
   });
   spawnerConsole.log(`Created acmeFrontendClient, client_id: ${acmeFrontendClient.id}`);
 
+  acmeBackendClient = await parcel.createClient(acmeApp.id, {
+    name: 'acme-backend-client',
+    isScript: false,
+    redirectUris: ['http://localhost:4050/callback'],
+    postLogoutRedirectUris: [],
+    canHoldSecrets: true,
+    publicKeys: [extractPubKey(acmeBackendClientPrivateKey)],
+  });
+  spawnerConsole.log(`Created acmeBackendClient, client_id: ${acmeBackendClient.id}`);
+
   // Second app and bob-client.
   bobApp = await parcel.createApp(await getAppFixture(spawnerIdentity));
   spawnerConsole.log(`Created bobApp, id: ${bobApp.id}, owner ${bobApp.owner}`);
@@ -237,38 +261,17 @@ it(
 );
 
 it(
-  'login-with-oasis',
+  'login-with-oasis-frontend',
   async () => {
-    await new Promise<void>((resolve, reject) => {
-      const example = runExample('login-with-oasis');
-      example.stdout?.on('data', async (data) => {
-        // Forward example's output to stdout.
-        process.stdout.write(data.toString());
+    await runCypressTest('login-with-oasis-frontend');
+  },
+  100 * 1000,
+);
 
-        // Wait for Express used in the example to start listening.
-        if (data.includes('listening at http://localhost:4050')) {
-          try {
-            // Launch a front-end test.
-            const cypressCmd = `${npxPath} cypress run --config '{"baseUrl":"http://localhost:4050","integrationFolder":"test/examples","testFiles":["login-with-oasis.spec.js"],"chromeWebSecurity":false,"video":true}'`;
-            execSync(cypressCmd, { stdio: 'inherit' });
-          } finally {
-            // XXX: npm start spawns a sub-subprocess and nodejs doesn't support killing it out of the
-            // box. Writing 0x03 to stdin (ctrl+C) also doesn't work. Kill it by calling external kill
-            // command and obtain the correct child process.
-            const killCmd = `/bin/kill -SIGINT $(pgrep -P $(pgrep -P ${example.pid}))`;
-            execSync(killCmd, { stdio: 'inherit' });
-          }
-        }
-      });
-      example.on('close', (signal) => {
-        if (signal === 130) {
-          // 130 is the expected return code caused by the interrupt.
-          resolve();
-        } else {
-          reject(new Error(`example exited with code ${signal}`));
-        }
-      });
-    });
+it(
+  'login-with-oasis-backend',
+  async () => {
+    await runCypressTest('login-with-oasis-backend');
   },
   100 * 1000,
 );
@@ -289,6 +292,39 @@ it(
   },
   300 * 1000,
 );
+
+async function runCypressTest(exampleName: string): Promise<void> {
+  return new Promise<void>((resolve, reject) => {
+    const example = runExample(exampleName, async (data) => {
+      // Forward example's output to stdout.
+      process.stdout.write(data.toString());
+
+      // Wait for Express used in the example to start listening.
+      if (data.includes('listening at http://localhost:4050')) {
+        try {
+          // Launch a front-end test.
+          const cypressCmd = `${npxPath} cypress run --config '{"baseUrl":"http://localhost:4050","integrationFolder":"test/examples","testFiles":["login-with-oasis.spec.js"],"chromeWebSecurity":false,"video":true,"videosFolder":"cypress/videos/${exampleName}"}'`;
+          execSync(cypressCmd, { stdio: 'inherit' });
+        } finally {
+          // XXX: npm start spawns a sub-subprocess and nodejs doesn't support killing it out of the
+          // box. Writing 0x03 to stdin (ctrl+C) also doesn't work. Kill it by calling external kill
+          // command and obtain the correct child process.
+          // Perhaps we could use start-server-and-test library instead?
+          const killCmd = `/bin/kill -SIGINT $(pgrep -P $(pgrep -P ${example.pid}))`;
+          execSync(killCmd, { stdio: 'inherit' });
+        }
+      }
+    });
+    example.on('close', (signal) => {
+      if (signal === 130) {
+        // 130 is the expected return code caused by the interrupt.
+        resolve();
+      } else {
+        reject(new Error(`example exited with code ${signal}`));
+      }
+    });
+  });
+}
 
 async function runExamplePromisified(
   name: string,
@@ -320,6 +356,7 @@ function runExample(name: string, customStdoutListener?: (chunk: any) => void): 
       ACME_APP_ID: acmeApp.id,
       ACME_SERVICE_CLIENT_ID: acmeServiceClient.id,
       ACME_FRONTEND_CLIENT_ID: acmeFrontendClient.id,
+      ACME_BACKEND_CLIENT_ID: acmeBackendClient.id,
       BOB_IDENTITY_ID: bobIdentity.id,
       BOB_SERVICE_CLIENT_ID: bobServiceClient.id,
       ...process.env,

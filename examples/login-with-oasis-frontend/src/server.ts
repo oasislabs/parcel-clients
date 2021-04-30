@@ -37,9 +37,6 @@ app.get('/getOidcConfig', (req: express.Request, res: express.Response) => {
     .send(`let oidcConfig = ${JSON.stringify(oidcConfig)};`);
 });
 
-// #region snippet-finalize-login
-// #endregion snippet-finalize-login
-
 app.listen(port, () => {
   console.log('Login with Oasis app listening at http://localhost:%s', port);
 });

@@ -28,7 +28,7 @@
     "streamsaver": "^2.0.5"
   },
   "alias": {
-    "@oasislabs/parcel": "../../"
+    "@oasislabs/parcel": "^1.0.0-beta.1"
   },
   "browserslist": ">2%"
 }
