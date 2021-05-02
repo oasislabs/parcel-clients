@@ -371,7 +371,7 @@ function makeJWT({
   };
 
   const now = Math.floor(Date.now() / 1000);
-  payload.iat = now;
+  payload.iat = now - 2 * 60; // Take off a couple of minutes to account for clock skew.
   payload.exp = now + lifetime;
 
   return jsrsasign.KJUR.jws.JWS.sign(null, header, payload, privateKey);
