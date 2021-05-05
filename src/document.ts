@@ -223,7 +223,7 @@ export class Upload extends EventEmitter {
         if (typeof data === 'string' || data instanceof Uint8Array) {
           data = new Blob([data], { type: contentType });
         } else if ('pipe' in data) {
-          throw new TypeError('uploaded data must be a `string`, `Blob`, or `Uint8Array`');
+          throw new TypeError('uploaded data must of type `Storable`');
         }
 
         form.append(name, data);
