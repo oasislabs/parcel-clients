@@ -1,8 +1,8 @@
 import Parcel, { AppId, IdentityId } from '@oasislabs/parcel';
 import fs from 'fs';
 
-// #region snippet-config
-const tokenSource = {
+// Connect to ACME's identity.
+const parcel = new Parcel({
   clientId: process.env.ACME_SERVICE_CLIENT_ID!,
   privateKey: {
     kid: 'acme-service-client',
@@ -14,21 +14,15 @@ const tokenSource = {
     y: 'e4Q4ygapmkxku_olSuc-WhSJaWiNCvuPqIWaOV6P9pE',
     d: '_X2VJCigbOYXOq0ilXATJdh9c2DdaSzZlxXVV6yuCXg',
   },
-} as const;
-// #endregion snippet-config
-
-// #region snippet-identity-acme-connect
-// Connect to ACME's identity.
-const parcel = new Parcel(tokenSource);
-// #endregion snippet-identity-acme-connect
+});
 
 // By default, documents are owned by the uploading identity
 // #region snippet-upload-default-owner
 const acmeIdentity = await parcel.getCurrentIdentity();
 console.log(`Uploading data with identity: ${acmeIdentity.id}`);
 
-const data = 'The weather will be sunny tomorrow and cloudy on Tuesday.';
-const documentDetails = { title: 'Weather forecast summary', tags: ['english'] };
+const data = 'Eggs and Emmentaler is the best!';
+const documentDetails = { title: 'Favorite sando', tags: ['lang:en'] };
 const acmeDocument = await parcel.uploadDocument(data, {
   details: documentDetails,
   toApp: undefined,

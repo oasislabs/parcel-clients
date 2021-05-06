@@ -9,11 +9,11 @@ const PARCEL_AUTH_URL = process.env.PARCEL_AUTH_URL ?? 'https://auth.oasislabs.c
 
 const oidcConfig = {
   authority: PARCEL_AUTH_URL,
-  // Replace with your app's front-end client ID.
+  // Replace with your app's frontend client ID.
   client_id: process.env.ACME_FRONTEND_CLIENT_ID!,
   redirect_uri: `http://localhost:${port}/callback`,
   response_type: 'code',
-  scope: 'openid',
+  scope: 'openid profile email',
   filterProtocolClaims: false,
   loadUserInfo: false,
   extraQueryParams: {

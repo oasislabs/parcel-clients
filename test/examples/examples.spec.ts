@@ -302,7 +302,7 @@ async function runCypressTest(exampleName: string): Promise<void> {
       // Wait for Express used in the example to start listening.
       if (data.includes('listening at http://localhost:4050')) {
         try {
-          // Launch a front-end test.
+          // Launch a frontend test.
           const cypressCmd = `${npxPath} cypress run --config '{"baseUrl":"http://localhost:4050","integrationFolder":"test/examples","testFiles":["login-with-oasis.spec.js"],"chromeWebSecurity":false,"video":true,"videosFolder":"cypress/videos/${exampleName}"}'`;
           execSync(cypressCmd, { stdio: 'inherit' });
         } finally {
