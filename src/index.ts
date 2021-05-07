@@ -30,7 +30,7 @@ import type {
   DocumentUpdateParams,
   DocumentUploadParams,
   ListAccessLogFilter,
-  ListDocumentsFilter,
+  DocumentSearchParams,
   Storable,
   Upload,
 } from './document.js';
@@ -161,8 +161,10 @@ export class Parcel {
     return DocumentImpl.get(this.client, id);
   }
 
-  public async listDocuments(filter?: ListDocumentsFilter & PageParams): Promise<Page<Document>> {
-    return DocumentImpl.list(this.client, filter);
+  public async searchDocuments(
+    params?: DocumentSearchParams & PageParams,
+  ): Promise<Page<Document>> {
+    return DocumentImpl.search(this.client, params);
   }
 
   public downloadDocument(id: DocumentId): Download {

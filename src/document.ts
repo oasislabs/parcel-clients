@@ -3,11 +3,13 @@ import type { ReadStream } from 'fs';
 import EventEmitter from 'eventemitter3';
 import FormData from 'form-data';
 import type { Readable } from 'readable-stream';
-import type { Opaque, RequireExactlyOne, SetOptional } from 'type-fest';
+import type { Opaque, SetOptional } from 'type-fest';
 
 import type { AppId } from './app.js';
-import type { JobId } from './compute.js';
+import type { JobId, JobSpec } from './compute.js';
+import type { Condition } from './condition.js';
 import type { HttpClient, Download } from './http.js';
+import { setExpectedStatus } from './http.js';
 import type { IdentityId } from './identity.js';
 import type { Model, Page, PageParams, PODModel, ResourceId, WritableExcluding } from './model.js';
 import { makePage } from './model.js';
@@ -85,21 +87,14 @@ export namespace DocumentImpl {
     return new Document(client, podDocument);
   }
 
-  export async function list(
+  export async function search(
     client: HttpClient,
-    filter?: ListDocumentsFilter & PageParams,
+    params?: DocumentSearchParams & PageParams,
   ): Promise<Page<Document>> {
-    let tagsFilter;
-    if (filter?.tags) {
-      const tagsSpec = filter.tags;
-      const prefix = Array.isArray(tagsSpec) || tagsSpec.all ? 'all' : 'any';
-      const tags = Array.isArray(tagsSpec) ? tagsSpec : tagsSpec.all ?? tagsSpec.any;
-      tagsFilter = `${prefix}:${tags.join(',')}`;
-    }
-
-    const podPage = await client.get<Page<PODDocument>>(DOCUMENTS_EP, {
-      ...filter,
-      tags: tagsFilter,
+    const podPage = await client.post<Page<PODDocument>>(`${DOCUMENTS_EP}/search`, params, {
+      hooks: {
+        beforeRequest: [setExpectedStatus(200)],
+      },
     });
     return makePage(Document, podPage, client);
   }
@@ -169,17 +164,94 @@ export type DocumentUploadParams = SetOptional<DocumentUpdateParams, 'owner' | '
 
 export type Storable = Uint8Array | Readable | ReadStream | Blob | string;
 
-export type ListDocumentsFilter = Partial<{
-  creator: IdentityId;
-  owner: IdentityId;
-  sharedWith: IdentityId;
-  tags:
-    | string[]
-    | RequireExactlyOne<{
-        any: string[];
-        all: string[];
-      }>;
-}>;
+/**
+ * A very flexible document search interface.
+ *
+ * ## Examples:
+ *
+ * ### Search for documents you own
+ *
+ * ```
+ * {
+ *   ownedBy: (await parcel.getCurrentIdentity()).id,
+ * }
+ * ```
+ *
+ * ### Search for documents shared with you
+ *
+ * ```
+ * let me = (await parcel.getCurrentIdentity()).id;
+ * {
+ *   selectedByCondition: { 'document.owner': { $ne: me } },
+ *   accessibleInContext: { accessor: me },
+ * }
+ * ```
+ *
+ * ### Search for documents with tags
+ *
+ * ```
+ * {
+ *   selectedByCondition: {
+ *     'document.tags': { $intersects: ['csv', 'json'] }
+ *   },
+ * }
+ * ```
+ *
+ */
+export type DocumentSearchParams = {
+  /** Searches for documents owned by this identity. */
+  ownedBy?: IdentityId;
+
+  /**
+   * Searches for documents that would be selected if a grant with the
+   * specfified condition were created. Use this field for simulating a grant.
+   *
+   * If `accessibleInContext` is also specfified, this field selects documents
+   * both accessible in the context and selected by the condition (i.e. existing
+   * conditions apply).
+   */
+  selectedByCondition?: Condition;
+
+  /**
+   * Searches for documents that can be accessed in the provided context.
+   * This field allows you to discover documents that you can access either
+   * yourself, or from a job.
+   */
+  accessibleInContext?: AccessContext;
+};
+
+/**
+ * The context in which a document will be accessed.
+ * Grants condition on the values of this context.
+ */
+type AccessContext = {
+  /**
+   * The identity that will be accessing the document.
+   * Leaving this field unset will search for documents
+   * accessible to anybody (likely only in the context of a job).
+   */
+  accessor?: IdentityId;
+
+  /**
+   * The job that will be accessing the data.
+   * Leaving this field unset will search for documents
+   * accessible directly by identities. If `identity` is
+   * also unset, the search will return public documents.
+   */
+  job?: JobSpec;
+
+  /**
+   * The time at which the data will be accessed.
+   * Generally, you don't need to set this unless you're differentiating
+   * among multple documents that all require a certain access time.
+   */
+  accessTime?: Date;
+
+  // /**
+  //  * The kind of worker that you must use to run the job.
+  //  */
+  // worker: WorkerSpec; // TODO
+};
 
 export type AccessEvent = {
   createdAt: Date;

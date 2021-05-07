@@ -13,6 +13,7 @@ export namespace Selectors {
   export type IdentityId = {
     'identity.id': RelationalOp<$IdentityId>;
   };
+
   // Resource-based selectors.
   export type DocumentId = {
     'document.id': RelationalOp<$DocumentId>;
@@ -26,6 +27,8 @@ export namespace Selectors {
   export type DocumentTags = {
     'document.tags': ArrayOp<string>;
   };
+  export type Document = DocumentId | DocumentCreator | DocumentTitle | DocumentTags;
+
   // Action-based selectors.
   export type JobImage = {
     'job.spec.image': RelationalOp<string>;
@@ -36,6 +39,8 @@ export namespace Selectors {
   export type JobOutputs = {
     'job.spec.outputs': RelationalOp<$OutputDatsetSpec>;
   };
+  export type Job = JobImage | JobInputs | JobOutputs;
+
   export type AccessTime = {
     accessTime: RelationalOp<string>; // TODO: This should be a Date, but Date is not currently serializable as a JsonObject.
   };
@@ -50,13 +55,8 @@ export namespace Selectors {
 // A Selector is a leaf node in the boolean expression tree for a condition.
 export type Selector =
   | Selectors.IdentityId
-  | Selectors.DocumentId
-  | Selectors.DocumentCreator
-  | Selectors.DocumentTitle
-  | Selectors.DocumentTags
-  | Selectors.JobImage
-  | Selectors.JobInputs
-  | Selectors.JobOutputs
+  | Selectors.Document
+  | Selectors.Job
   | Selectors.AccessTime;
 
 // Logical operators enabled by the conditions DSL.
@@ -75,7 +75,7 @@ export namespace LogicalOps {
   };
 }
 // A LogicalOp is an internal node in the boolean expression tree for a condition.
-type LogicalOp = LogicalOps.And | LogicalOps.Or | LogicalOps.Nor | LogicalOps.Not;
+export type LogicalOp = LogicalOps.And | LogicalOps.Or | LogicalOps.Nor | LogicalOps.Not;
 
 export type Condition = Selector | LogicalOp;
 

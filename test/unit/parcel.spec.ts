@@ -250,7 +250,7 @@ describe('Parcel', () => {
       owner: createIdentityId(),
       size: 1234,
       details: {
-        tags: ['mock', 'document'],
+        tags: ['["mock"]', 'document'],
         key: { value: 42 },
       },
       originatingJob: createJobId(),
@@ -605,10 +605,11 @@ describe('Parcel', () => {
           expect(nextPageToken).toEqual(fixtureResultsPage.nextPageToken);
         });
 
-        nockIt('no results', async (scope) => {
-          const fixtureResultsPage: Page<PODDocument> = createResultsPage(0, createPodDocument);
-          scope.get('/documents').reply(200, fixtureResultsPage);
-          const { results, nextPageToken } = await parcel.listDocuments();
+        nockItWithCurrentIdentity('no results', async (scope) => {
+          const fixtureResultsPage: Page<PODPermission> = createResultsPage(0, createPodPermission);
+          scope.get(`/identities/${fixtureIdentity.id}/permissions`).reply(200, fixtureResultsPage);
+          const identity = await parcel.getCurrentIdentity();
+          const { results, nextPageToken } = await identity.listGrantedPermissions();
           expect(results).toHaveLength(0);
           expect(nextPageToken).toEqual(fixtureResultsPage.nextPageToken);
         });
@@ -657,7 +658,7 @@ describe('Parcel', () => {
     }
 
     // Matches the metadata part of a (multipart) document upload request
-    const MULTIPART_METADATA_RE = /content-disposition: form-data; name="metadata"\r\ncontent-type: application\/json\r\n\r\n{"details":{"tags":\["mock","document","to-app-\w+"],"key":{"value":42}}}\r\n/gi;
+    const MULTIPART_METADATA_RE = /content-disposition: form-data; name="metadata"\r\ncontent-type: application\/json\r\n\r\n{"details":{"tags":\["\[\\"mock\\"]","document","to-app-\w+"],"key":{"value":42}}}\r\n/gi;
     // Matches the data part of a (multipart) document upload request
     const MULTIPART_DATA_RE = /content-disposition: form-data; name="data"\r\ncontent-type: application\/octet-stream\r\n\r\nfixture data\r\n/gi;
 
@@ -845,9 +846,9 @@ describe('Parcel', () => {
         );
         expect(fixtureResultsPage).toMatchSchema(getResponseSchema('GET', '/documents', 200));
 
-        scope.get('/documents').reply(200, fixtureResultsPage);
+        scope.post('/documents/search').reply(200, fixtureResultsPage);
 
-        const { results, nextPageToken } = await parcel.listDocuments();
+        const { results, nextPageToken } = await parcel.searchDocuments();
         expect(results).toHaveLength(numberResults);
         for (const [i, r] of results.entries()) {
           expect(r).toMatchPOD(fixtureResultsPage.results[i]);
@@ -864,26 +865,25 @@ describe('Parcel', () => {
         );
 
         const filterWithPagination = {
-          owner: fixtureResultsPage.results[0].owner as IdentityId,
-          creator: fixtureResultsPage.results[0].creator as IdentityId,
-          tags: 'all:tag1,tag2',
+          ownedBy: fixtureResultsPage.results[0].owner as IdentityId,
+          accessibleInContext: {
+            accessor: createIdentityId(),
+          },
+          selectedByCondition: {
+            $and: [
+              { 'document.tags': { $any: { $in: ['tag1', 'tag2'] } } },
+              {
+                'document.creator': { $eq: fixtureResultsPage.results[0].creator as IdentityId },
+              },
+            ],
+          },
           pageSize: 2,
           pageToken: makeRandomId(),
         };
         expect(filterWithPagination).toMatchSchema(getQueryParametersSchema('GET', '/documents'));
-        scope
-          .get('/documents')
-          .query(
-            Object.fromEntries(
-              Object.entries(filterWithPagination).map(([k, v]) => [paramCase(k), v]),
-            ),
-          )
-          .reply(200, fixtureResultsPage);
+        scope.post('/documents/search', filterWithPagination).reply(200, fixtureResultsPage);
 
-        const { results, nextPageToken } = await parcel.listDocuments({
-          ...filterWithPagination,
-          tags: { all: ['tag1', 'tag2'] },
-        });
+        const { results, nextPageToken } = await parcel.searchDocuments(filterWithPagination);
         expect(results).toHaveLength(numberResults);
         for (const [i, r] of results.entries()) {
           expect(r).toMatchPOD(fixtureResultsPage.results[i]);
@@ -894,8 +894,8 @@ describe('Parcel', () => {
 
       nockIt('no results', async (scope) => {
         const fixtureResultsPage: Page<PODDocument> = createResultsPage(0, createPodDocument);
-        scope.get('/documents').reply(200, fixtureResultsPage);
-        const { results, nextPageToken } = await parcel.listDocuments();
+        scope.post('/documents/search').reply(200, fixtureResultsPage);
+        const { results, nextPageToken } = await parcel.searchDocuments();
         expect(results).toHaveLength(0);
         expect(nextPageToken).toEqual(fixtureResultsPage.nextPageToken);
       });
