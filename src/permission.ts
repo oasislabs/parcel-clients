@@ -1,7 +1,7 @@
 import type { Opaque } from 'type-fest';
 
 import type { AppId } from './app.js';
-import { endpointForId as endpointForApp } from './app.js';
+import { endpointForApp } from './app.js';
 import type { Condition } from './condition.js';
 import type { HttpClient } from './http.js';
 import type { IdentityId } from './identity.js';

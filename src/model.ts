@@ -1,8 +1,18 @@
-import type { ConditionalExcept, Except, JsonValue } from 'type-fest';
+import type { ConditionalExcept, Except } from 'type-fest';
 
 import type { HttpClient } from './http.js';
 
 export type ResourceId = string;
+
+export type JsonSerializable =
+  | Date
+  | string
+  | number
+  | boolean
+  | null
+  | undefined
+  | JsonSerializable[]
+  | { [key in string]: JsonSerializable };
 
 export interface PODModel {
   /** An undifferentiated model identifier. */
@@ -26,7 +36,7 @@ export type WritableExcluding<T extends Model, ReadOnly extends keyof T> = Condi
   (...args: any[]) => any
 >;
 
-export type Page<T = JsonValue> = {
+export type Page<T> = {
   results: T[];
   nextPageToken: string;
 };

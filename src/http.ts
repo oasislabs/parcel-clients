@@ -6,8 +6,8 @@ import type { BeforeRequestHook, NormalizedOptions, Options as KyOptions } from 
 import ky from 'ky';
 import { paramCase } from 'param-case';
 import type { Readable, Writable } from 'stream';
-import type { JsonObject } from 'type-fest';
 
+import type { JsonSerializable } from './model.js';
 import type { TokenProvider } from './token.js';
 import { ReadableStreamPF } from './polyfill.js';
 
@@ -117,7 +117,7 @@ export class HttpClient {
   /** Convenience method for POSTing and expecting a 201 response */
   public async create<T>(
     endpoint: string,
-    data: JsonObject | FormData,
+    data: Record<string, JsonSerializable> | FormData,
     requestOptions?: KyOptions,
   ): Promise<T> {
     return this.post(endpoint, data, requestOptions);
@@ -125,7 +125,7 @@ export class HttpClient {
 
   public async post<T>(
     endpoint: string,
-    data: JsonObject | FormData | undefined,
+    data: Record<string, JsonSerializable> | FormData | undefined,
     requestOptions?: KyOptions,
   ): Promise<T> {
     const opts = requestOptions ?? {};
@@ -143,11 +143,11 @@ export class HttpClient {
     return this.apiKy.post(endpoint, opts).json();
   }
 
-  public async update<T>(endpoint: string, params: JsonObject): Promise<T> {
+  public async update<T>(endpoint: string, params: Record<string, JsonSerializable>): Promise<T> {
     return this.put(endpoint, params);
   }
 
-  public async put<T>(endpoint: string, params: JsonObject): Promise<T> {
+  public async put<T>(endpoint: string, params: Record<string, JsonSerializable>): Promise<T> {
     return this.apiKy.put(endpoint, { json: params }).json();
   }
 

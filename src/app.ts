@@ -190,7 +190,8 @@ export namespace AppImpl {
 }
 
 export const APPS_EP = 'apps';
-export const endpointForId = (id: AppId) => `${APPS_EP}/${id}`;
+const endpointForId = (id: AppId) => `${APPS_EP}/${id}`;
+export { endpointForId as endpointForApp };
 
 export type AppCreateParams = Except<AppUpdateParams, 'owner'> & {
   /** The credentials used to authorize clients acting as this app. */
