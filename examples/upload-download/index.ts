@@ -82,8 +82,8 @@ window.downloadDocument = async function (id: string) {
 window.listUploadedDocuments = async function () {
   if (!parcel) return;
   const uploadedDocuments = (
-    await parcel.listDocuments({
-      creator: (await parcel.getCurrentIdentity()).id,
+    await parcel.searchDocuments({
+      selectedByCondition: { 'document.creator': { $eq: (await parcel.getCurrentIdentity()).id } },
     })
   ).results;
 

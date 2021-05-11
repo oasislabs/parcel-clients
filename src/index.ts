@@ -14,6 +14,7 @@ import type {
   ListClientsFilter,
 } from './client.js';
 import type { Job, JobId, JobSpec, JobStatus, JobStatusReport } from './compute.js';
+import type { Condition } from './condition.js';
 import {
   ComputeImpl,
   InputDocumentSpec,
@@ -74,6 +75,7 @@ export {
   ClientCreateParams,
   ClientCredentials,
   ClientId,
+  Condition,
   Document,
   DocumentId,
   DocumentUpdateParams,
@@ -120,7 +122,7 @@ export {
  *   clientId: serviceClientId,
  *   privateKey: serviceClientPrivateKey,
  * });
- * console.log(await parcel.listDocuments());
+ * console.log(await parcel.searchDocuments());
  * ```
  *
  * @category Main

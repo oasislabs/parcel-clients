@@ -245,7 +245,7 @@ it(
         } as RenewingTokenProviderParams);
         void parcelBob.createGrant({
           grantee: acmeIdentity.id,
-          condition: { 'document.tags': { $any: { $eq: `to-app-${acmeApp.id}` } } },
+          condition: { 'document.tags': { $contains: `to-app-${acmeApp.id}` } },
         });
       }
     });

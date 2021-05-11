@@ -21,13 +21,21 @@ export namespace Selectors {
   export type DocumentCreator = {
     'document.creator': RelationalOp<$IdentityId>;
   };
+  export type DocumentOwner = {
+    'document.owner': RelationalOp<$IdentityId>;
+  };
   export type DocumentTitle = {
     'document.title': RelationalOp<string>;
   };
   export type DocumentTags = {
-    'document.tags': ArrayOp<string>;
+    'document.tags': SetOp<string>;
   };
-  export type Document = DocumentId | DocumentCreator | DocumentTitle | DocumentTags;
+  export type Document =
+    | DocumentId
+    | DocumentCreator
+    | DocumentOwner
+    | DocumentTitle
+    | DocumentTags;
 
   // Action-based selectors.
   export type JobImage = {
@@ -124,7 +132,6 @@ type RelationalOp<T> =
   | RelationalOp.In<T>
   | RelationalOp.Nin<T>;
 
-// Array operators enabled by the conditions DSL.
 export namespace ArrayOps {
   export type Any<T = Primitive> = {
     $any: RelationalOp<T>;
@@ -138,4 +145,37 @@ export namespace ArrayOps {
     $size: RelationalOp<T>;
   };
 }
-type ArrayOp<T> = ArrayOps.Any<T> | ArrayOps.All<T> | ArrayOps.Len<T>;
+export type ArrayOp<T> = ArrayOps.Any<T> | ArrayOps.All<T> | ArrayOps.Len<T>;
+
+export namespace SetOps {
+  export type Contains<T = Primitive> = {
+    $contains: T;
+  };
+
+  export type Intersects<T = Primitive> = {
+    $intersects: T[];
+  };
+
+  export type Superset<T = Primitive> = {
+    $superset: T[];
+  };
+
+  export type Subset<T = Primitive> = {
+    $subset: T[];
+  };
+
+  export type Values<T = Primitive> = {
+    $values: ArrayOp<T>;
+  };
+
+  export type Len<T = Primitive> = {
+    $size: RelationalOp<T>;
+  };
+}
+export type SetOp<T> =
+  | SetOps.Contains<T>
+  | SetOps.Intersects<T>
+  | SetOps.Superset<T>
+  | SetOps.Subset<T>
+  | SetOps.Values<T>
+  | SetOps.Len<T>;
