@@ -339,7 +339,7 @@ describe('Parcel', () => {
       granter: createIdentityId(),
       grantee: createIdentityId(),
       permission: createPermissionId(),
-      condition: { 'document.tags': { $any: { $eq: 'mock' } } },
+      condition: { 'document.tags': { $contains: 'mock' } },
       capabilities: 'read',
     };
     expect(podGrant).toMatchSchema('Grant');
@@ -397,7 +397,7 @@ describe('Parcel', () => {
         {
           granter: 'participant',
           grantee: 'app',
-          condition: { 'document.tags': { $any: { $eq: 'mock' } } },
+          condition: { 'document.tags': { $contains: 'mock' } },
         },
       ],
       appId: createAppId(),
@@ -844,7 +844,9 @@ describe('Parcel', () => {
           numberResults,
           createPodDocument,
         );
-        expect(fixtureResultsPage).toMatchSchema(getResponseSchema('GET', '/documents', 200));
+        expect(fixtureResultsPage).toMatchSchema(
+          getResponseSchema('POST', '/documents/search', 200),
+        );
 
         scope.post('/documents/search').reply(200, fixtureResultsPage);
 
@@ -871,7 +873,7 @@ describe('Parcel', () => {
           },
           selectedByCondition: {
             $and: [
-              { 'document.tags': { $any: { $in: ['tag1', 'tag2'] } } },
+              { 'document.tags': { $intersects: ['tag1', 'tag2'] } },
               {
                 'document.creator': { $eq: fixtureResultsPage.results[0].creator as IdentityId },
               },
@@ -880,7 +882,9 @@ describe('Parcel', () => {
           pageSize: 2,
           pageToken: makeRandomId(),
         };
-        expect(filterWithPagination).toMatchSchema(getQueryParametersSchema('GET', '/documents'));
+        expect(filterWithPagination).toMatchSchema(
+          getQueryParametersSchema('POST', '/documents/search'),
+        );
         scope.post('/documents/search', filterWithPagination).reply(200, fixtureResultsPage);
 
         const { results, nextPageToken } = await parcel.searchDocuments(filterWithPagination);
