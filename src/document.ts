@@ -173,7 +173,7 @@ export type Storable = Uint8Array | Readable | ReadStream | Blob | string;
  *
  * ```
  * {
- *   ownedBy: (await parcel.getCurrentIdentity()).id,
+ *   selectedByCondition: { 'document.owner': { $eq: (await parcel.getCurrentIdentity()).id } },
  * }
  * ```
  *
@@ -199,9 +199,6 @@ export type Storable = Uint8Array | Readable | ReadStream | Blob | string;
  *
  */
 export type DocumentSearchParams = {
-  /** Searches for documents owned by this identity. */
-  ownedBy?: IdentityId;
-
   /**
    * Searches for documents that would be selected if a grant with the
    * specfified condition were created. Use this field for simulating a grant.

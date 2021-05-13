@@ -867,7 +867,6 @@ describe('Parcel', () => {
         );
 
         const filterWithPagination = {
-          ownedBy: fixtureResultsPage.results[0].owner as IdentityId,
           accessibleInContext: {
             accessor: createIdentityId(),
           },
