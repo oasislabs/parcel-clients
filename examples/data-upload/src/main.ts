@@ -37,6 +37,17 @@ try {
 console.log(`Created document ${document.id} with title ${document.details.title}`);
 // #endregion snippet-document-upload
 
+// #region snippet-document-search
+const uploadedDocuments = (
+  await parcel.searchDocuments({
+    selectedByCondition: { 'document.creator': { $eq: (await parcel.getCurrentIdentity()).id } },
+  })
+).results;
+for (const d of uploadedDocuments) {
+  console.log(`Found document ${d.id} named ${d.details.title}`);
+}
+// #endregion snippet-document-search
+
 // #region snippet-document-download
 // Let's download the above document using its ID.
 // By default, the document owner can download the data.
