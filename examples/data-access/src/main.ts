@@ -1,7 +1,7 @@
 import Parcel, { AppId, IdentityId } from '@oasislabs/parcel';
 import fs from 'fs';
 
-// Connect to ACME's identity.
+// Connect to Acme's identity.
 const parcel = new Parcel({
   clientId: process.env.ACME_SERVICE_CLIENT_ID!,
   privateKey: {
@@ -63,7 +63,7 @@ try {
   console.log(`Attempting to access Bob's document without permission...`);
   await download.pipeTo(saver);
 } catch (error: any) {
-  console.log(`ACME was not able to access Bob's data (this was expected): ${error}`);
+  console.log(`Acme was not able to access Bob's data (this was expected): ${error}`);
 }
 // #endregion snippet-download-acme-error
 
@@ -78,7 +78,7 @@ try {
 while (true) {
   try {
     // #region snippet-download-bob-success
-    console.log(`Attempting to access Bob's document with ACME identity ${acmeIdentity.id}`);
+    console.log(`Attempting to access Bob's document with Acme identity ${acmeIdentity.id}`);
     download = parcel.downloadDocument(bobDocument.id);
     saver = fs.createWriteStream(`./bob_data_by_acme`);
     await download.pipeTo(saver);

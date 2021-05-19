@@ -93,7 +93,7 @@ async function getAppFixture(owner: Identity): Promise<AppCreateParams> {
     allowUserUploads: true,
 
     name: 'Rate Your S@ndwich',
-    organization: 'ACME ltd.',
+    organization: 'Acme ltd.',
     shortDescription: 'Sharing and rating of food recipes',
     homepageUrl: 'https://example.com',
     privacyPolicy: 'https://example.com/privacy',
@@ -235,7 +235,7 @@ it(
       process.stdout.write(data.toString());
 
       // Wait for the example until the grant permission is required.
-      if (data.includes("ACME was not able to access Bob's data (this was expected):")) {
+      if (data.includes("Acme was not able to access Bob's data (this was expected):")) {
         spawnerConsole.log(
           `Assigning grant to ${acmeIdentity.id} for documents with tag ${acmeApp.id}`,
         );

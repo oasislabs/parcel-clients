@@ -3,8 +3,8 @@ import fs from 'fs';
 
 // --- Upload data as Bob.
 // In a real-world scenario, these credentials would typically be used in a completely separate script
-// because no single entity has access to both ACME and Bob credentials.
-// This example script, however, performs actions both as ACME and Bob so that the flow is easier to
+// because no single entity has access to both Acme and Bob credentials.
+// This example script, however, performs actions both as Acme and Bob so that the flow is easier to
 // follow.
 // #region snippet-input-documents
 const parcelBob = new Parcel({
@@ -22,7 +22,7 @@ const parcelBob = new Parcel({
 });
 const bobId = (await parcelBob.getCurrentIdentity()).id;
 
-// Upload a document and give ACME access to it.
+// Upload a document and give Acme access to it.
 console.log('Uploading input document as Bob.');
 const recipeDocument = await parcelBob.uploadDocument(
   Buffer.from('14g butter; 15g chicken sausage; 18g feta; 20g green pepper; 1.5min baking'),
@@ -34,7 +34,7 @@ await parcelBob.createGrant({
 });
 // #endregion snippet-input-documents
 
-// --- Run compute job as ACME.
+// --- Run compute job as Acme.
 const parcelAcme = new Parcel({
   clientId: process.env.ACME_SERVICE_CLIENT_ID!,
   privateKey: {
@@ -57,7 +57,7 @@ try {
   await recipeDownload.pipeTo(recipeSaver);
   console.log('Successful download! (this was expected)');
 } catch (error: any) {
-  console.log(`ACME was not able to directly access Bob's data: ${error}`);
+  console.log(`Acme was not able to directly access Bob's data: ${error}`);
 }
 // #endregion snippet-successful-download
 
@@ -77,7 +77,7 @@ const jobSpec: JobSpec = {
 
 // #region snippet-job-submit-wait
 // Submit the job.
-console.log('Running the job as ACME.');
+console.log('Running the job as Acme.');
 const jobId = (await parcelAcme.submitJob(jobSpec)).id;
 
 // Wait for job to finish.
@@ -93,7 +93,7 @@ console.log(
 );
 // #endregion snippet-job-submit-wait
 
-// Obtain compute job output -- again as Bob, because the computation was confidential and ACME
+// Obtain compute job output -- again as Bob, because the computation was confidential and Acme
 // does not have access to the output data.
 // #region snippet-job-output
 console.log('Downloading output document as Bob.');
