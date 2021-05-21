@@ -69,7 +69,7 @@
     "ajv": "^7.0.0",
     "ajv-formats": "^1.5.1",
     "bs58": "^4.0.1",
-    "cypress": "^6.0.0",
+    "cypress": "7.3.0",
     "esbuild": "^0.11.16",
     "eslint-config-xo-typescript": "^0.38.0",
     "eslint-plugin-cypress": "^2.11.2",

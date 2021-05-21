@@ -19,7 +19,8 @@ describe('node-specific', () => {
   });
 
   const fixtureData = 'fixture data';
-  const MULTIPART_DATA_RE = /content-disposition: form-data; name="data".*\r\ncontent-type: application\/octet-stream\r\n\r\nfixture data\r\n/gi;
+  const MULTIPART_DATA_RE =
+    /content-disposition: form-data; name="data".*\r\ncontent-type: application\/octet-stream\r\n\r\nfixture data\r\n/gi;
 
   nockIt('upload ReadStream', async (scope) => {
     scope

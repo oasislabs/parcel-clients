@@ -344,10 +344,10 @@ function jwkToPem(jwk: PrivateJWK): string {
 
   const kjurJWK = JSON.parse(JSON.stringify(jwk));
   kjurJWK.crv = 'secp256r1'; // KJUR's preferred name for name for P-256
-  const privateKey = (jsrsasign.KEYUTIL.getPEM(
+  const privateKey = jsrsasign.KEYUTIL.getPEM(
     jsrsasign.KEYUTIL.getKey(kjurJWK),
     'PKCS8PRV',
-  ) as unknown) as string; // The type definitions are wrong: they say `void` but it's actually `string`.
+  ) as unknown as string; // The type definitions are wrong: they say `void` but it's actually `string`.
   return privateKey;
 }
 

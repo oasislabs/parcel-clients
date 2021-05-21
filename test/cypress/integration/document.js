@@ -26,11 +26,11 @@ context('Download', () => {
     const mockData = Buffer.alloc(1024 * 1024 * 2).fill(34);
 
     const downloadUrl = `${API_URL}/documents/${mockDocumentId}/download`;
-    cy.route2('OPTIONS', downloadUrl, {
-      headers: CORS_HEADERS,
-    });
-    cy.route2('GET', downloadUrl, (req) => {
+    cy.intercept('GET', downloadUrl, (req) => {
       req.reply(mockData.toString('base64'), CORS_HEADERS);
+    });
+    cy.intercept('OPTIONS', downloadUrl, {
+      headers: CORS_HEADERS,
     });
     cy.window()
       .then(async (window) => {
@@ -51,11 +51,11 @@ context('Download', () => {
   it('not found', () => {
     const bogusDocumentId = 'totally-bogus-document-id';
     const downloadUrl = `${API_URL}/documents/${bogusDocumentId}/download`;
-    cy.route2('OPTIONS', downloadUrl, {
-      headers: CORS_HEADERS,
-    });
-    cy.route2('GET', downloadUrl, (req) => {
+    cy.intercept('GET', downloadUrl, (req) => {
       req.reply(404, { error: 'not found' }, CORS_HEADERS);
+    });
+    cy.intercept('OPTIONS', downloadUrl, {
+      headers: CORS_HEADERS,
     });
     cy.window().then(async (window) => {
       const parcel = new window.Parcel('fake api token', { apiUrl: API_URL });
@@ -82,10 +82,24 @@ context('Redirect', () => {
 
     const redirectingUrl = `${API_MOUNT_POINT}/identities/me`;
     const redirectedUrl = `${API_MOUNT_POINT}/identities/${mockIdentityId}`;
-    cy.route2('OPTIONS', redirectingUrl, {
+    cy.intercept(
+      {
+        method: 'GET',
+        headers: {
+          authorization: 'Bearer fake api token',
+        },
+        pathname: redirectedUrl,
+      },
+      {
+        statusCode: 200,
+        body: { id: mockIdentityId },
+        headers: CORS_HEADERS,
+      },
+    );
+    cy.intercept('OPTIONS', redirectedUrl, {
       headers: CORS_HEADERS,
     });
-    cy.route2(
+    cy.intercept(
       {
         method: 'GET',
         headers: {
@@ -101,23 +115,9 @@ context('Redirect', () => {
         },
       },
     );
-    cy.route2('OPTIONS', redirectedUrl, {
+    cy.intercept('OPTIONS', redirectingUrl, {
       headers: CORS_HEADERS,
     });
-    cy.route2(
-      {
-        method: 'GET',
-        headers: {
-          authorization: 'Bearer fake api token',
-        },
-        pathname: redirectedUrl,
-      },
-      {
-        statusCode: 200,
-        body: { id: mockIdentityId },
-        headers: CORS_HEADERS,
-      },
-    );
     cy.window()
       .then(async (window) => {
         const parcel = new window.Parcel('fake api token', { apiUrl: API_URL });

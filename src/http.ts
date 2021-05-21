@@ -196,7 +196,7 @@ export class Download implements AsyncIterable<Uint8Array> {
     /* istanbul ignore else: tested using Cypress */
     if ((body as any).getReader === undefined) {
       // https://github.com/node-fetch/node-fetch/issues/930
-      const bodyReadable = (body as any) as Readable;
+      const bodyReadable = body as any as Readable;
       yield* bodyReadable;
     } else {
       const rdr = body.getReader();
