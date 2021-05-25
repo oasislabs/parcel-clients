@@ -10,6 +10,6 @@ discover the TS client APIs, and the [OpenAPI spec][]
 to learn what's going on under the hood.
 
 [examples]: https://github.com/oasislabs/parcel-examples/tree/latest
-[tutorial]: https://docs.oasislabs.com/latest/
-[generated TypeDoc]: https://docs.oasislabs.com/latest/typedoc/
-[OpenAPI spec]: https://docs.oasislabs.com/latest/parcel-api.html
+[tutorial]: https://docs.oasislabs.com/parcel/latest
+[generated TypeDoc]: https://docs.oasislabs.com/parcel/latest/typedoc/
+[OpenAPI spec]: https://docs.oasislabs.com/parcel/latest/parcel-api.html
