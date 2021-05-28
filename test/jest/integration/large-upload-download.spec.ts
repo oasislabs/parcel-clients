@@ -1,5 +1,6 @@
 import Parcel, { PrivateJWK, PublicJWK, Document } from '@oasislabs/parcel';
 import fs from 'fs';
+import crypto from 'crypto';
 import { JWK } from 'node-jose';
 
 const apiUrl = process.env.PARCEL_API_URL ?? 'http://localhost:4242/v1';
@@ -38,9 +39,9 @@ async function bootstrapParcel() {
 }
 
 async function createLargeFile() {
-  await fs.promises.writeFile('/tmp/large_input', 'a', 'utf-8');
+  await fs.promises.writeFile('/tmp/large_input', '');
   for (let i = 0; i < 100; i++) {
-    await fs.promises.appendFile('/tmp/large_input', 'a'.repeat(1024 * 1024), 'utf-8');
+    await fs.promises.appendFile('/tmp/large_input', crypto.randomBytes(1024 * 1024));
   }
 }
 
@@ -49,8 +50,8 @@ describe('Large file (100MiB)', () => {
   let doc: Document;
 
   beforeAll(async () => {
-    parcel = await bootstrapParcel();
     await createLargeFile();
+    parcel = await bootstrapParcel();
   });
 
   it('Upload', async () => {
