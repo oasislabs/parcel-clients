@@ -46,6 +46,7 @@ export class HttpClient {
       },
       hooks: {
         beforeRequest: [
+          appendAsLastBeforeRequest(dontCloneForAfterResponses()),
           async (req) => {
             req.headers.set('authorization', `Bearer ${await this.tokenProvider.getToken()}`);
           },
@@ -106,12 +107,11 @@ export class HttpClient {
       }
     }
 
-    return this.apiKy
-      .get(endpoint, {
-        searchParams: hasParams ? kebabCaseParams : undefined,
-        ...requestOptions,
-      })
-      .json();
+    const response = await this.apiKy.get(endpoint, {
+      searchParams: hasParams ? kebabCaseParams : undefined,
+      ...requestOptions,
+    });
+    return response.json();
   }
 
   /** Convenience method for POSTing and expecting a 201 response */
@@ -140,7 +140,7 @@ export class HttpClient {
       }
     }
 
-    return this.apiKy.post(endpoint, opts).json();
+    return (await this.apiKy.post(endpoint, opts)).json();
   }
 
   public async update<T>(endpoint: string, params: Record<string, JsonSerializable>): Promise<T> {
@@ -148,7 +148,7 @@ export class HttpClient {
   }
 
   public async put<T>(endpoint: string, params: Record<string, JsonSerializable>): Promise<T> {
-    return this.apiKy.put(endpoint, { json: params }).json();
+    return (await this.apiKy.put(endpoint, { json: params })).json();
   }
 
   public async delete(endpoint: string): Promise<void> {
@@ -158,6 +158,73 @@ export class HttpClient {
   public download(endpoint: string): Download {
     return new Download(this.apiKy, endpoint);
   }
+}
+
+/**
+ * Workaround to fix `afterResponse` breaking >20MB file downloads.
+ *
+ * Ky clones the response when using afterResponse. Cloning causes requests to
+ * stop requesting data after 2x highWaterMark (we use 10 MB) unless all clones
+ * consume data at the same time. This workaround uses beforeRequest hook to
+ * skip ky's fetch call + afterResponse handling, and reimplements both.
+ *
+ * Side effect is that reading response.body in multiple afterResponse hooks
+ * will throw an error.
+ *
+ * Related issues:
+ * - https://github.com/node-fetch/node-fetch#custom-highwatermark
+ * - https://github.com/sindresorhus/ky-universal/issues/8
+ * - https://github.com/sindresorhus/ky/issues/135
+ * - https://github.com/node-fetch/node-fetch/issues/386
+ *
+ * TODO: remove if fixed by https://github.com/sindresorhus/ky/pull/356
+ */
+export function dontCloneForAfterResponses(): BeforeRequestHook {
+  /**
+   * Replaces the default `this._decorateResponse(response.clone())`, but doesn't
+   * clone response.body.
+   *
+   * Note: `return response;` would avoid cloning body, but allows hooks to modify
+   * `response` in-place. Shallow cloning ensures consistent behaviour - modified
+   * response doesn't propagate.
+   */
+  function fixedDecorateAndClone(response: Response) {
+    // https://github.com/node-fetch/node-fetch/blob/ffef5e3c2322e8493dd75120b1123b01b106ab23/src/response.js#L87-L98
+    // https://github.com/node-fetch/node-fetch/blob/ffef5e3c2322e8493dd75120b1123b01b106ab23/src/body.js#L240-L264
+    const newResponse = new globalThis.Response(response.body, response);
+    // Replicate decorateResponse
+    // https://github.com/sindresorhus/ky/blob/5f3c3158af5c7efbb6a1cfd9e5f16fc71dd26e36/source/core/Ky.ts#L214-L222
+    newResponse.json = response.json;
+    return newResponse;
+  }
+
+  return async (req, opts: NormalizedOptions & KyOptions) => {
+    if (!opts.hooks?.afterResponse?.length) return;
+
+    const { afterResponse } = opts.hooks;
+    opts.hooks.afterResponse = [];
+
+    let response = await opts.fetch!(req.clone());
+    // https://github.com/sindresorhus/ky/blob/5f3c3158af5c7efbb6a1cfd9e5f16fc71dd26e36/source/core/Ky.ts#L112-L123
+    for (const hook of afterResponse) {
+      const modifiedResponse = await hook(req, opts, fixedDecorateAndClone(response));
+      if (modifiedResponse instanceof globalThis.Response) {
+        response = modifiedResponse;
+      }
+    }
+
+    return response;
+  };
+}
+
+/** Attaches a hook to end of hooks.beforeRequest (incl. after one-off hooks specified in the call to fetch(), e.g. setExpectedStatus) */
+export function appendAsLastBeforeRequest(hookToSchedule: BeforeRequestHook): BeforeRequestHook {
+  return (req, opts: NormalizedOptions & KyOptions) => {
+    if (!opts.hooks) opts.hooks = {};
+    if (!opts.hooks.beforeRequest) opts.hooks.beforeRequest = [];
+
+    opts.hooks.beforeRequest.push(hookToSchedule);
+  };
 }
 
 /** A beforeRequest hook that attaches context to the Request, for displaying in errors. */

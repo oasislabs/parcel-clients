@@ -1,3 +1,4 @@
+import { appendAsLastBeforeRequest, dontCloneForAfterResponses } from './http.js';
 import jsrsasign from 'jsrsasign';
 import type { NormalizedOptions, ResponsePromise } from 'ky';
 import ky from 'ky';
@@ -28,6 +29,7 @@ export class TokenError extends ky.HTTPError {
 
 const tokenKy: typeof ky = ky.create({
   hooks: {
+    beforeRequest: [appendAsLastBeforeRequest(dontCloneForAfterResponses())],
     afterResponse: [
       async (req, opts, res) => {
         // Wrap errors, for easier client handling (and maybe better messages).
@@ -291,7 +293,7 @@ class Token {
       access_token: string;
       request_time: number;
       expires_in: number;
-    } = await response.json();
+    } = await (await response).json();
     return new Token(body.access_token, requestTime + body.expires_in * 1000);
   }
 
