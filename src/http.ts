@@ -84,7 +84,7 @@ export class HttpClient {
                 req,
                 opts,
                 res,
-                `${req.method} ${endpoint} returned unexpected status ${expectedStatus}. expected: ${res.status}.`,
+                `${req.method} ${endpoint} returned unexpected status ${res.status}. expected: ${expectedStatus}.`,
               );
             }
           },
