@@ -20,8 +20,10 @@
     "fmt": "xo --fix && prettier --write {tsconfig,package}.json",
     "lint": "xo && prettier --check {tsconfig,package}.json && tools/update-examples-parcel-version.sh --check",
     "test": "jest",
+    "test:unit": "jest test/jest/unit/",
+    "test:examples": "jest test/examples/",
     "test:cy": "start-test 'parcel serve test/cypress/fixtures/index.html -p 4444' 4444 'cypress run'",
-    "coverage": "jest --coverage test/unit && yarn test:cy",
+    "coverage": "yarn test:unit --coverage && yarn test:cy",
     "doc": "typedoc --options docs/typedoc.json",
     "prepublishOnly": "yarn build"
   },
