@@ -189,9 +189,11 @@ export function dontCloneForAfterResponses(): BeforeRequestHook {
    * response doesn't propagate.
    */
   function fixedDecorateAndClone(response: Response) {
+    // Browsers throw error on `notNull = {}; new Response(notNull, {status: 204})`
+    const body = [101, 204, 205, 304].includes(response.status) ? null : response.body;
     // https://github.com/node-fetch/node-fetch/blob/ffef5e3c2322e8493dd75120b1123b01b106ab23/src/response.js#L87-L98
     // https://github.com/node-fetch/node-fetch/blob/ffef5e3c2322e8493dd75120b1123b01b106ab23/src/body.js#L240-L264
-    const newResponse = new globalThis.Response(response.body, response);
+    const newResponse = new globalThis.Response(body, response);
     // Replicate decorateResponse
     // https://github.com/sindresorhus/ky/blob/5f3c3158af5c7efbb6a1cfd9e5f16fc71dd26e36/source/core/Ky.ts#L214-L222
     newResponse.json = response.json;
