@@ -160,6 +160,11 @@ export class HttpClient {
   }
 }
 
+declare module 'ky' {
+  // Mark methods readonly too to prevent hooks from modifying `response`
+  export type Response = Readonly<globalThis.Response>;
+}
+
 /**
  * Workaround to fix `afterResponse` breaking >20MB file downloads.
  *
@@ -168,8 +173,11 @@ export class HttpClient {
  * consume data at the same time. This workaround uses beforeRequest hook to
  * skip ky's fetch call + afterResponse handling, and reimplements both.
  *
- * Side effect is that reading response.body in multiple afterResponse hooks
- * will throw an error.
+ * WARNING: Use caution if modifying response.json or response.body in hooks. In
+ * vanilla ky every hook receives its own clone of the response; with this
+ * workaround, the same response object is passed to all hooks, so changes
+ * propagate (somewhat mitigated by readonly fields on Response). In addition,
+ * response.body can only be read once.
  *
  * Related issues:
  * - https://github.com/node-fetch/node-fetch#custom-highwatermark
@@ -180,26 +188,6 @@ export class HttpClient {
  * TODO: remove if fixed by https://github.com/sindresorhus/ky/pull/356
  */
 export function dontCloneForAfterResponses(): BeforeRequestHook {
-  /**
-   * Replaces the default `this._decorateResponse(response.clone())`, but doesn't
-   * clone response.body.
-   *
-   * Note: `return response;` would avoid cloning body, but allows hooks to modify
-   * `response` in-place. Shallow cloning ensures consistent behaviour - modified
-   * response doesn't propagate.
-   */
-  function fixedDecorateAndClone(response: Response) {
-    // Browsers throw error on `notNull = {}; new Response(notNull, {status: 204})`
-    const body = [101, 204, 205, 304].includes(response.status) ? null : response.body;
-    // https://github.com/node-fetch/node-fetch/blob/ffef5e3c2322e8493dd75120b1123b01b106ab23/src/response.js#L87-L98
-    // https://github.com/node-fetch/node-fetch/blob/ffef5e3c2322e8493dd75120b1123b01b106ab23/src/body.js#L240-L264
-    const newResponse = new globalThis.Response(body, response);
-    // Replicate decorateResponse
-    // https://github.com/sindresorhus/ky/blob/5f3c3158af5c7efbb6a1cfd9e5f16fc71dd26e36/source/core/Ky.ts#L214-L222
-    newResponse.json = response.json;
-    return newResponse;
-  }
-
   return async (req, opts: NormalizedOptions & KyOptions) => {
     if (!opts.hooks?.afterResponse?.length) return;
 
@@ -209,7 +197,7 @@ export function dontCloneForAfterResponses(): BeforeRequestHook {
     let response = await opts.fetch!(req.clone());
     // https://github.com/sindresorhus/ky/blob/5f3c3158af5c7efbb6a1cfd9e5f16fc71dd26e36/source/core/Ky.ts#L112-L123
     for (const hook of afterResponse) {
-      const modifiedResponse = await hook(req, opts, fixedDecorateAndClone(response));
+      const modifiedResponse = await hook(req, opts, response);
       if (modifiedResponse instanceof globalThis.Response) {
         response = modifiedResponse;
       }
