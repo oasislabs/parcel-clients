@@ -1,4 +1,4 @@
-/// <reference path="../fixtures/types.d.ts" />
+/// <reference types="../fixtures/types" />
 /* eslint-disable promise/prefer-await-to-then */ // These `thens` aren't Promises.
 
 // @ts-check
