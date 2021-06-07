@@ -90,6 +90,19 @@ export type JobSpec = {
    * Files that do not exist will be silently skipped; the job will not fail.
    */
   outputDocuments?: OutputDocumentSpec[];
+
+  /**
+   * The (fractional) number of cpus requested to run the job. This is clamped by a per-worker
+   * maximum.
+   */
+  cpus?: number;
+
+  /**
+   * The amount of memory requested to run the job. This is clamped by a per-worker
+   * maximum. Memory limit (format: <number>[<unit>]). Number is a positive integer.
+   * Unit can be one of M or G. Minimum is 4M.
+   */
+  memory?: string;
 };
 
 export type JobStatus = {
