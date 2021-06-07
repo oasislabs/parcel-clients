@@ -9,6 +9,8 @@ import Parcel, {
   PublicJWK,
   PrivateJWK,
   RenewingTokenProviderParams,
+  AppId,
+  ClientId,
 } from '@oasislabs/parcel';
 
 // We define a console for the spawner with [SPAWNER] prefix and not as cluttered as the default
@@ -160,63 +162,103 @@ beforeAll(async () => {
   const spawnerIdentity = await parcel.getCurrentIdentity();
 
   // First app and acme-client.
-  acmeApp = await parcel.createApp(await getAppFixture(spawnerIdentity));
-  spawnerConsole.log(`Created acmeApp, id: ${acmeApp.id}, owner ${acmeApp.owner}`);
-  acmeServiceClient = await parcel.createClient(acmeApp.id, {
-    name: 'acme-service-client',
-    isScript: true,
-    redirectUris: [],
-    postLogoutRedirectUris: [],
-    canHoldSecrets: true,
-    publicKeys: [extractPubKey(acmeServiceClientPrivateKey)],
-  });
+  if (process.env.ACME_APP_ID) {
+    acmeApp = await parcel.getApp(process.env.ACME_APP_ID as AppId);
+    spawnerConsole.log(`Fetched acmeApp, id: ${acmeApp.id}, owner ${acmeApp.owner}`);
+  } else {
+    acmeApp = await parcel.createApp(await getAppFixture(spawnerIdentity));
+    spawnerConsole.log(`Created acmeApp, id: ${acmeApp.id}, owner ${acmeApp.owner}`);
+  }
+
+  if (process.env.ACME_SERVICE_CLIENT_ID) {
+    acmeServiceClient = await parcel.getClient(
+      acmeApp.id,
+      process.env.ACME_SERVICE_CLIENT_ID as ClientId,
+    );
+    spawnerConsole.log(`Fetched acmeServiceClient, client_id: ${acmeServiceClient.id}`);
+  } else {
+    acmeServiceClient = await parcel.createClient(acmeApp.id, {
+      name: 'acme-service-client',
+      isScript: true,
+      redirectUris: [],
+      postLogoutRedirectUris: [],
+      canHoldSecrets: true,
+      publicKeys: [extractPubKey(acmeServiceClientPrivateKey)],
+    });
+    spawnerConsole.log(`Created acmeServiceClient, client_id: ${acmeServiceClient.id}`);
+  }
+
   const parcelAcme = new Parcel({
     clientId: acmeServiceClient.id,
     privateKey: acmeServiceClientPrivateKey,
   } as RenewingTokenProviderParams);
   acmeIdentity = await parcelAcme.getCurrentIdentity();
-  spawnerConsole.log(
-    `Created acmeServiceClient, client_id: ${acmeServiceClient.id}, identity: ${acmeIdentity.id}`,
-  );
-  acmeFrontendClient = await parcel.createClient(acmeApp.id, {
-    name: 'acme-frontend-client',
-    isScript: false,
-    redirectUris: ['http://localhost:4050/callback'],
-    postLogoutRedirectUris: [],
-    canHoldSecrets: false,
-    publicKeys: [],
-  });
-  spawnerConsole.log(`Created acmeFrontendClient, client_id: ${acmeFrontendClient.id}`);
+  spawnerConsole.log(`Created Acme's Parcel instance, identity: ${acmeIdentity.id}`);
 
-  acmeBackendClient = await parcel.createClient(acmeApp.id, {
-    name: 'acme-backend-client',
-    isScript: false,
-    redirectUris: ['http://localhost:4050/callback'],
-    postLogoutRedirectUris: [],
-    canHoldSecrets: true,
-    publicKeys: [extractPubKey(acmeBackendClientPrivateKey)],
-  });
-  spawnerConsole.log(`Created acmeBackendClient, client_id: ${acmeBackendClient.id}`);
+  if (process.env.ACME_FRONTEND_CLIENT_ID) {
+    acmeFrontendClient = await parcel.getClient(
+      acmeApp.id,
+      process.env.ACME_FRONTEND_CLIENT_ID as ClientId,
+    );
+    spawnerConsole.log(`Fetched acmeFrontendClient, client_id: ${acmeFrontendClient.id}`);
+  } else {
+    acmeFrontendClient = await parcel.createClient(acmeApp.id, {
+      name: 'acme-frontend-client',
+      isScript: false,
+      redirectUris: ['http://localhost:4050/callback'],
+      postLogoutRedirectUris: [],
+      canHoldSecrets: false,
+      publicKeys: [],
+    });
+    spawnerConsole.log(`Created acmeFrontendClient, client_id: ${acmeFrontendClient.id}`);
+  }
+
+  if (process.env.ACME_BACKEND_CLIENT_ID) {
+    acmeBackendClient = await parcel.getClient(
+      acmeApp.id,
+      process.env.ACME_BACKEND_CLIENT_ID as ClientId,
+    );
+    spawnerConsole.log(`Fetched acmeBackendClient, client_id: ${acmeBackendClient.id}`);
+  } else {
+    acmeBackendClient = await parcel.createClient(acmeApp.id, {
+      name: 'acme-backend-client',
+      isScript: false,
+      redirectUris: ['http://localhost:4050/callback'],
+      postLogoutRedirectUris: [],
+      canHoldSecrets: true,
+      publicKeys: [extractPubKey(acmeBackendClientPrivateKey)],
+    });
+    spawnerConsole.log(`Created acmeBackendClient, client_id: ${acmeBackendClient.id}`);
+  }
 
   // Second app and bob-client.
   bobApp = await parcel.createApp(await getAppFixture(spawnerIdentity));
   spawnerConsole.log(`Created bobApp, id: ${bobApp.id}, owner ${bobApp.owner}`);
-  bobServiceClient = await parcel.createClient(bobApp.id, {
-    name: 'bob-service-client',
-    isScript: true,
-    redirectUris: [],
-    postLogoutRedirectUris: [],
-    canHoldSecrets: true,
-    publicKeys: [extractPubKey(bobServiceClientPrivateKey)],
-  });
+
+  if (process.env.BOB_SERVICE_CLIENT_ID) {
+    bobServiceClient = await parcel.getClient(
+      bobApp.id,
+      process.env.BOB_SERVICE_CLIENT_ID as ClientId,
+    );
+    spawnerConsole.log(`Fetched bobServiceClient, client_id: ${bobServiceClient.id}`);
+  } else {
+    bobServiceClient = await parcel.createClient(bobApp.id, {
+      name: 'bob-service-client',
+      isScript: true,
+      redirectUris: [],
+      postLogoutRedirectUris: [],
+      canHoldSecrets: true,
+      publicKeys: [extractPubKey(bobServiceClientPrivateKey)],
+    });
+    spawnerConsole.log(`Created bobServiceClient, client_id: ${bobServiceClient.id}`);
+  }
+
   const parcelBob = new Parcel({
     clientId: bobServiceClient.id,
     privateKey: bobServiceClientPrivateKey,
   } as RenewingTokenProviderParams);
   bobIdentity = await parcelBob.getCurrentIdentity();
-  spawnerConsole.log(
-    `Created bobServiceClient, client_id: ${bobServiceClient.id}, identity: ${bobIdentity.id}`,
-  );
+  spawnerConsole.log(`Created Bob's Parcel instance, identity: ${bobIdentity.id}`);
 }, 15 * 1000);
 
 it(

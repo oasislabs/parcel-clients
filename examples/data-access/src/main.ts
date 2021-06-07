@@ -95,4 +95,27 @@ while (true) {
   }
 }
 
+// Print Bob's document access history.
+// #region snippet-document-history
+console.log(`Access log for document ${bobDocument.id}:`);
+for (const event of (await bobDocument.history()).results) {
+  console.log(`${event.accessor} accessed this document on ${event.createdAt.toISOString()}`);
+}
+
+// #endregion snippet-document-history
+
+// Perform another access and print the access history.
+// #region snippet-document-history-again
+console.log(`Downloading document ${bobDocument.id} again...`);
+download = parcel.downloadDocument(bobDocument.id);
+saver = fs.createWriteStream(`./bob_data_by_acme_again`);
+await download.pipeTo(saver);
+
+console.log(`Access log for document ${bobDocument.id}:`);
+for (const event of (await bobDocument.history()).results) {
+  console.log(`${event.accessor} accessed this document on ${event.createdAt.toISOString()}`);
+}
+
+// #endregion snippet-document-history-again
+
 console.log();
