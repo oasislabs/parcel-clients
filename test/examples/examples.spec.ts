@@ -272,25 +272,7 @@ it(
 it(
   'data-access',
   async () => {
-    await runExamplePromisified('data-access', (data) => {
-      // Forward example's output to stdout.
-      process.stdout.write(data.toString());
-
-      // Wait for the example until the grant permission is required.
-      if (data.includes("Acme was not able to access Bob's data (this was expected):")) {
-        spawnerConsole.log(
-          `Assigning grant to ${acmeIdentity.id} for documents with tag ${acmeApp.id}`,
-        );
-        const parcelBob = new Parcel({
-          clientId: bobServiceClient.id,
-          privateKey: bobServiceClientPrivateKey,
-        } as RenewingTokenProviderParams);
-        void parcelBob.createGrant({
-          grantee: acmeIdentity.id,
-          condition: { 'document.tags': { $contains: `to-app-${acmeApp.id}` } },
-        });
-      }
-    });
+    await runExamplePromisified('data-access');
   },
   20 * 1000,
 );
