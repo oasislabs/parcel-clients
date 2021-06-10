@@ -14,6 +14,8 @@ import type { AppId, AppUpdateParams, PODApp } from '@oasislabs/parcel/app';
 import type {
   ClientCreateParams,
   ClientId,
+  PODFrontendClient,
+  ClientType,
   ClientUpdateParams,
   PODClient,
 } from '@oasislabs/parcel/client';
@@ -69,15 +71,14 @@ describe('Parcel', () => {
       new Ajv({
         formats: {
           'RGB hex': /^#[\da-f]{6}$/i,
-          binary: (b: any) => Buffer.isBuffer(b) || b.constructor.name === 'Uint8Array',
-          byte: (b64s: string) => /^(?=(.{4})*$)[-A-Za-z\d/]*={0,2}$/.test(b64s),
-          int32: Number.isInteger,
-          int64: Number.isInteger,
           path: /[^\0]+/,
         },
       }),
     );
-
+    ajv.addFormat('byte', {
+      type: 'string',
+      validate: (b64s: string) => /^(?=(.{4})*$)[-A-Za-z\d/]*={0,2}$/.test(b64s),
+    });
     ajv.addKeyword({
       keyword: 'example',
     });
@@ -135,7 +136,11 @@ describe('Parcel', () => {
 
   type HttpVerb = 'GET' | 'POST' | 'PUT' | 'DELETE';
 
-  function getRequestSchema(method: HttpVerb, endpoint: string): JsonObject {
+  function getRequestSchema(
+    method: HttpVerb,
+    endpoint: string,
+    allowAdditional?: boolean,
+  ): JsonObject {
     const requestSchema = openapiSchema.paths[endpoint][method.toLowerCase()];
     let schema = clone(requestSchema.requestBody.content['application/json'].schema);
     if (schema.allOf) schema = mergeAllOf(schema.allOf);
@@ -147,7 +152,7 @@ describe('Parcel', () => {
       }
     }
 
-    schema.additionalProperties = false;
+    schema.additionalProperties = allowAdditional ?? false;
     ajv.validateSchema(schema) as boolean;
     expect(ajv.errors).toBeNull();
     return schema;
@@ -183,6 +188,7 @@ describe('Parcel', () => {
     endpoint: string,
     statusCode: number,
     contentType?: string,
+    allowAdditional?: boolean,
   ): any {
     const responses = openapiSchema.paths[endpoint][method.toLowerCase()].responses[statusCode];
     if (!responses.content) return undefined;
@@ -195,7 +201,7 @@ describe('Parcel', () => {
     }
 
     if (schema.allOf) schema = mergeAllOf(schema.allOf);
-    schema.additionalProperties = false;
+    schema.additionalProperties = allowAdditional ?? false;
     ajv.validateSchema(schema) as boolean;
     expect(ajv.errors).toBeNull();
     return schema;
@@ -304,33 +310,38 @@ describe('Parcel', () => {
     return podApp;
   }
 
-  function createPodClient(options?: { appId: AppId; isScript?: boolean }): PODClient {
-    const podClient = {
+  function createPodClient(options?: { appId: AppId; isService?: boolean }): PODClient {
+    const baseClient = {
       ...createPodModel(),
       creator: createIdentityId(),
       appId: options?.appId ?? createPodApp().id,
       name: 'test client',
-      redirectUris: options?.isScript ? [] : ['https://example.com/redirect'],
-      postLogoutRedirectUris: options?.isScript ? [] : ['https://example.com/post-logout-redirect'],
-      publicKeys: options?.isScript
-        ? [
-            {
-              use: 'sig',
-              kty: 'EC',
-              kid: 'J07JL44uZsnGWFt87Vqs5HLO7B1RM7zd5XtWJwS7bpw=',
-              crv: 'P-256',
-              alg: 'ES256',
-              x: 'L2uZsV50Qz4N227FeNARVi0IkKdgMKi8TqoBnhYp60s',
-              y: 'E7ZbVjSKjBuBSLWARvFZ_lmT_Q-ifUQBB6QriBhhN-w',
-            } as const,
-          ]
-        : [],
-      canHoldSecrets: Boolean(options?.isScript),
-      canActOnBehalfOfUsers: false,
-      isScript: Boolean(options?.isScript),
     };
-    expect(podClient).toMatchSchema('Client');
-    return podClient;
+    if (options?.isService) {
+      return {
+        ...baseClient,
+        type: 'service' as ClientType.Service,
+        publicKeys: [
+          {
+            use: 'sig',
+            kty: 'EC',
+            kid: 'J07JL44uZsnGWFt87Vqs5HLO7B1RM7zd5XtWJwS7bpw=',
+            crv: 'P-256',
+            alg: 'ES256',
+            x: 'L2uZsV50Qz4N227FeNARVi0IkKdgMKi8TqoBnhYp60s',
+            y: 'E7ZbVjSKjBuBSLWARvFZ_lmT_Q-ifUQBB6QriBhhN-w',
+          } as const,
+        ],
+      };
+    }
+
+    return {
+      ...baseClient,
+      type: 'frontend' as ClientType.Frontend,
+      redirectUris: ['https://example.com/redirect'],
+      postLogoutRedirectUris: ['https://example.com/post-logout-redirect'],
+      canActOnBehalfOfUsers: false,
+    };
   }
 
   function createPodGrant(): PODGrant {
@@ -1324,15 +1335,26 @@ describe('Parcel', () => {
 
       nockIt('create', async (scope) => {
         const createParams: ClientCreateParams = (() => {
-          const { id, createdAt, creator, appId, canActOnBehalfOfUsers, ...createParams } =
-            clone(fixtureClient);
+          const { id, createdAt, creator, appId, ...createParams } = clone(fixtureClient);
           return createParams;
         })();
 
-        expect(createParams).toMatchSchema(getRequestSchema('POST', '/apps/{appId}/clients'));
+        expect(createParams).toMatchSchema(
+          getRequestSchema(
+            'POST',
+            '/apps/{appId}/clients',
+            true, // `allowAdditional` (anyOf)
+          ),
+        );
         scope.post(`/apps/${fixtureApp.id}/clients`, createParams).reply(201, fixtureClient);
         expect(fixtureClient).toMatchSchema(
-          getResponseSchema('POST', '/apps/{appId}/clients', 201),
+          getResponseSchema(
+            'POST',
+            '/apps/{appId}/clients',
+            201,
+            undefined,
+            true, // `allowAdditional` (anyOf)
+          ),
         );
         const client = await parcel.createClient(fixtureApp.id as AppId, createParams);
         expect(client).toMatchPOD(fixtureClient);
@@ -1340,7 +1362,13 @@ describe('Parcel', () => {
 
       nockIt('get', async (scope) => {
         expect(fixtureClient).toMatchSchema(
-          getResponseSchema('GET', '/apps/{appId}/clients/{clientId}', 200),
+          getResponseSchema(
+            'GET',
+            '/apps/{appId}/clients/{clientId}',
+            200,
+            undefined,
+            true, // `allowAdditional` (anyOf)
+          ),
         );
         scope.get(`/apps/${fixtureApp.id}/clients/${fixtureClient.id}`).reply(200, fixtureClient);
         const client = await parcel.getClient(fixtureApp.id as AppId, fixtureClient.id as ClientId);
@@ -1414,10 +1442,14 @@ describe('Parcel', () => {
 
         beforeEach(() => {
           update = {
-            redirectUris: [...fixtureClient.redirectUris, 'https://example.com/new-redirect'],
+            type: (fixtureClient as PODFrontendClient).type,
+            redirectUris: [
+              ...(fixtureClient as PODFrontendClient).redirectUris,
+              'https://example.com/new-redirect',
+            ],
             postLogoutRedirectUris: [],
-            publicKeys: fixtureClient.publicKeys,
             name: fixtureClient.name,
+            canActOnBehalfOfUsers: false,
           };
           updatedClient = Object.assign(clone(fixtureClient), update);
         });

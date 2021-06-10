@@ -1,4 +1,4 @@
-import type { Except, Opaque } from 'type-fest';
+import type { Opaque } from 'type-fest';
 
 import type { AppId } from './app.js';
 import { endpointForApp } from './app.js';
@@ -9,59 +9,135 @@ import type { PublicJWK } from './token.js';
 
 export type ClientId = Opaque<ResourceId, 'ClientId'>;
 
-export type PODClient = Readonly<
+export type PODBaseClient = Readonly<
   PODModel & {
     creator: ResourceId;
     appId: ResourceId;
     name: string;
-    redirectUris: string[];
-    postLogoutRedirectUris: string[];
-    publicKeys: PublicJWK[];
-    canHoldSecrets: boolean;
-    canActOnBehalfOfUsers: boolean;
-    isScript: boolean;
   }
 >;
+export type PODFrontendClient = PODBaseClient &
+  Readonly<{
+    type: ClientType.Frontend;
+    redirectUris: string[];
+    postLogoutRedirectUris: string[];
+    canActOnBehalfOfUsers: boolean;
+  }>;
+export type PODBackendClient = PODBaseClient &
+  Readonly<{
+    type: ClientType.Backend;
+    publicKeys: PublicJWK[];
+  }>;
+export type PODServiceClient = PODBaseClient &
+  Readonly<{
+    type: ClientType.Service;
+    publicKeys: PublicJWK[];
+  }>;
+export type PODClient = PODFrontendClient | PODBackendClient | PODServiceClient;
 
-export class Client implements Model {
+export enum ClientType {
+  Frontend = 'frontend',
+  Backend = 'backend',
+  Service = 'service',
+}
+
+class BaseClient implements Model {
   public readonly id: ClientId;
   public readonly createdAt: Date;
   public readonly creator: IdentityId;
   public readonly appId: AppId;
   public readonly name: string;
-  public readonly redirectUris: string[];
-  public readonly postLogoutRedirectUris: string[];
-  public readonly publicKeys: PublicJWK[];
-  public readonly canHoldSecrets: boolean;
-  public readonly canActOnBehalfOfUsers: boolean;
-  public readonly isScript: boolean;
 
   #client: HttpClient;
 
-  public constructor(client: HttpClient, pod: PODClient) {
+  public constructor(client: HttpClient, pod: PODBaseClient) {
     this.#client = client;
     this.id = pod.id as ClientId;
     this.createdAt = new Date(pod.createdAt);
     this.creator = pod.creator as IdentityId;
     this.appId = pod.appId as AppId;
     this.name = pod.name;
-    this.redirectUris = pod.redirectUris;
-    this.postLogoutRedirectUris = pod.postLogoutRedirectUris;
-    this.publicKeys = pod.publicKeys;
-    this.canHoldSecrets = pod.canHoldSecrets;
-    this.canActOnBehalfOfUsers = pod.canActOnBehalfOfUsers;
-    this.isScript = pod.isScript;
-  }
-
-  public async update(params: ClientUpdateParams): Promise<Client> {
-    Object.assign(this, await ClientImpl.update(this.#client, this.appId, this.id, params));
-    return this;
   }
 
   public async delete(): Promise<void> {
     return this.#client.delete(endpointForId(this.appId, this.id));
   }
+
+  public isFrontend(): this is FrontendClient {
+    return this.type === ClientType.Frontend;
+  }
+
+  public isBackend(): this is BackendClient {
+    return this.type === ClientType.Backend;
+  }
+
+  public isService(): this is ServiceClient {
+    return this.type === ClientType.Service;
+  }
 }
+
+function makeClient(
+  client: HttpClient,
+  pod: PODFrontendClient | PODBackendClient | PODServiceClient,
+): Client {
+  if (pod.type === ClientType.Frontend) return new FrontendClient(client, pod);
+  if (pod.type === ClientType.Backend) return new BackendClient(client, pod);
+  if (pod.type === ClientType.Service) return new ServiceClient(client, pod);
+  throw new Error(`unrecognized client type`);
+}
+
+export class FrontendClient extends BaseClient {
+  public readonly type = ClientType.Frontend;
+  public readonly redirectUris: string[];
+  public readonly postLogoutRedirectUris: string[];
+  public readonly canActOnBehalfOfUsers: boolean;
+
+  public constructor(client: HttpClient, pod: PODFrontendClient) {
+    super(client, pod);
+    this.redirectUris = pod.redirectUris;
+    this.postLogoutRedirectUris = pod.postLogoutRedirectUris;
+    this.canActOnBehalfOfUsers = pod.canActOnBehalfOfUsers;
+  }
+}
+
+type FrontendClientConfig = {
+  type: ClientType.Frontend;
+  redirectUris: string[];
+  postLogoutRedirectUris: string[];
+  canActOnBehalfOfUsers: boolean;
+};
+
+export class BackendClient extends BaseClient {
+  public readonly type = ClientType.Backend;
+  public readonly publicKeys: PublicJWK[];
+
+  public constructor(client: HttpClient, pod: PODBackendClient) {
+    super(client, pod);
+    this.publicKeys = pod.publicKeys;
+  }
+}
+
+type BackendClientConfig = {
+  type: ClientType.Backend;
+  publicKeys: PublicJWK[];
+};
+
+export class ServiceClient extends BaseClient {
+  public readonly type = ClientType.Service;
+  public readonly publicKeys: PublicJWK[];
+
+  public constructor(client: HttpClient, pod: PODServiceClient) {
+    super(client, pod);
+    this.publicKeys = pod.publicKeys!;
+  }
+}
+
+type ServiceClientConfig = {
+  type: ClientType.Service;
+  publicKeys: PublicJWK[];
+};
+
+export type Client = FrontendClient | BackendClient | ServiceClient;
 
 export namespace ClientImpl {
   export async function create(
@@ -70,12 +146,12 @@ export namespace ClientImpl {
     params: ClientCreateParams,
   ): Promise<Client> {
     const podClient = await client.create<PODClient>(endpointForCollection(appId), params);
-    return new Client(client, podClient);
+    return makeClient(client, podClient);
   }
 
   export async function get(client: HttpClient, appId: AppId, clientId: ClientId): Promise<Client> {
     const podClient = await client.get<PODClient>(endpointForId(appId, clientId));
-    return new Client(client, podClient);
+    return makeClient(client, podClient);
   }
 
   export async function list(
@@ -84,7 +160,7 @@ export namespace ClientImpl {
     filter?: ListClientsFilter & PageParams,
   ): Promise<Page<Client>> {
     const podPage = await client.get<Page<PODClient>>(endpointForCollection(appId), filter);
-    const results = podPage.results.map((podClient) => new Client(client, podClient));
+    const results = podPage.results.map((podClient) => makeClient(client, podClient));
     return {
       results,
       nextPageToken: podPage.nextPageToken,
@@ -98,7 +174,7 @@ export namespace ClientImpl {
     params: ClientUpdateParams,
   ): Promise<Client> {
     const podClient = await client.update<PODClient>(endpointForId(appId, clientId), params);
-    return new Client(client, podClient);
+    return makeClient(client, podClient);
   }
 
   export async function delete_(
@@ -114,11 +190,23 @@ const endpointForCollection = (appId: AppId) => `${endpointForApp(appId)}/client
 const endpointForId = (appId: AppId, clientId: ClientId) =>
   `${endpointForCollection(appId)}/${clientId}`;
 
-export type ClientCreateParams = WritableExcluding<
-  Client,
-  'creator' | 'appId' | 'canActOnBehalfOfUsers'
->;
-export type ClientUpdateParams = Except<ClientCreateParams, 'canHoldSecrets' | 'isScript'>;
+type BaseClientCreateParams = WritableExcluding<BaseClient, 'creator' | 'appId'>;
+export type FrontendClientCreateParams = BaseClientCreateParams & FrontendClientConfig;
+export type BackendClientCreateParams = BaseClientCreateParams & BackendClientConfig;
+export type ServiceClientCreateParams = BaseClientCreateParams & ServiceClientConfig;
+export type ClientCreateParams =
+  | FrontendClientCreateParams
+  | BackendClientCreateParams
+  | ServiceClientConfig;
+
+type BaseClientUpdateParams = BaseClientCreateParams;
+export type FrontendClientUpdateParams = FrontendClientUpdateParams & FrontendClientConfig;
+export type BackendClientUpdateParams = BaseClientUpdateParams & BackendClientConfig;
+export type ServiceClientUpdateParams = BaseClientUpdateParams & ServiceClientConfig;
+export type ClientUpdateParams =
+  | FrontendClientUpdateParams
+  | BackendClientUpdateParams
+  | ServiceClientUpdateParams;
 
 export type ListClientsFilter = Partial<{
   /** Only return clients created by the provided identity. */

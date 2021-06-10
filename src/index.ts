@@ -7,14 +7,24 @@
 import type { App, AppCreateParams, AppId, AppUpdateParams, ListAppsFilter } from './app.js';
 import { AppImpl } from './app.js';
 import type {
+  BackendClient,
+  BackendClientCreateParams,
+  BackendClientUpdateParams,
   Client,
   ClientCreateParams,
   ClientId,
+  ClientType,
   ClientUpdateParams,
+  FrontendClient,
+  FrontendClientCreateParams,
+  FrontendClientUpdateParams,
   ListClientsFilter,
+  ServiceClient,
+  ServiceClientCreateParams,
+  ServiceClientUpdateParams,
 } from './client.js';
+import { ClientImpl } from './client.js';
 import type { Job, JobId, JobSpec, JobStatus, JobStatusReport } from './compute.js';
-import type { Condition } from './condition.js';
 import {
   ComputeImpl,
   InputDocumentSpec,
@@ -23,15 +33,15 @@ import {
   OutputDocument,
   OutputDocumentSpec,
 } from './compute.js';
-import { ClientImpl } from './client.js';
+import type { Condition } from './condition.js';
 import type {
   AccessEvent,
   Document,
   DocumentId,
+  DocumentSearchParams,
   DocumentUpdateParams,
   DocumentUploadParams,
   ListAccessLogFilter,
-  DocumentSearchParams,
   Storable,
   Upload,
 } from './document.js';
@@ -70,17 +80,24 @@ export {
   AppCreateParams,
   AppId,
   AppUpdateParams,
+  BackendClient,
+  BackendClientCreateParams,
+  BackendClientUpdateParams,
   Capabilities,
   Client,
   ClientCreateParams,
   ClientCredentials,
   ClientId,
+  ClientType,
   Condition,
   Document,
   DocumentId,
   DocumentUpdateParams,
   DocumentUploadParams,
   Download,
+  FrontendClient,
+  FrontendClientCreateParams,
+  FrontendClientUpdateParams,
   Grant,
   GrantCreateParams,
   GrantId,
@@ -110,6 +127,9 @@ export {
   RenewingTokenProviderParams,
   Scope,
   SelfIssuedTokenProviderParams,
+  ServiceClient,
+  ServiceClientCreateParams,
+  ServiceClientUpdateParams,
   Storable,
   TokenSource,
 };
