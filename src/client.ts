@@ -14,6 +14,7 @@ export type PODBaseClient = Readonly<
     creator: ResourceId;
     appId: ResourceId;
     name: string;
+    type: ClientType;
   }
 >;
 export type PODFrontendClient = PODBaseClient &
@@ -26,6 +27,8 @@ export type PODFrontendClient = PODBaseClient &
 export type PODBackendClient = PODBaseClient &
   Readonly<{
     type: ClientType.Backend;
+    redirectUris: string[];
+    postLogoutRedirectUris: string[];
     publicKeys: PublicJWK[];
   }>;
 export type PODServiceClient = PODBaseClient &
@@ -47,6 +50,7 @@ class BaseClient implements Model {
   public readonly creator: IdentityId;
   public readonly appId: AppId;
   public readonly name: string;
+  public readonly type: ClientType;
 
   #client: HttpClient;
 
@@ -57,6 +61,7 @@ class BaseClient implements Model {
     this.creator = pod.creator as IdentityId;
     this.appId = pod.appId as AppId;
     this.name = pod.name;
+    this.type = pod.type;
   }
 
   public async delete(): Promise<void> {
@@ -109,16 +114,22 @@ type FrontendClientConfig = {
 
 export class BackendClient extends BaseClient {
   public readonly type = ClientType.Backend;
+  public readonly redirectUris: string[];
+  public readonly postLogoutRedirectUris: string[];
   public readonly publicKeys: PublicJWK[];
 
   public constructor(client: HttpClient, pod: PODBackendClient) {
     super(client, pod);
+    this.redirectUris = pod.redirectUris;
+    this.postLogoutRedirectUris = pod.postLogoutRedirectUris;
     this.publicKeys = pod.publicKeys;
   }
 }
 
 type BackendClientConfig = {
   type: ClientType.Backend;
+  redirectUris: string[];
+  postLogoutRedirectUris: string[];
   publicKeys: PublicJWK[];
 };
 
@@ -200,7 +211,7 @@ export type ClientCreateParams =
   | ServiceClientConfig;
 
 type BaseClientUpdateParams = BaseClientCreateParams;
-export type FrontendClientUpdateParams = FrontendClientUpdateParams & FrontendClientConfig;
+export type FrontendClientUpdateParams = BaseClientUpdateParams & FrontendClientConfig;
 export type BackendClientUpdateParams = BaseClientUpdateParams & BackendClientConfig;
 export type ServiceClientUpdateParams = BaseClientUpdateParams & ServiceClientConfig;
 export type ClientUpdateParams =

@@ -7,23 +7,19 @@
 import type { App, AppCreateParams, AppId, AppUpdateParams, ListAppsFilter } from './app.js';
 import { AppImpl } from './app.js';
 import type {
-  BackendClient,
   BackendClientCreateParams,
   BackendClientUpdateParams,
   Client,
   ClientCreateParams,
   ClientId,
-  ClientType,
   ClientUpdateParams,
-  FrontendClient,
   FrontendClientCreateParams,
   FrontendClientUpdateParams,
   ListClientsFilter,
-  ServiceClient,
   ServiceClientCreateParams,
   ServiceClientUpdateParams,
 } from './client.js';
-import { ClientImpl } from './client.js';
+import { BackendClient, ClientImpl, ClientType, FrontendClient, ServiceClient } from './client.js';
 import type { Job, JobId, JobSpec, JobStatus, JobStatusReport } from './compute.js';
 import {
   ComputeImpl,
