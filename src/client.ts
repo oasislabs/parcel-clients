@@ -22,7 +22,6 @@ export type PODFrontendClient = PODBaseClient &
     type: ClientType.Frontend;
     redirectUris: string[];
     postLogoutRedirectUris: string[];
-    canActOnBehalfOfUsers: boolean;
   }>;
 export type PODBackendClient = PODBaseClient &
   Readonly<{
@@ -95,13 +94,11 @@ export class FrontendClient extends BaseClient {
   public readonly type = ClientType.Frontend;
   public readonly redirectUris: string[];
   public readonly postLogoutRedirectUris: string[];
-  public readonly canActOnBehalfOfUsers: boolean;
 
   public constructor(client: HttpClient, pod: PODFrontendClient) {
     super(client, pod);
     this.redirectUris = pod.redirectUris;
     this.postLogoutRedirectUris = pod.postLogoutRedirectUris;
-    this.canActOnBehalfOfUsers = pod.canActOnBehalfOfUsers;
   }
 }
 
@@ -109,7 +106,6 @@ type FrontendClientConfig = {
   type: ClientType.Frontend;
   redirectUris: string[];
   postLogoutRedirectUris: string[];
-  canActOnBehalfOfUsers: boolean;
 };
 
 export class BackendClient extends BaseClient {

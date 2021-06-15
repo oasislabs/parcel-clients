@@ -340,7 +340,6 @@ describe('Parcel', () => {
       type: 'frontend' as ClientType.Frontend,
       redirectUris: ['https://example.com/redirect'],
       postLogoutRedirectUris: ['https://example.com/post-logout-redirect'],
-      canActOnBehalfOfUsers: false,
     };
   }
 
@@ -1449,7 +1448,6 @@ describe('Parcel', () => {
             ],
             postLogoutRedirectUris: [],
             name: fixtureClient.name,
-            canActOnBehalfOfUsers: false,
           };
           updatedClient = Object.assign(clone(fixtureClient), update);
         });
