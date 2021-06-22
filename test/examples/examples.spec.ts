@@ -268,6 +268,14 @@ it(
   },
   10 * 1000,
 );
+// Uploading and downloading larger files takes some time.
+it(
+  'data-upload-stream',
+  async () => {
+    await runExamplePromisified('data-upload-stream');
+  },
+  60 * 1000,
+);
 
 it(
   'data-access',
