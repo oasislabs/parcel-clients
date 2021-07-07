@@ -204,7 +204,7 @@ export type ServiceClientCreateParams = BaseClientCreateParams & ServiceClientCo
 export type ClientCreateParams =
   | FrontendClientCreateParams
   | BackendClientCreateParams
-  | ServiceClientConfig;
+  | ServiceClientCreateParams;
 
 type BaseClientUpdateParams = BaseClientCreateParams;
 export type FrontendClientUpdateParams = BaseClientUpdateParams & FrontendClientConfig;

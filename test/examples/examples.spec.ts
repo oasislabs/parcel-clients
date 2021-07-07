@@ -3,14 +3,15 @@ import { dirname, join } from 'path';
 import { CustomConsole, LogType, LogMessage } from '@jest/console';
 import Parcel, {
   App,
-  Client,
   AppCreateParams,
-  Identity,
-  PublicJWK,
-  PrivateJWK,
-  RenewingTokenProviderParams,
   AppId,
+  Client,
   ClientId,
+  ClientType,
+  Identity,
+  PrivateJWK,
+  PublicJWK,
+  RenewingTokenProviderParams,
 } from '@oasislabs/parcel';
 
 // We define a console for the spawner with [SPAWNER] prefix and not as cluttered as the default
@@ -28,6 +29,11 @@ const npxPath = join(dirname(process.execPath), 'npx');
 
 if (!process.env.PARCEL_API_URL || !process.env.PARCEL_AUTH_URL) {
   throw new Error('PARCEL_API_URL and PARCEL_AUTH_URL env variables must be defined. Aborting.');
+}
+if (!process.env.PARCEL_STORAGE_URL) {
+  const apiUrl = new URL(process.env.PARCEL_API_URL);
+  const storageHost = apiUrl.host.replace('api.', 'storage.');
+  process.env.PARCEL_STORAGE_URL = `${apiUrl.protocol}//${storageHost}/v1/parcel`;
 }
 
 // Test_identity_1.
@@ -179,10 +185,7 @@ beforeAll(async () => {
   } else {
     acmeServiceClient = await parcel.createClient(acmeApp.id, {
       name: 'acme-service-client',
-      isScript: true,
-      redirectUris: [],
-      postLogoutRedirectUris: [],
-      canHoldSecrets: true,
+      type: ClientType.Service,
       publicKeys: [extractPubKey(acmeServiceClientPrivateKey)],
     });
     spawnerConsole.log(`Created acmeServiceClient, client_id: ${acmeServiceClient.id}`);
@@ -204,11 +207,9 @@ beforeAll(async () => {
   } else {
     acmeFrontendClient = await parcel.createClient(acmeApp.id, {
       name: 'acme-frontend-client',
-      isScript: false,
+      type: ClientType.Frontend,
       redirectUris: ['http://localhost:4050/callback'],
       postLogoutRedirectUris: [],
-      canHoldSecrets: false,
-      publicKeys: [],
     });
     spawnerConsole.log(`Created acmeFrontendClient, client_id: ${acmeFrontendClient.id}`);
   }
@@ -222,10 +223,9 @@ beforeAll(async () => {
   } else {
     acmeBackendClient = await parcel.createClient(acmeApp.id, {
       name: 'acme-backend-client',
-      isScript: false,
+      type: ClientType.Backend,
       redirectUris: ['http://localhost:4050/callback'],
       postLogoutRedirectUris: [],
-      canHoldSecrets: true,
       publicKeys: [extractPubKey(acmeBackendClientPrivateKey)],
     });
     spawnerConsole.log(`Created acmeBackendClient, client_id: ${acmeBackendClient.id}`);
@@ -244,10 +244,7 @@ beforeAll(async () => {
   } else {
     bobServiceClient = await parcel.createClient(bobApp.id, {
       name: 'bob-service-client',
-      isScript: true,
-      redirectUris: [],
-      postLogoutRedirectUris: [],
-      canHoldSecrets: true,
+      type: ClientType.Service,
       publicKeys: [extractPubKey(bobServiceClientPrivateKey)],
     });
     spawnerConsole.log(`Created bobServiceClient, client_id: ${bobServiceClient.id}`);
