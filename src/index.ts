@@ -151,6 +151,7 @@ export class Parcel {
     const tokenProvider = TokenProvider.fromSource(tokenSource);
     this.client = new HttpClient(tokenProvider, {
       apiUrl: config?.apiUrl,
+      storageUrl: config?.storageUrl,
       httpClientConfig: config?.httpClientConfig,
     });
   }

@@ -7,15 +7,19 @@ import ky from 'ky';
 import { paramCase } from 'param-case';
 import type { Readable, Writable } from 'stream';
 
+import type { PODDocument } from './document';
 import type { JsonSerializable } from './model.js';
 import type { TokenProvider } from './token.js';
 import { ReadableStreamPF } from './polyfill.js';
 
 const DEFAULT_API_URL =
   globalThis?.process?.env?.PARCEL_API_URL ?? 'https://api.oasislabs.com/parcel/v1';
+const DEFAULT_STORAGE_URL =
+  globalThis?.process?.env?.PARCEL_STORAGE_URL ?? 'https://storage.oasislabs.com/v1/parcel';
 
 export type Config = Partial<{
   apiUrl: string;
+  storageUrl: string;
   httpClientConfig: KyOptions;
 }>;
 
@@ -28,11 +32,13 @@ const EXPECTED_RESPONSE_CODES = new Map([
 
 export class HttpClient {
   public readonly apiUrl: string;
+  public readonly storageUrl: string;
 
   private readonly apiKy: typeof ky;
 
   public constructor(private readonly tokenProvider: TokenProvider, config?: Config) {
     this.apiUrl = config?.apiUrl?.replace(/\/$/, '') ?? DEFAULT_API_URL;
+    this.storageUrl = config?.storageUrl?.replace(/\/$/, '') ?? DEFAULT_STORAGE_URL;
     this.apiKy = ky.create({
       ...config?.httpClientConfig,
 
@@ -58,7 +64,7 @@ export class HttpClient {
             if (
               res.redirected &&
               (res.status === 401 || res.status === 403) &&
-              res.url.startsWith(this.apiUrl)
+              (res.url.startsWith(this.apiUrl) || res.url.startsWith(this.storageUrl))
             ) {
               return this.apiKy(res.url, {
                 method: req.method,
@@ -121,6 +127,13 @@ export class HttpClient {
     requestOptions?: KyOptions,
   ): Promise<T> {
     return this.post(endpoint, data, requestOptions);
+  }
+
+  public async upload(data: FormData, requestOptions?: KyOptions): Promise<PODDocument> {
+    return this.post(this.storageUrl, data, {
+      prefixUrl: '',
+      ...requestOptions,
+    });
   }
 
   public async post<T>(
@@ -253,7 +266,7 @@ export class Download implements AsyncIterable<Uint8Array> {
     /* istanbul ignore else: tested using Cypress */
     if ((body as any).getReader === undefined) {
       // https://github.com/node-fetch/node-fetch/issues/930
-      const bodyReadable = body as any as Readable;
+      const bodyReadable = (body as any) as Readable;
       yield* bodyReadable;
     } else {
       const rdr = body.getReader();

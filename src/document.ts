@@ -315,7 +315,7 @@ export class Upload extends EventEmitter {
     appendPart('data', data, 'application/octet-stream', (data as any).length);
 
     client
-      .create<PODDocument>(DOCUMENTS_EP, form, {
+      .upload(form, {
         headers: 'getHeaders' in form ? /* node */ form.getHeaders() : undefined,
         signal: this.abortController.signal,
         timeout: false,
