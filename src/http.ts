@@ -38,7 +38,20 @@ export class HttpClient {
 
   public constructor(private readonly tokenProvider: TokenProvider, config?: Config) {
     this.apiUrl = config?.apiUrl?.replace(/\/$/, '') ?? DEFAULT_API_URL;
-    this.storageUrl = config?.storageUrl?.replace(/\/$/, '') ?? DEFAULT_STORAGE_URL;
+    if (config?.storageUrl) {
+      this.storageUrl = config.storageUrl;
+    } else if (config?.apiUrl) {
+      const apiUrl = new URL(this.apiUrl);
+      if (/local/g.test(apiUrl.host) || /^parcel-(run|gate)way/g.test(apiUrl.host)) {
+        this.storageUrl = `${this.apiUrl}/documents`; // Intranet can use the endpoint directly.
+      } else {
+        const storageHost = `storage.${apiUrl.host.replace(/^\w+\./, '')}`;
+        this.storageUrl = `${apiUrl.protocol}//${storageHost}/v1/parcel`;
+      }
+    } else {
+      this.storageUrl = DEFAULT_STORAGE_URL;
+    }
+
     this.apiKy = ky.create({
       ...config?.httpClientConfig,
 
@@ -266,7 +279,7 @@ export class Download implements AsyncIterable<Uint8Array> {
     /* istanbul ignore else: tested using Cypress */
     if ((body as any).getReader === undefined) {
       // https://github.com/node-fetch/node-fetch/issues/930
-      const bodyReadable = (body as any) as Readable;
+      const bodyReadable = body as any as Readable;
       yield* bodyReadable;
     } else {
       const rdr = body.getReader();
