@@ -45,7 +45,7 @@ export class HttpClient {
       if (/local/g.test(apiUrl.host) || /^parcel-(run|gate)way/g.test(apiUrl.host)) {
         this.storageUrl = `${this.apiUrl}/documents`; // Intranet can use the endpoint directly.
       } else {
-        const storageHost = `storage.${apiUrl.host.replace(/^\w+\./, '')}`;
+        const storageHost = apiUrl.host.replace(/^\w+\./, 'storage.');
         this.storageUrl = `${apiUrl.protocol}//${storageHost}/v1/parcel`;
       }
     } else {
