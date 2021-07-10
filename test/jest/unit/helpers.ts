@@ -3,21 +3,27 @@ import type { JsonObject } from 'type-fest';
 
 import Parcel from '@oasislabs/parcel';
 
-const API_BASE_URL = 'https://api.oasislabs.com/parcel/v1';
+export const API_BASE_URL = 'https://api.oasislabs.com/parcel/v1';
+export const STORAGE_URL = 'https://storage.oasislabs.com/v1/parcel';
+
 export function nockIt(testName: string, test: (scope: nock.Scope) => Promise<void>): void {
   it(testName, async () => {
-    const scope = nock(API_BASE_URL)
-      .defaultReplyHeaders({
-        'content-type': 'application/json',
-      })
-      .replyContentLength()
-      .matchHeader(
-        'authorization',
-        /^Bearer [\w-=]+\.[\w-=]+\.?[\w-.+/=]*$/, // JWT regex
-      );
+    const scope = parcelNock(API_BASE_URL);
     await test(scope);
     scope.done();
   });
+}
+
+export function parcelNock(url: string): nock.Scope {
+  return nock(url)
+    .defaultReplyHeaders({
+      'content-type': 'application/json',
+    })
+    .replyContentLength()
+    .matchHeader(
+      'authorization',
+      /^Bearer [\w-=]+\.[\w-=]+\.?[\w-.+/=]*$/, // JWT regex
+    );
 }
 
 export function clone<T = JsonObject>(obj: T): T {
@@ -30,5 +36,6 @@ const API_TOKEN =
 export function makeParcel(): Parcel {
   return new Parcel(API_TOKEN, {
     apiUrl: API_BASE_URL,
+    storageUrl: STORAGE_URL,
   });
 }

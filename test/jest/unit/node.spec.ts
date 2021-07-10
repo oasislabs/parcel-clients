@@ -5,7 +5,7 @@ import tempy from 'tempy';
 
 import type { default as Parcel, DocumentId } from '@oasislabs/parcel';
 
-import { makeParcel, nockIt } from './helpers';
+import { makeParcel, nockIt, parcelNock, STORAGE_URL } from './helpers';
 
 describe('node-specific', () => {
   let parcel: Parcel;
@@ -22,16 +22,16 @@ describe('node-specific', () => {
   const MULTIPART_DATA_RE =
     /content-disposition: form-data; name="data".*\r\ncontent-type: application\/octet-stream\r\n\r\nfixture data\r\n/gi;
 
-  nockIt('upload ReadStream', async (scope) => {
-    scope
-      .post('/documents', MULTIPART_DATA_RE)
+  it('upload ReadStream', async () => {
+    const scope = parcelNock(STORAGE_URL)
+      .post('', MULTIPART_DATA_RE)
       .matchHeader('content-type', /^multipart\/form-data; boundary=/)
       .reply(201, {});
-
     await tempy.write.task(fixtureData, async (dataPath) => {
       const readStream = fs.createReadStream(dataPath);
       await parcel.uploadDocument(readStream, null /* params */).finished;
     });
+    scope.done();
   });
 
   nockIt('pipeTo WriteStream', async (scope) => {

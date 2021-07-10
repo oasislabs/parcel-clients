@@ -29,7 +29,7 @@ import type { IdentityId, PODIdentity } from '@oasislabs/parcel/identity';
 import type { Page, PODModel } from '@oasislabs/parcel/model';
 import type { PublicJWK } from '@oasislabs/parcel/token';
 
-import { clone, makeParcel, nockIt } from './helpers';
+import { clone, makeParcel, nockIt, parcelNock, STORAGE_URL } from './helpers';
 
 declare global {
   namespace jest {
@@ -675,20 +675,21 @@ describe('Parcel', () => {
       /content-disposition: form-data; name="data"\r\ncontent-type: application\/octet-stream\r\n\r\nfixture data\r\n/gi;
 
     describe('upload', () => {
-      nockIt('no params', async (scope) => {
+      it('no params', async () => {
         expect(fixtureDocument).toMatchSchema(getResponseSchema('POST', '/documents', 201));
-        scope
-          .post('/documents', MULTIPART_DATA_RE)
+        const scope = parcelNock(STORAGE_URL)
+          .post('', MULTIPART_DATA_RE)
           .matchHeader('content-type', /^multipart\/form-data; boundary=/)
           .reply(201, fixtureDocument);
         const document = await parcel.uploadDocument(fixtureData, null /* params */).finished;
         expect(document).toMatchPOD(fixtureDocument);
+        scope.done();
       });
 
-      nockIt('with params', async (scope) => {
-        scope
+      nockIt('with params', async () => {
+        const scope = parcelNock(STORAGE_URL)
           .post(
-            '/documents',
+            '',
             (body: string) => MULTIPART_METADATA_RE.test(body) && MULTIPART_DATA_RE.test(body),
           )
           .matchHeader('content-type', /^multipart\/form-data; boundary=/)
@@ -698,6 +699,7 @@ describe('Parcel', () => {
           toApp: createAppId(),
         }).finished;
         expect(document).toMatchPOD(fixtureDocument);
+        scope.done();
       });
     });
 

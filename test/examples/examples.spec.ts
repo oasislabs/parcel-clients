@@ -30,6 +30,7 @@ const npxPath = join(dirname(process.execPath), 'npx');
 if (!process.env.PARCEL_API_URL || !process.env.PARCEL_AUTH_URL) {
   throw new Error('PARCEL_API_URL and PARCEL_AUTH_URL env variables must be defined. Aborting.');
 }
+
 if (!process.env.PARCEL_STORAGE_URL) {
   const apiUrl = new URL(process.env.PARCEL_API_URL);
   const storageHost = apiUrl.host.replace('api.', 'storage.');
