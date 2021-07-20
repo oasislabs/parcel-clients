@@ -114,7 +114,7 @@ export class HttpClient {
 
   public async get<T>(
     endpoint: string,
-    params: Record<string, string | number | boolean | undefined> = {},
+    params: Record<string, string | number | Date | boolean | undefined> = {},
     requestOptions?: KyOptions,
   ): Promise<T> {
     let hasParams = false;
@@ -122,7 +122,7 @@ export class HttpClient {
     for (const [k, v] of Object.entries(params)) {
       if (v !== undefined) {
         hasParams = true;
-        kebabCaseParams[paramCase(k)] = v;
+        kebabCaseParams[paramCase(k)] = v instanceof Date ? v.getTime() : v;
       }
     }
 

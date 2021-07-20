@@ -104,13 +104,13 @@ export namespace GrantImpl {
   }
 }
 
-export type ListGrantsFilter = Partial<{
+export type ListGrantsFilter = {
   /** Only return grants from granter. */
   granter?: IdentityId;
 
   /** Only return grants for the provided app. */
   grantee?: IdentityId;
-}>;
+};
 
 /**
  * `Capabilities` is a collection of bit flags.

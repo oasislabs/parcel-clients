@@ -54,6 +54,8 @@ import type {
   IdentityUpdateParams,
 } from './identity.js';
 import { IdentityImpl } from './identity.js';
+import type { GetUsageFilter, MeteringQuota, MeteringReport, QuotaUpdateParams } from './meter.js';
+import { MeterImpl } from './meter.js';
 import type { Page, PageParams } from './model.js';
 import type { Permission, PermissionCreateParams, PermissionId } from './permission.js';
 import { PermissionImpl } from './permission.js';
@@ -94,6 +96,7 @@ export {
   FrontendClient,
   FrontendClientCreateParams,
   FrontendClientUpdateParams,
+  GetUsageFilter,
   Grant,
   GrantCreateParams,
   GrantId,
@@ -109,6 +112,8 @@ export {
   JobSpec,
   JobStatus,
   JobStatusReport,
+  MeteringQuota,
+  MeteringReport,
   OutputDocument,
   OutputDocumentSpec,
   PARCEL_RUNTIME_AUD,
@@ -119,6 +124,7 @@ export {
   PermissionId,
   PrivateJWK,
   PublicJWK,
+  QuotaUpdateParams,
   RefreshingTokenProviderParams,
   RenewingTokenProviderParams,
   Scope,
@@ -320,6 +326,29 @@ export class Parcel {
    */
   public async terminateJob(jobId: JobId): Promise<void> {
     return ComputeImpl.terminateJob(this.client, jobId);
+  }
+
+  /**
+   * Gets a metering report for your API usage.
+   * @param filter Controls API usage window.
+   */
+  public async getUsage(filter?: GetUsageFilter): Promise<MeteringReport> {
+    return MeterImpl.getUsage(this.client, filter);
+  }
+
+  /**
+   * Gets your monthly API usage quota limits.
+   */
+  public async getQuota(): Promise<MeteringQuota> {
+    return MeterImpl.getQuota(this.client);
+  }
+
+  /**
+   * Updates your monthly API usage quota limits.
+   * @param params Specifies monthly quota limits to enforce until you change them again.
+   */
+  public async setQuota(params: QuotaUpdateParams): Promise<MeteringQuota> {
+    return MeterImpl.setQuota(this.client, params);
   }
 }
 

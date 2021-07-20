@@ -116,13 +116,7 @@ export namespace DocumentImpl {
     id: DocumentId,
     filter?: ListAccessLogFilter & PageParams,
   ): Promise<Page<AccessEvent>> {
-    const podPage = await client.get<Page<PODAccessEvent>>(endpointForId(id) + '/history', {
-      ...filter,
-      // Dates must be string-ified since request parameters are of type JSONObject
-      // and doesn't support Date.
-      after: filter?.after?.getTime(),
-      before: filter?.before?.getTime(),
-    });
+    const podPage = await client.get<Page<PODAccessEvent>>(endpointForId(id) + '/history', filter);
 
     const results = podPage.results.map((podAccessEvent) => {
       return {
@@ -288,7 +282,7 @@ export class Upload extends EventEmitter {
           knownLength: length,
         });
       } else {
-        // If `Blob` eixsts, we're probably in the browser and will pefer to use it.
+        // If `Blob` exists, we're probably in the browser and will prefer to use it.
         if (typeof data === 'string' || data instanceof Uint8Array) {
           data = new Blob([data], { type: contentType });
         } else if ('pipe' in data) {

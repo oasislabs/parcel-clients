@@ -44,7 +44,7 @@
     ],
     "moduleNameMapper": {
       "^@oasislabs/parcel$": "<rootDir>/src/index",
-      "^\\./(app|client|compute|condition|document|grant|http|identity|model|permission|polyfill|token).js$": "<rootDir>/src/$1",
+      "^\\./(app|client|compute|condition|document|grant|http|identity|meter|model|permission|polyfill|token).js$": "<rootDir>/src/$1",
       "^@oasislabs/parcel/(.*)$": "<rootDir>/src/$1"
     },
     "testEnvironment": "node",

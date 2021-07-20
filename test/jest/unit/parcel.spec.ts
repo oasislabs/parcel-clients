@@ -26,6 +26,7 @@ import type { DocumentId, PODAccessEvent, PODDocument } from '@oasislabs/parcel/
 import type { GrantId, PODGrant } from '@oasislabs/parcel/grant';
 import { Capabilities, stringifyCaps } from '@oasislabs/parcel/grant';
 import type { IdentityId, PODIdentity } from '@oasislabs/parcel/identity';
+import type { PODMeteringQuota, PODMeteringReport } from '@oasislabs/parcel/meter';
 import type { Page, PODModel } from '@oasislabs/parcel/model';
 import type { PublicJWK } from '@oasislabs/parcel/token';
 
@@ -418,6 +419,32 @@ describe('Parcel', () => {
     };
     expect(podPermission).toMatchSchema('Permission');
     return podPermission;
+  }
+
+  function createPodMeteringReport(): PODMeteringReport {
+    const podMeteringReport: PODMeteringReport = {
+      createCount: 100,
+      readCount: 100,
+      writeCount: 100,
+      deleteCount: 100,
+      uploadCount: 10,
+      downloadCount: 10,
+      uploadSizeBytes: 100_000,
+      downloadSizeBytes: 100_000,
+      computeMsec: 100_000,
+    };
+    expect(podMeteringReport).toMatchSchema('MeteringReport');
+    return podMeteringReport;
+  }
+
+  function createPodMeteringQuota(): PODMeteringQuota {
+    const podMeteringQuota: PODMeteringQuota = {
+      apiCallsLimit: 1_000,
+      accessedBytesLimit: 10_000,
+      computeMsecLimit: 1_000,
+    };
+    expect(podMeteringQuota).toMatchSchema('MeteringQuota');
+    return podMeteringQuota;
   }
 
   function createResultsPage<T>(n: number, factory: () => T): Page<T> {
@@ -1574,6 +1601,46 @@ describe('Parcel', () => {
         scope.delete(`/compute/jobs/${jobId}`).reply(200);
         await expect(parcel.terminateJob(jobId)).rejects.toThrow();
       });
+    });
+  });
+
+  describe('usage', () => {
+    nockIt('get', async (scope) => {
+      const fixtureMeteringReport: PODMeteringReport = createPodMeteringReport();
+      expect(fixtureMeteringReport).toMatchSchema(getResponseSchema('GET', '/usage', 200));
+
+      scope.get('/usage').reply(200, fixtureMeteringReport);
+
+      const meteringReport = await parcel.getUsage();
+      expect(meteringReport).toEqual(fixtureMeteringReport);
+    });
+  });
+
+  describe('quota', () => {
+    let fixtureMeteringQuota: PODMeteringQuota;
+
+    beforeEach(() => {
+      fixtureMeteringQuota = createPodMeteringQuota();
+    });
+
+    nockIt('get', async (scope) => {
+      expect(fixtureMeteringQuota).toMatchSchema(getResponseSchema('GET', '/quota', 200));
+      scope.get('/quota').reply(200, fixtureMeteringQuota);
+      const meteringQuota = await parcel.getQuota();
+      expect(meteringQuota).toEqual(fixtureMeteringQuota);
+    });
+
+    nockIt('update', async (scope) => {
+      expect(fixtureMeteringQuota).toMatchSchema(getResponseSchema('PUT', '/quota', 200));
+      const update = {
+        apiCallsLimit: 10_000,
+        accessedBytesLimit: 1_000,
+        computeMsecLimit: 10_000,
+      };
+      const updatedMeteringQuota = Object.assign(clone(fixtureMeteringQuota), update);
+      scope.put(`/quota`, update).reply(200, updatedMeteringQuota);
+      const meteringQuota = await parcel.setQuota(updatedMeteringQuota);
+      expect(meteringQuota).toEqual(update);
     });
   });
 });
