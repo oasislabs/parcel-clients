@@ -95,9 +95,9 @@ export class HttpClient {
               );
             }
 
-            const expectedStatus: number =
+            const expectedStatus: number[] =
               (req as any).expectedStatus ?? EXPECTED_RESPONSE_CODES.get(req.method);
-            if (res.ok && expectedStatus && res.status !== expectedStatus) {
+            if (res.ok && expectedStatus && !(res.status in expectedStatus)) {
               const endpoint = res.url.replace(this.apiUrl, '');
               throw new ApiError(
                 req,
@@ -136,7 +136,7 @@ export class HttpClient {
   /** Convenience method for POSTing and expecting a 201 response */
   public async create<T>(
     endpoint: string,
-    data: Record<string, JsonSerializable> | FormData,
+    data: Record<string, JsonSerializable> | FormData | undefined,
     requestOptions?: KyOptions,
   ): Promise<T> {
     return this.post(endpoint, data, requestOptions);
@@ -250,9 +250,9 @@ function attachContext(context: string): BeforeRequestHook {
   };
 }
 
-export function setExpectedStatus(status: number): BeforeRequestHook {
+export function setExpectedStatus(status: number | number[]): BeforeRequestHook {
   return (req) => {
-    (req as any).expectedStatus = status;
+    (req as any).expectedStatus = Array.isArray(status) ? status : [status];
   };
 }
 

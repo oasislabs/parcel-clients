@@ -6,7 +6,8 @@ import type { Readable } from 'readable-stream';
 import type { Opaque, SetOptional } from 'type-fest';
 
 import type { AppId } from './app.js';
-import type { JobId, JobSpec } from './compute.js';
+import type { AccessContext } from './asset.js';
+import type { JobId } from './compute.js';
 import type { Condition } from './condition.js';
 import type { HttpClient, Download } from './http.js';
 import { setExpectedStatus } from './http.js';
@@ -209,39 +210,6 @@ export type DocumentSearchParams = {
    * yourself, or from a job.
    */
   accessibleInContext?: AccessContext;
-};
-
-/**
- * The context in which a document will be accessed.
- * Grants condition on the values of this context.
- */
-type AccessContext = {
-  /**
-   * The identity that will be accessing the document.
-   * Leaving this field unset will search for documents
-   * accessible to anybody (likely only in the context of a job).
-   */
-  accessor?: IdentityId;
-
-  /**
-   * The job that will be accessing the data.
-   * Leaving this field unset will search for documents
-   * accessible directly by identities. If `identity` is
-   * also unset, the search will return public documents.
-   */
-  job?: JobSpec;
-
-  /**
-   * The time at which the data will be accessed.
-   * Generally, you don't need to set this unless you're differentiating
-   * among multple documents that all require a certain access time.
-   */
-  accessTime?: Date;
-
-  // /**
-  //  * The kind of worker that you must use to run the job.
-  //  */
-  // worker: WorkerSpec; // TODO
 };
 
 export type AccessEvent = {
