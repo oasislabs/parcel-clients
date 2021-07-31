@@ -10,7 +10,6 @@ import type { AccessContext } from './asset.js';
 import type { JobId } from './compute.js';
 import type { Condition } from './condition.js';
 import type { HttpClient, Download } from './http.js';
-import { setExpectedStatus } from './http.js';
 import type { IdentityId } from './identity.js';
 import type { Model, Page, PageParams, PODModel, ResourceId, WritableExcluding } from './model.js';
 import { makePage } from './model.js';
@@ -92,11 +91,7 @@ export namespace DocumentImpl {
     client: HttpClient,
     params?: DocumentSearchParams & PageParams,
   ): Promise<Page<Document>> {
-    const podPage = await client.post<Page<PODDocument>>(`${DOCUMENTS_EP}/search`, params, {
-      hooks: {
-        beforeRequest: [setExpectedStatus(200)],
-      },
-    });
+    const podPage = await client.search<PODDocument>(DOCUMENTS_EP, params);
     return makePage(Document, podPage, client);
   }
 

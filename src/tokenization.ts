@@ -5,7 +5,6 @@ import { AssetImpl } from './asset.js';
 import type { Condition } from './condition.js';
 import type { Capabilities } from './grant.js';
 import type { HttpClient } from './http.js';
-import { setExpectedStatus } from './http.js';
 import type { IdentityId } from './identity.js';
 import type { Model, Page, PageParams, PODModel, ResourceId } from './model.js';
 import { makePage } from './model.js';
@@ -85,8 +84,14 @@ export class Token implements Model {
     return TokenImpl.removeAsset(this.#client, this.id, asset);
   }
 
-  public async transfer(recipient: IdentityId, amount: number): Promise<TransferReceipt> {
-    return TokenImpl.transfer(this.#client, this.id, recipient, amount);
+  public async transfer(amount: number, recipient: IdentityId): Promise<TransferReceipt> {
+    return TokenImpl.transfer(this.#client, this.id, amount, recipient);
+  }
+
+  public async listTransfers(
+    filter?: ListTokenTransfersFilter & PageParams,
+  ): Promise<Page<TransferReceipt>> {
+    return TokenImpl.listTransferReceipts(this.#client, this.id, filter);
   }
 }
 
@@ -109,11 +114,7 @@ export namespace TokenImpl {
     client: HttpClient,
     params?: TokenSearchParams & PageParams,
   ): Promise<Page<Token>> {
-    const podPage = await client.post<Page<PODToken>>(`${TOKENS_EP}/search`, params, {
-      hooks: {
-        beforeRequest: [setExpectedStatus(200)],
-      },
-    });
+    const podPage = await client.search<PODToken>(TOKENS_EP, params);
     return makePage(Token, podPage, client);
   }
 
@@ -136,8 +137,8 @@ export namespace TokenImpl {
   export async function transfer(
     client: HttpClient,
     token: TokenId,
-    recipient: IdentityId,
     amount: number,
+    recipient: IdentityId,
   ): Promise<TransferReceipt> {
     if (amount % 1 !== 0 || amount < 0) {
       throw new Error(`invalid token amount ${amount}. must be a positive integer`);
@@ -150,6 +151,24 @@ export namespace TokenImpl {
     return {
       ...podReceipt,
       completedAt: new Date(podReceipt.completedAt),
+    };
+  }
+
+  export async function listTransferReceipts(
+    client: HttpClient,
+    tokenId: TokenId,
+    filter?: ListTokenTransfersFilter & PageParams,
+  ): Promise<Page<TransferReceipt>> {
+    const podPage = await client.get<Page<PODTransferReceipt>>(
+      endpointForTransfers(tokenId),
+      filter,
+    );
+    return {
+      ...podPage,
+      results: podPage.results.map((podReceipt) => ({
+        ...podReceipt,
+        completedAt: new Date(podReceipt.completedAt),
+      })),
     };
   }
 
@@ -250,3 +269,12 @@ export type TransferReceipt = {
 };
 
 export type PODTransferReceipt = Except<TransferReceipt, 'completedAt'> & { completedAt: string };
+
+export type ListTokenTransfersFilter = {
+  sender?: IdentityId;
+  recipient?: IdentityId;
+  /** Transfers completed after this time. */
+  after?: Date;
+  /** Transfers completed before this time. */
+  before?: Date;
+};

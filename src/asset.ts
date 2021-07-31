@@ -3,7 +3,6 @@ import type { Opaque } from 'type-fest';
 import type { JobSpec } from './compute.js';
 import type { Condition } from './condition.js';
 import type { HttpClient } from './http.js';
-import { setExpectedStatus } from './http.js';
 import type { IdentityId } from './identity.js';
 import type { Page, PageParams, ResourceId } from './model.js';
 import type { TokenId } from './tokenization.js';
@@ -11,6 +10,7 @@ import type { TokenId } from './tokenization.js';
 export type AssetId = Opaque<ResourceId, 'DocumentId' | 'DatabaseId'>;
 
 const ASSETS_EP = 'assets';
+const endpointForId = (id: AssetId) => `${ASSETS_EP}/${id}`;
 
 /** An asset held by the escrow identity. */
 export type EscrowedAsset = {
@@ -25,11 +25,11 @@ export namespace AssetImpl {
     client: HttpClient,
     params?: EscrowedAssetSearchParams & PageParams,
   ): Promise<Page<EscrowedAsset>> {
-    return client.post<Page<EscrowedAsset>>(`${ASSETS_EP}/search`, params, {
-      hooks: {
-        beforeRequest: [setExpectedStatus(200)],
-      },
-    });
+    return client.search<EscrowedAsset>(`${ASSETS_EP}/search`, params);
+  }
+
+  export async function get(client: HttpClient, assetId: AssetId): Promise<EscrowedAsset> {
+    return client.get(endpointForId(assetId));
   }
 }
 

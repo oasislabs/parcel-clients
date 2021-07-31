@@ -8,7 +8,7 @@ import { paramCase } from 'param-case';
 import type { Readable, Writable } from 'stream';
 
 import type { PODDocument } from './document';
-import type { JsonSerializable } from './model.js';
+import type { JsonSerializable, Page } from './model.js';
 import type { TokenProvider } from './token.js';
 import { ReadableStreamPF } from './polyfill.js';
 
@@ -24,10 +24,10 @@ export type Config = Partial<{
 }>;
 
 const EXPECTED_RESPONSE_CODES = new Map([
-  ['POST', 201],
-  ['PUT', 200],
-  ['PATCH', 200],
-  ['DELETE', 204],
+  ['POST', [201]],
+  ['PUT', [200]],
+  ['PATCH', [200]],
+  ['DELETE', [204]],
 ]);
 
 export class HttpClient {
@@ -95,15 +95,15 @@ export class HttpClient {
               );
             }
 
-            const expectedStatus: number[] =
+            const expectedStatuses: number[] =
               (req as any).expectedStatus ?? EXPECTED_RESPONSE_CODES.get(req.method);
-            if (res.ok && expectedStatus && !(res.status in expectedStatus)) {
+            if (res.ok && expectedStatuses.length > 0 && !expectedStatuses.includes(res.status)) {
               const endpoint = res.url.replace(this.apiUrl, '');
               throw new ApiError(
                 req,
                 opts,
                 res,
-                `${req.method} ${endpoint} returned unexpected status ${res.status}. expected: ${expectedStatus}.`,
+                `${req.method} ${endpoint} returned unexpected status ${res.status}. expected: ${expectedStatuses}.`,
               );
             }
           },
@@ -140,6 +140,20 @@ export class HttpClient {
     requestOptions?: KyOptions,
   ): Promise<T> {
     return this.post(endpoint, data, requestOptions);
+  }
+
+  /** Convenience method for POSTing and expecting a 200 response */
+  public async search<T>(
+    baseEndpoint: string, // Without the `/search` suffix.
+    params: Record<string, JsonSerializable> | undefined,
+    requestOptions?: KyOptions,
+  ): Promise<Page<T>> {
+    return this.post<Page<T>>(`${baseEndpoint}/search`, params, {
+      hooks: {
+        ...requestOptions,
+        beforeRequest: [...(requestOptions?.hooks?.beforeRequest ?? []), setExpectedStatus(200)],
+      },
+    });
   }
 
   public async upload(data: FormData, requestOptions?: KyOptions): Promise<PODDocument> {

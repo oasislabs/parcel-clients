@@ -83,6 +83,10 @@ export class Identity implements Model {
     return IdentityImpl.listGrantedPermissions(this.#client, this.id, filter);
   }
 
+  public async grantPermission(id: PermissionId): Promise<GrantedPermission> {
+    return IdentityImpl.grantPermission(this.#client, this.id, id);
+  }
+
   /** Gets a granted permission by id. Useful for checking if a permission has been granted. */
   public async getGrantedPermission(id: PermissionId): Promise<Permission> {
     return IdentityImpl.getGrantedPermission(this.#client, this.id, id);
