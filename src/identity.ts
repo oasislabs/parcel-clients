@@ -153,10 +153,20 @@ export namespace IdentityImpl {
         );
       }
 
-      proof = web3.currentProvider.sendAsync({
-        method: 'personal_sign',
-        params: [`parcel identity = ${identity}`, ethAddr],
-        from: ethAddr,
+      proof = await new Promise((resolve, reject) => {
+        const req = {
+          method: 'personal_sign',
+          params: [`parcel identity = ${identity}`, ethAddr],
+          from: ethAddr,
+        };
+        web3.currentProvider.sendAsync(req, (err: any, { result }: { result: string }) => {
+          if (err) {
+            reject(err);
+            return;
+          }
+
+          resolve(result);
+        });
       });
     }
 
