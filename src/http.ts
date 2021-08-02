@@ -23,11 +23,11 @@ export type Config = Partial<{
   httpClientConfig: KyOptions;
 }>;
 
-const EXPECTED_RESPONSE_CODES = new Map([
-  ['POST', [201]],
-  ['PUT', [200]],
-  ['PATCH', [200]],
-  ['DELETE', [204]],
+const DEFAULT_RESPONSE_CODES = new Map([
+  ['POST', 200],
+  ['PUT', 200],
+  ['PATCH', 200],
+  ['DELETE', 204],
 ]);
 
 export class HttpClient {
@@ -95,15 +95,17 @@ export class HttpClient {
               );
             }
 
-            const expectedStatuses: number[] =
-              (req as any).expectedStatus ?? EXPECTED_RESPONSE_CODES.get(req.method);
-            if (res.ok && expectedStatuses.length > 0 && !expectedStatuses.includes(res.status)) {
+            const allowedStatusCodes: number[] = (req as any).allowedStatusCodes ?? [];
+            allowedStatusCodes.push(DEFAULT_RESPONSE_CODES.get(req.method) ?? 200);
+            if (res.ok && !allowedStatusCodes.includes(res.status)) {
               const endpoint = res.url.replace(this.apiUrl, '');
               throw new ApiError(
                 req,
                 opts,
                 res,
-                `${req.method} ${endpoint} returned unexpected status ${res.status}. expected: ${expectedStatuses}.`,
+                `${req.method} ${endpoint} returned unexpected status ${
+                  res.status
+                }. expected: ${allowedStatusCodes.join(' | ')}.`,
               );
             }
           },
@@ -133,13 +135,25 @@ export class HttpClient {
     return response.json();
   }
 
+  public async upload(data: FormData, requestOptions?: KyOptions): Promise<PODDocument> {
+    return this.create(this.storageUrl, data, {
+      prefixUrl: '',
+      ...requestOptions,
+    });
+  }
+
   /** Convenience method for POSTing and expecting a 201 response */
   public async create<T>(
     endpoint: string,
     data: Record<string, JsonSerializable> | FormData | undefined,
     requestOptions?: KyOptions,
   ): Promise<T> {
-    return this.post(endpoint, data, requestOptions);
+    return this.post(endpoint, data, {
+      ...requestOptions,
+      hooks: {
+        beforeRequest: [...(requestOptions?.hooks?.beforeRequest ?? []), addAllowedStatusCode(201)],
+      },
+    });
   }
 
   /** Convenience method for POSTing and expecting a 200 response */
@@ -148,19 +162,7 @@ export class HttpClient {
     params: Record<string, JsonSerializable> | undefined,
     requestOptions?: KyOptions,
   ): Promise<Page<T>> {
-    return this.post<Page<T>>(`${baseEndpoint}/search`, params, {
-      hooks: {
-        ...requestOptions,
-        beforeRequest: [...(requestOptions?.hooks?.beforeRequest ?? []), setExpectedStatus(200)],
-      },
-    });
-  }
-
-  public async upload(data: FormData, requestOptions?: KyOptions): Promise<PODDocument> {
-    return this.post(this.storageUrl, data, {
-      prefixUrl: '',
-      ...requestOptions,
-    });
+    return this.post<Page<T>>(`${baseEndpoint}/search`, params, requestOptions);
   }
 
   public async post<T>(
@@ -264,9 +266,10 @@ function attachContext(context: string): BeforeRequestHook {
   };
 }
 
-export function setExpectedStatus(status: number | number[]): BeforeRequestHook {
-  return (req) => {
-    (req as any).expectedStatus = Array.isArray(status) ? status : [status];
+export function addAllowedStatusCode(status: number): BeforeRequestHook {
+  return (req: any) => {
+    req.allowedStatusCodes = req.allowedStatusCodes ?? [];
+    req.allowedStatusCodes.push(status);
   };
 }
 

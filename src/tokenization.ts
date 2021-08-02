@@ -123,7 +123,7 @@ export namespace TokenImpl {
     token: TokenId,
     asset: AssetId,
   ): Promise<TokenizationReceipt> {
-    return client.create(endpointForAsset(token, asset), undefined);
+    return client.post(endpointForAsset(token, asset), undefined);
   }
 
   export async function removeAsset(
