@@ -538,7 +538,11 @@ describe('Parcel', () => {
       nockItWithCurrentIdentity('grant', async (scope) => {
         const fixtureCreatedGrant = { grants: [createPodGrant()] };
         expect(fixtureCreatedGrant).toMatchSchema(
-          getResponseSchema('POST', '/identities/{identityId}/permissions/{permissionId}', 201),
+          getResponseSchema(
+            'POST',
+            '/identities/{identityOrAppId}/permissions/{permissionId}',
+            201,
+          ),
         );
 
         const fixturePermission = createPodPermission();
@@ -555,7 +559,11 @@ describe('Parcel', () => {
         nockItWithCurrentIdentity('granted', async (scope) => {
           const fixturePermission = createPodPermission();
           expect(fixturePermission).toMatchSchema(
-            getResponseSchema('GET', '/identities/{identityId}/permissions/{permissionId}', 200),
+            getResponseSchema(
+              'GET',
+              '/identities/{identityOrAppId}/permissions/{permissionId}',
+              200,
+            ),
           );
 
           scope
@@ -590,7 +598,7 @@ describe('Parcel', () => {
             createPodPermission,
           );
           expect(fixtureResultsPage).toMatchSchema(
-            getResponseSchema('GET', '/identities/{identityId}/permissions', 200),
+            getResponseSchema('GET', '/identities/{identityOrAppId}/permissions', 200),
           );
 
           scope.get(`/identities/${fixtureIdentity.id}/permissions`).reply(200, fixtureResultsPage);
@@ -618,7 +626,7 @@ describe('Parcel', () => {
             pageToken: makeRandomId(),
           };
           expect(filterWithPagination).toMatchSchema(
-            getQueryParametersSchema('GET', '/identities/{identityId}/permissions'),
+            getQueryParametersSchema('GET', '/identities/{identityOrAppId}/permissions'),
           );
 
           scope
