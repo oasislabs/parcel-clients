@@ -26,7 +26,7 @@ export type GrantCreateParams = {
    */
   grantee: IdentityId | 'everyone';
 
-  /** The condition that must be matched to receive access to one or more Documents. */
+  /** The condition that must be matched to receive access to one or more Assets - Documents and Databases. */
   condition?: Condition;
 
   /** The capabilities attached to this grant. The default is `read`. */
@@ -52,7 +52,7 @@ export class Grant implements Model {
    * The Identity to which permission is given or everyone,
    */
   public readonly grantee: IdentityId | 'everyone';
-  /** The condition that describes Documents to be shared. */
+  /** The condition that describes Assets - Documents and Databases to be shared. */
   public readonly condition?: Condition;
   /** The permission that created this Grant, if any. */
   public readonly permission?: PermissionId;

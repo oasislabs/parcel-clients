@@ -4,6 +4,7 @@ import type {
   InputDocumentSpec as $InputDocumentSpec,
   OutputDocumentSpec as $OutputDatsetSpec,
 } from './compute.js';
+import type { DatabaseId as $DatabaseId } from './database.js';
 import type { DocumentId as $DocumentId } from './document.js';
 import type { IdentityId as $IdentityId } from './identity.js';
 
@@ -37,6 +38,20 @@ export namespace Selectors {
     | DocumentTitle
     | DocumentTags;
 
+  export type DatabaseId = {
+    'database.id': RelationalOp<$DatabaseId>;
+  };
+  export type DatabaseCreator = {
+    'database.creator': RelationalOp<$IdentityId>;
+  };
+  export type DatabaseOwner = {
+    'database.owner': RelationalOp<$IdentityId>;
+  };
+  export type DatabaseName = {
+    'database.name': RelationalOp<string>;
+  };
+  export type Database = DatabaseId | DatabaseCreator | DatabaseOwner | DatabaseName;
+
   // Action-based selectors.
   export type JobImage = {
     'job.spec.image': RelationalOp<string>;
@@ -63,6 +78,7 @@ export namespace Selectors {
 // A Selector is a leaf node in the boolean expression tree for a condition.
 export type Selector =
   | Selectors.IdentityId
+  | Selectors.Database
   | Selectors.Document
   | Selectors.Job
   | Selectors.AccessTime;
