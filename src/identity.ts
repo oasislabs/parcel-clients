@@ -10,7 +10,7 @@ import type { PermissionId, PODPermission } from './permission.js';
 import type { IdentityTokenClaims, PublicJWK } from './token.js';
 import type { EthAddr, TokenBalance, TokenId } from './tokenization.js';
 
-export type IdentityId = Opaque<ResourceId, 'IdentityId' | 'AppId'>;
+export type IdentityId = Opaque<ResourceId, 'IdentityId' | 'AppId'> | 'escrow';
 
 export type PODIdentity = Readonly<
   PODModel & {

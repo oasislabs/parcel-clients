@@ -190,13 +190,13 @@ export type TokenCreateParams = {
   name?: string;
   grant: TokenGrantSpec;
   supply: number;
-  consumesAssets: boolean;
-  ethBridge: EthBridge;
+  consumesAssets?: boolean;
+  ethBridge?: EthBridge;
 };
 
 export type TokenGrantSpec = {
-  condition?: Condition;
-  capabilities: Capabilities;
+  condition?: Condition | null;
+  capabilities?: Capabilities;
 };
 
 export type TokenBalance = {

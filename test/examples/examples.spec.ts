@@ -323,6 +323,14 @@ it(
   300 * 1000,
 );
 
+it(
+  'tokenization-basic',
+  async () => {
+    await runExamplePromisified('tokenization-basic');
+  },
+  20 * 1000,
+);
+
 async function runCypressTest(exampleName: string): Promise<void> {
   return new Promise<void>((resolve, reject) => {
     const example = runExample(exampleName, async (data) => {
