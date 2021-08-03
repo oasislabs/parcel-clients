@@ -16,18 +16,8 @@ const parcelBob = new Parcel({
   },
 });
 
-// --- Upload a data asset as Bob.
-// #region snippet-upload-asset
-console.log('Create a new document and prepare it for tokenization.');
-const recipeText = '14g butter; 15g chicken sausage; 18g feta; 20g green pepper; 1.5min baking';
-const recipeDocument = await parcelBob.uploadDocument(recipeText, {
-  owner: 'escrow', // ⚠️  The data must be owned by the escrow identity to be tokenized. This can be done after uploading, too.
-  toApp: undefined,
-}).finished;
-// #endregion snippet-input-documents
-
 // --- Create a new data-backed token held by Bob.
-// #region snippet-create-token
+// #region snippet-mint-token
 console.log('Creating a new data-backed token owned by Bob.');
 const recipeToken = await parcelBob.mintToken({
   name: "Bob's World Famous Chicken & Pepper Recipe (keto!)",
@@ -36,11 +26,22 @@ const recipeToken = await parcelBob.mintToken({
   },
   supply: 1, // It's an NFT.
 });
+console.log('The recipe token is:', recipeToken);
+// #endregion snippet-mint-token
+
+// --- Upload and tokenize a data asset provided by Bob.
+// #region snippet-tokenize-asset
+console.log('Create a new document and prepare it for tokenization.');
+const recipeText = '14g butter; 15g chicken sausage; 18g feta; 20g green pepper; 1.5min baking';
+const recipeDocument = await parcelBob.uploadDocument(recipeText, {
+  owner: 'escrow', // ⚠️  The data must be owned by the escrow identity to be tokenized. This can be done after uploading, too.
+  toApp: undefined,
+}).finished;
 
 console.log('Add the document to the token.');
 await recipeToken.addAsset(recipeDocument.id);
-// More data can also be added (by anyone)...
-// #endregion snippet-create-token
+// More data assets can also be added (by anyone).
+// #endregion snippet-tokenize-asset
 
 // --- Transfer the token to Acme and download the data.
 const parcelAcme = new Parcel({
