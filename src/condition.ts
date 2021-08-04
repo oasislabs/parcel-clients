@@ -122,6 +122,7 @@ export namespace RelationalOp {
   };
 }
 type Comparable = number | Date;
+// eslint-disable-next-line @typescript-eslint/no-redeclare
 type RelationalOp<T> =
   | RelationalOp.Eq<T>
   | RelationalOp.Neq<T>

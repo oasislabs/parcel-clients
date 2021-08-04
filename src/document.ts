@@ -114,13 +114,11 @@ export namespace DocumentImpl {
   ): Promise<Page<AccessEvent>> {
     const podPage = await client.get<Page<PODAccessEvent>>(endpointForId(id) + '/history', filter);
 
-    const results = podPage.results.map((podAccessEvent) => {
-      return {
-        createdAt: new Date(podAccessEvent.createdAt),
-        document: podAccessEvent.document as DocumentId,
-        accessor: podAccessEvent.accessor as IdentityId,
-      };
-    });
+    const results = podPage.results.map((podAccessEvent) => ({
+      createdAt: new Date(podAccessEvent.createdAt),
+      document: podAccessEvent.document as DocumentId,
+      accessor: podAccessEvent.accessor as IdentityId,
+    }));
     return {
       results,
       nextPageToken: podPage.nextPageToken,
@@ -281,6 +279,7 @@ export class Upload extends EventEmitter {
       .then((podDocument) => {
         this.emit('finish', new Document(client, podDocument));
       })
+      // eslint-disable-next-line promise/prefer-await-to-then
       .catch((error: any) => {
         this.emit('error', error);
       });

@@ -1,11 +1,11 @@
 import type { WriteStream } from 'fs';
+import type { Readable, Writable } from 'stream';
 
 import AbortController from 'abort-controller';
 import FormData from 'form-data';
 import type { BeforeRequestHook, NormalizedOptions, Options as KyOptions } from 'ky';
-import ky from 'ky';
+import ky, { HTTPError } from 'ky';
 import { paramCase } from 'param-case';
-import type { Readable, Writable } from 'stream';
 
 import type { PODDocument } from './document';
 import type { JsonSerializable, Page } from './model.js';
@@ -363,7 +363,7 @@ export class Download implements AsyncIterable<Uint8Array> {
   }
 }
 
-export class ApiError extends ky.HTTPError {
+export class ApiError extends HTTPError {
   name = 'ApiError';
   public readonly message: string;
 
@@ -378,7 +378,7 @@ export class ApiError extends ky.HTTPError {
     this.message = request.context ? `error in ${request.context}: ${message}` : message;
   }
 
-  public static async fromHTTPError(error: ky.HTTPError): Promise<ApiError> {
+  public static async fromHTTPError(error: HTTPError): Promise<ApiError> {
     const res = error.response;
     return new ApiError(error.request, error.options, res, (await res.json()).error);
   }

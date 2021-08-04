@@ -439,9 +439,9 @@ describe('Parcel', () => {
 
   function createPodMeteringQuota(): PODMeteringQuota {
     const podMeteringQuota: PODMeteringQuota = {
-      apiCallsLimit: 1_000,
+      apiCallsLimit: 1000,
       accessedBytesLimit: 10_000,
-      computeMsecLimit: 1_000,
+      computeMsecLimit: 1000,
     };
     expect(podMeteringQuota).toMatchSchema('MeteringQuota');
     return podMeteringQuota;
@@ -465,16 +465,16 @@ describe('Parcel', () => {
       testName: string,
       test: (scope: nock.Scope) => Promise<void>,
     ): void {
-      nockIt(testName, async (scope) => {
-        return test(
+      nockIt(testName, async (scope) =>
+        test(
           scope
             .get('/identities/me')
             // The `/parcel` below would be added by an ingress rewrite URL.
             .reply(307, {}, { location: `/parcel/v1/identities/${fixtureIdentity.id}` })
             .get(`/identities/${fixtureIdentity.id}`)
             .reply(200, fixtureIdentity),
-        );
-      });
+        ),
+      );
     }
 
     beforeEach(() => {
@@ -1642,7 +1642,7 @@ describe('Parcel', () => {
       expect(fixtureMeteringQuota).toMatchSchema(getResponseSchema('PUT', '/quota', 200));
       const update = {
         apiCallsLimit: 10_000,
-        accessedBytesLimit: 1_000,
+        accessedBytesLimit: 1000,
         computeMsecLimit: 10_000,
       };
       const updatedMeteringQuota = Object.assign(clone(fixtureMeteringQuota), update);

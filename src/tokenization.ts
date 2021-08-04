@@ -233,6 +233,7 @@ export namespace EthBridge {
     optionId: string;
   };
 }
+// eslint-disable-next-line @typescript-eslint/no-redeclare
 export type EthBridge = EthBridge.Managed | EthBridge.ERC20 | EthBridge.ERC721 | EthBridge.ERC1155;
 
 export type EthBridgeType = 'managed' | 'erc20' | 'erc721' | 'erc1155';

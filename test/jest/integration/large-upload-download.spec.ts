@@ -1,7 +1,9 @@
-import Parcel, { PrivateJWK, PublicJWK, Document } from '@oasislabs/parcel';
 import fs from 'fs';
+
 import crypto from 'crypto';
 import { JWK } from 'node-jose';
+
+import Parcel, { PrivateJWK, PublicJWK, Document } from '@oasislabs/parcel';
 
 const apiUrl = process.env.PARCEL_API_URL ?? 'http://localhost:4242/v1';
 
