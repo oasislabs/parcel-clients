@@ -9,7 +9,7 @@ import type { TokenId } from './tokenization.js';
 
 export type AssetId = Opaque<ResourceId, 'DocumentId' | 'DatabaseId'>;
 
-const ASSETS_EP = 'assets';
+const ASSETS_EP = 'escrow/assets';
 const endpointForId = (id: AssetId) => `${ASSETS_EP}/${id}`;
 
 /** An asset held by the escrow identity. */

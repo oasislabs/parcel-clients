@@ -87,6 +87,6 @@ for await (const chunk of artDownload) {
   artChunks.push(chunk);
 }
 
-console.log('Acme now has access to the art! (And Bob doesn\'t anymore.)');
+console.log("Acme now has access to the art! (And Bob doesn't anymore.)");
 assert.strictEqual(Buffer.concat(artChunks).toString(), artContents);
 // #endregion snippet-transfer-token
