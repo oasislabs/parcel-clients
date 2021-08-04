@@ -1,7 +1,7 @@
 {
     "entryPoints": ["src"],
     "exclude": ["examples"],
-    "out": "docs/typedoc",
+    "out": "typedoc",
     "readme": "docs/README.md",
     "includeVersion": true
 }

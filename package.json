@@ -1,6 +1,6 @@
 {
   "name": "@oasislabs/parcel",
-  "version": "1.0.0-beta.10",
+  "version": "1.0.0-beta.11",
   "license": "Apache-2.0",
   "author": "Oasis Labs <feedback@oasislabs.com>",
   "main": "lib/bundle.cjs",
@@ -18,7 +18,7 @@
   "scripts": {
     "build": "esbuild src/index.ts --platform=node --target=node14 --bundle --outfile=lib/bundle.cjs && tsc -b",
     "fmt": "xo --fix && prettier --write {tsconfig,package}.json",
-    "lint": "xo && prettier --check {tsconfig,package}.json && tools/update-examples-parcel-version.sh --check",
+    "lint": "xo && prettier --check {tsconfig,package}.json",
     "test": "jest",
     "test:unit": "jest test/jest/unit/",
     "test:examples": "jest test/examples/",
@@ -44,7 +44,7 @@
     ],
     "moduleNameMapper": {
       "^@oasislabs/parcel$": "<rootDir>/src/index",
-      "^\\./(app|asset|client|compute|condition|document|grant|http|identity|meter|model|permission|polyfill|token|tokenization).js$": "<rootDir>/src/$1",
+      "^\\./(app|asset|client|compute|condition|database|document|grant|http|identity|meter|model|permission|polyfill|token|tokenization).js$": "<rootDir>/src/$1",
       "^@oasislabs/parcel/(.*)$": "<rootDir>/src/$1"
     },
     "testEnvironment": "node",

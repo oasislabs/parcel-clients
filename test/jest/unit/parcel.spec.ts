@@ -22,6 +22,13 @@ import type {
 import type { PermissionId, PODPermission } from '@oasislabs/parcel/permission';
 import type { JobId, JobSpec, PODJob } from '@oasislabs/parcel/compute';
 import { JobPhase } from '@oasislabs/parcel/compute';
+import type {
+  DatabaseId,
+  DatabaseUpdateParams,
+  PODDatabase,
+  Query,
+  Row,
+} from '@oasislabs/parcel/database';
 import type { DocumentId, PODAccessEvent, PODDocument } from '@oasislabs/parcel/document';
 import type { GrantId, PODGrant } from '@oasislabs/parcel/grant';
 import { Capabilities, stringifyCaps } from '@oasislabs/parcel/grant';
@@ -248,6 +255,17 @@ describe('Parcel', () => {
     };
     expect(podIdentity).toMatchSchema('Identity');
     return podIdentity;
+  }
+
+  function createPodDatabase(): PODDatabase {
+    const podDatabase = {
+      ...createPodModel(),
+      creator: createIdentityId(),
+      owner: createIdentityId(),
+      name: 'A cheesy database',
+    };
+    expect(podDatabase).toMatchSchema('Database');
+    return podDatabase;
   }
 
   function createPodDocument(): PODDocument {
@@ -669,6 +687,159 @@ describe('Parcel', () => {
 
       const identity = await parcel.getCurrentIdentity();
       await identity.revokePermission(fixturePermission.id as PermissionId);
+    });
+  });
+
+  describe('database', () => {
+    let fixtureDatabase: PODDatabase;
+
+    beforeEach(() => {
+      fixtureDatabase = createPodDatabase();
+    });
+
+    describe('create', () => {
+      nockIt('create', async (scope) => {
+        expect(fixtureDatabase).toMatchSchema(getResponseSchema('POST', '/databases', 201));
+        const createParams = {
+          name: 'A cheesy database',
+        };
+        expect(createParams).toMatchSchema(getRequestSchema('POST', '/databases'));
+        scope.post('/databases', createParams).reply(201, fixtureDatabase);
+        const identity = await parcel.createDatabase(createParams);
+        expect(identity).toMatchPOD(fixtureDatabase);
+      });
+
+      nockIt('bad request', async (scope) => {
+        scope.post('/databases').reply(400);
+        await expect(parcel.createDatabase({} as any)).rejects.toThrow();
+      });
+    });
+
+    nockIt('get', async (scope) => {
+      expect(fixtureDatabase).toMatchSchema(
+        getResponseSchema('GET', '/databases/{databaseId}', 200),
+      );
+      scope.get(`/databases/${fixtureDatabase.id}`).reply(200, fixtureDatabase);
+      const app = await parcel.getDatabase(fixtureDatabase.id as DatabaseId);
+      expect(app).toMatchPOD(fixtureDatabase);
+    });
+
+    describe('update', () => {
+      let update: DatabaseUpdateParams;
+      let updatedDatabase: PODDatabase;
+
+      beforeEach(() => {
+        update = {
+          name: 'new name',
+        };
+        updatedDatabase = Object.assign(clone(fixtureDatabase), update);
+      });
+
+      nockIt('by id', async (scope) => {
+        scope.put(`/databases/${fixtureDatabase.id}`, update).reply(200, updatedDatabase);
+        const updated = await parcel.updateDatabase(fixtureDatabase.id as DatabaseId, update);
+        expect(updated).toMatchPOD(updatedDatabase);
+      });
+
+      nockIt('retrieved', async (scope) => {
+        scope.put(`/databases/${fixtureDatabase.id}`, update).reply(200, updatedDatabase);
+        scope.get(`/databases/${fixtureDatabase.id}`).reply(200, fixtureDatabase);
+
+        const app = await parcel.getDatabase(fixtureDatabase.id as DatabaseId);
+        await app.update(update);
+        expect(app).toMatchPOD(updatedDatabase);
+      });
+    });
+
+    describe('list', () => {
+      nockIt('with filter and pagination', async (scope) => {
+        const numberResults = 1;
+        const fixtureResultsPage: Page<PODDatabase> = createResultsPage(
+          numberResults,
+          createPodDatabase,
+        );
+
+        const filterWithPagination = {
+          owner: createIdentityId(),
+          pageSize: 2,
+          pageToken: makeRandomId(),
+        };
+        expect(filterWithPagination).toMatchSchema(getQueryParametersSchema('GET', '/databases'));
+        scope
+          .get('/databases')
+          .query(
+            Object.fromEntries(
+              Object.entries(filterWithPagination).map(([k, v]) => [paramCase(k), v]),
+            ),
+          )
+          .reply(200, fixtureResultsPage);
+
+        const { results, nextPageToken } = await parcel.listDatabase(filterWithPagination);
+        expect(results).toHaveLength(numberResults);
+        for (const [i, r] of results.entries()) expect(r).toMatchPOD(fixtureResultsPage.results[i]);
+        expect(nextPageToken).toEqual(fixtureResultsPage.nextPageToken);
+      });
+
+      nockIt('no results', async (scope) => {
+        const fixtureResultsPage: Page<PODDatabase> = createResultsPage(0, createPodDatabase);
+
+        const filterWithPagination = {
+          name: 'unknown database',
+          owner: createIdentityId(),
+        };
+        expect(filterWithPagination).toMatchSchema(getQueryParametersSchema('GET', '/databases'));
+        scope
+          .get('/databases')
+          .query(
+            Object.fromEntries(
+              Object.entries(filterWithPagination).map(([k, v]) => [paramCase(k), v]),
+            ),
+          )
+          .reply(200, fixtureResultsPage);
+
+        const { results, nextPageToken } = await parcel.listDatabase(filterWithPagination);
+        expect(results).toHaveLength(0);
+        expect(nextPageToken).toEqual(fixtureResultsPage.nextPageToken);
+      });
+    });
+
+    describe('query', () => {
+      let query: Query;
+      let rows: Row[];
+
+      beforeEach(() => {
+        query = {
+          sql: 'CREATE TABLE threat_intels (wallet TEXT, inner TEXT, level INTEGER, data JSON)',
+          params: {},
+        };
+        rows = [{}];
+      });
+
+      nockIt('create', async (scope) => {
+        scope.post(`/databases/${fixtureDatabase.id}`, query as JsonObject).reply(200, rows);
+        const data = await parcel.queryDatabase(fixtureDatabase.id as DatabaseId, query);
+        expect(data).toHaveLength(1);
+        expect(data).toEqual(rows);
+      });
+    });
+
+    describe('delete', () => {
+      nockIt('by id', async (scope) => {
+        scope.delete(`/databases/${fixtureDatabase.id}`).reply(204);
+        await parcel.deleteDatabase(fixtureDatabase.id as DatabaseId);
+      });
+
+      nockIt('retrieved', async (scope) => {
+        scope.get(`/databases/${fixtureDatabase.id}`).reply(200, fixtureDatabase);
+        scope.delete(`/databases/${fixtureDatabase.id}`).reply(204);
+        const document = await parcel.getDatabase(fixtureDatabase.id as DatabaseId);
+        await document.delete();
+      });
+
+      nockIt('expect 204', async (scope) => {
+        scope.delete(`/databases/${fixtureDatabase.id}`).reply(200);
+        await expect(parcel.deleteDatabase(fixtureDatabase.id as DatabaseId)).rejects.toThrow();
+      });
     });
   });
 

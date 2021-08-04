@@ -33,6 +33,16 @@ import {
 } from './compute.js';
 import type { Condition } from './condition.js';
 import type {
+  Database,
+  DatabaseCreateParams,
+  DatabaseId,
+  DatabaseUpdateParams,
+  ListDatabasesFilter,
+  Query,
+  Row,
+} from './database.js';
+import { DatabaseImpl } from './database.js';
+import type {
   AccessEvent,
   Document,
   DocumentId,
@@ -108,6 +118,10 @@ export {
   ClientId,
   ClientType,
   Condition,
+  Database,
+  DatabaseCreateParams,
+  DatabaseId,
+  DatabaseUpdateParams,
   Document,
   DocumentId,
   DocumentUpdateParams,
@@ -211,6 +225,30 @@ export class Parcel {
     }
 
     return this.currentIdentity;
+  }
+
+  public async createDatabase(params: DatabaseCreateParams): Promise<Database> {
+    return DatabaseImpl.create(this.client, params);
+  }
+
+  public async getDatabase(id: DatabaseId): Promise<Database> {
+    return DatabaseImpl.get(this.client, id);
+  }
+
+  public async updateDatabase(id: DatabaseId, params: DatabaseUpdateParams): Promise<Database> {
+    return DatabaseImpl.update(this.client, id, params);
+  }
+
+  public async queryDatabase(id: DatabaseId, params: Query): Promise<Row[]> {
+    return DatabaseImpl.query(this.client, id, params);
+  }
+
+  public async listDatabase(params: ListDatabasesFilter & PageParams): Promise<Page<Database>> {
+    return DatabaseImpl.list(this.client, params);
+  }
+
+  public async deleteDatabase(id: DatabaseId): Promise<void> {
+    return DatabaseImpl.delete_(this.client, id);
   }
 
   public uploadDocument(data: Storable, params: DocumentUploadParams | undefined | null): Upload {
