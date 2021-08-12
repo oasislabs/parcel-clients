@@ -457,9 +457,9 @@ describe('Parcel', () => {
 
   function createPodMeteringQuota(): PODMeteringQuota {
     const podMeteringQuota: PODMeteringQuota = {
-      apiCallsLimit: 1_000,
+      apiCallsLimit: 1000,
       accessedBytesLimit: 10_000,
-      computeMsecLimit: 1_000,
+      computeMsecLimit: 1000,
     };
     expect(podMeteringQuota).toMatchSchema('MeteringQuota');
     return podMeteringQuota;
@@ -483,16 +483,16 @@ describe('Parcel', () => {
       testName: string,
       test: (scope: nock.Scope) => Promise<void>,
     ): void {
-      nockIt(testName, async (scope) => {
-        return test(
+      nockIt(testName, async (scope) =>
+        test(
           scope
             .get('/identities/me')
             // The `/parcel` below would be added by an ingress rewrite URL.
             .reply(307, {}, { location: `/parcel/v1/identities/${fixtureIdentity.id}` })
             .get(`/identities/${fixtureIdentity.id}`)
             .reply(200, fixtureIdentity),
-        );
-      });
+        ),
+      );
     }
 
     beforeEach(() => {
@@ -556,7 +556,11 @@ describe('Parcel', () => {
       nockItWithCurrentIdentity('grant', async (scope) => {
         const fixtureCreatedGrant = { grants: [createPodGrant()] };
         expect(fixtureCreatedGrant).toMatchSchema(
-          getResponseSchema('POST', '/identities/{identityId}/permissions/{permissionId}', 201),
+          getResponseSchema(
+            'POST',
+            '/identities/{identityOrAppId}/permissions/{permissionId}',
+            201,
+          ),
         );
 
         const fixturePermission = createPodPermission();
@@ -573,7 +577,11 @@ describe('Parcel', () => {
         nockItWithCurrentIdentity('granted', async (scope) => {
           const fixturePermission = createPodPermission();
           expect(fixturePermission).toMatchSchema(
-            getResponseSchema('GET', '/identities/{identityId}/permissions/{permissionId}', 200),
+            getResponseSchema(
+              'GET',
+              '/identities/{identityOrAppId}/permissions/{permissionId}',
+              200,
+            ),
           );
 
           scope
@@ -608,7 +616,7 @@ describe('Parcel', () => {
             createPodPermission,
           );
           expect(fixtureResultsPage).toMatchSchema(
-            getResponseSchema('GET', '/identities/{identityId}/permissions', 200),
+            getResponseSchema('GET', '/identities/{identityOrAppId}/permissions', 200),
           );
 
           scope.get(`/identities/${fixtureIdentity.id}/permissions`).reply(200, fixtureResultsPage);
@@ -636,7 +644,7 @@ describe('Parcel', () => {
             pageToken: makeRandomId(),
           };
           expect(filterWithPagination).toMatchSchema(
-            getQueryParametersSchema('GET', '/identities/{identityId}/permissions'),
+            getQueryParametersSchema('GET', '/identities/{identityOrAppId}/permissions'),
           );
 
           scope
@@ -1805,7 +1813,7 @@ describe('Parcel', () => {
       expect(fixtureMeteringQuota).toMatchSchema(getResponseSchema('PUT', '/quota', 200));
       const update = {
         apiCallsLimit: 10_000,
-        accessedBytesLimit: 1_000,
+        accessedBytesLimit: 1000,
         computeMsecLimit: 10_000,
       };
       const updatedMeteringQuota = Object.assign(clone(fixtureMeteringQuota), update);

@@ -1,14 +1,14 @@
 import type { WriteStream } from 'fs';
+import type { Readable, Writable } from 'stream';
 
 import AbortController from 'abort-controller';
 import FormData from 'form-data';
 import type { BeforeRequestHook, NormalizedOptions, Options as KyOptions } from 'ky';
-import ky from 'ky';
+import ky, { HTTPError } from 'ky';
 import { paramCase } from 'param-case';
-import type { Readable, Writable } from 'stream';
 
 import type { PODDocument } from './document';
-import type { JsonSerializable } from './model.js';
+import type { JsonSerializable, Page } from './model.js';
 import type { TokenProvider } from './token.js';
 import { ReadableStreamPF } from './polyfill.js';
 
@@ -23,8 +23,8 @@ export type Config = Partial<{
   httpClientConfig: KyOptions;
 }>;
 
-const EXPECTED_RESPONSE_CODES = new Map([
-  ['POST', 201],
+const DEFAULT_RESPONSE_CODES = new Map([
+  ['POST', 200],
   ['PUT', 200],
   ['PATCH', 200],
   ['DELETE', 204],
@@ -95,15 +95,17 @@ export class HttpClient {
               );
             }
 
-            const expectedStatus: number =
-              (req as any).expectedStatus ?? EXPECTED_RESPONSE_CODES.get(req.method);
-            if (res.ok && expectedStatus && res.status !== expectedStatus) {
+            const allowedStatusCodes: number[] = (req as any).allowedStatusCodes ?? [];
+            allowedStatusCodes.push(DEFAULT_RESPONSE_CODES.get(req.method) ?? 200);
+            if (res.ok && !allowedStatusCodes.includes(res.status)) {
               const endpoint = res.url.replace(this.apiUrl, '');
               throw new ApiError(
                 req,
                 opts,
                 res,
-                `${req.method} ${endpoint} returned unexpected status ${res.status}. expected: ${expectedStatus}.`,
+                `${req.method} ${endpoint} returned unexpected status ${
+                  res.status
+                }. expected: ${allowedStatusCodes.join(' | ')}.`,
               );
             }
           },
@@ -133,20 +135,34 @@ export class HttpClient {
     return response.json();
   }
 
-  /** Convenience method for POSTing and expecting a 201 response */
-  public async create<T>(
-    endpoint: string,
-    data: Record<string, JsonSerializable> | FormData,
-    requestOptions?: KyOptions,
-  ): Promise<T> {
-    return this.post(endpoint, data, requestOptions);
-  }
-
   public async upload(data: FormData, requestOptions?: KyOptions): Promise<PODDocument> {
-    return this.post(this.storageUrl, data, {
+    return this.create(this.storageUrl, data, {
       prefixUrl: '',
       ...requestOptions,
     });
+  }
+
+  /** Convenience method for POSTing and expecting a 201 response */
+  public async create<T>(
+    endpoint: string,
+    data: Record<string, JsonSerializable> | FormData | undefined,
+    requestOptions?: KyOptions,
+  ): Promise<T> {
+    return this.post(endpoint, data, {
+      ...requestOptions,
+      hooks: {
+        beforeRequest: [...(requestOptions?.hooks?.beforeRequest ?? []), addAllowedStatusCode(201)],
+      },
+    });
+  }
+
+  /** Convenience method for POSTing and expecting a 200 response */
+  public async search<T>(
+    baseEndpoint: string, // Without the `/search` suffix.
+    params: Record<string, JsonSerializable> | undefined,
+    requestOptions?: KyOptions,
+  ): Promise<Page<T>> {
+    return this.post<Page<T>>(`${baseEndpoint}/search`, params, requestOptions);
   }
 
   public async post<T>(
@@ -250,9 +266,10 @@ function attachContext(context: string): BeforeRequestHook {
   };
 }
 
-export function setExpectedStatus(status: number): BeforeRequestHook {
-  return (req) => {
-    (req as any).expectedStatus = status;
+export function addAllowedStatusCode(status: number): BeforeRequestHook {
+  return (req: any) => {
+    req.allowedStatusCodes = req.allowedStatusCodes ?? [];
+    req.allowedStatusCodes.push(status);
   };
 }
 
@@ -346,7 +363,7 @@ export class Download implements AsyncIterable<Uint8Array> {
   }
 }
 
-export class ApiError extends ky.HTTPError {
+export class ApiError extends HTTPError {
   name = 'ApiError';
   public readonly message: string;
 
@@ -361,7 +378,7 @@ export class ApiError extends ky.HTTPError {
     this.message = request.context ? `error in ${request.context}: ${message}` : message;
   }
 
-  public static async fromHTTPError(error: ky.HTTPError): Promise<ApiError> {
+  public static async fromHTTPError(error: HTTPError): Promise<ApiError> {
     const res = error.response;
     return new ApiError(error.request, error.options, res, (await res.json()).error);
   }

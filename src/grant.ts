@@ -27,7 +27,7 @@ export type GrantCreateParams = {
   grantee: IdentityId | 'everyone';
 
   /** The condition that must be matched to receive access to one or more Assets - Documents and Databases. */
-  condition?: Condition;
+  condition?: Condition | null;
 
   /** The capabilities attached to this grant. The default is `read`. */
   capabilities?: Capabilities | string;

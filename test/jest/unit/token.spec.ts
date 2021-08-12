@@ -96,9 +96,8 @@ describe('Re(new|fresh)ingTokenProvider', () => {
         refresh_token: REFRESHING_PROVIDER_PARAMS.refreshToken,
         audience: PARCEL_RUNTIME_AUD,
       },
-      expectedRefreshRequest: (body: any) => {
-        return body.refresh_token === 'refresh token 2' && body.audience === PARCEL_RUNTIME_AUD;
-      },
+      expectedRefreshRequest: (body: any) =>
+        body.refresh_token === 'refresh token 2' && body.audience === PARCEL_RUNTIME_AUD,
     },
   ]) {
     describe('using ' + suite.name, () => {

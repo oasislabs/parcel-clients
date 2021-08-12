@@ -203,7 +203,7 @@ const statusEndpointForId = (id: JobId) => `${JOBS_EP}/${id}/status`;
 
 export namespace ComputeImpl {
   export async function submitJob(client: HttpClient, spec: JobSpec): Promise<Job> {
-    const pod = await client.post<PODJob>(JOBS_EP, spec);
+    const pod = await client.create<PODJob>(JOBS_EP, spec);
     return new Job(client, pod);
   }
 

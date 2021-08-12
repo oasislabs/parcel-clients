@@ -6,10 +6,10 @@ import type { Readable } from 'readable-stream';
 import type { Opaque, SetOptional } from 'type-fest';
 
 import type { AppId } from './app.js';
-import type { JobId, JobSpec } from './compute.js';
+import type { AccessContext } from './asset.js';
+import type { JobId } from './compute.js';
 import type { Condition } from './condition.js';
 import type { HttpClient, Download } from './http.js';
-import { setExpectedStatus } from './http.js';
 import type { IdentityId } from './identity.js';
 import type { Model, Page, PageParams, PODModel, ResourceId, WritableExcluding } from './model.js';
 import { makePage } from './model.js';
@@ -91,11 +91,7 @@ export namespace DocumentImpl {
     client: HttpClient,
     params?: DocumentSearchParams & PageParams,
   ): Promise<Page<Document>> {
-    const podPage = await client.post<Page<PODDocument>>(`${DOCUMENTS_EP}/search`, params, {
-      hooks: {
-        beforeRequest: [setExpectedStatus(200)],
-      },
-    });
+    const podPage = await client.search<PODDocument>(DOCUMENTS_EP, params);
     return makePage(Document, podPage, client);
   }
 
@@ -118,13 +114,11 @@ export namespace DocumentImpl {
   ): Promise<Page<AccessEvent>> {
     const podPage = await client.get<Page<PODAccessEvent>>(endpointForId(id) + '/history', filter);
 
-    const results = podPage.results.map((podAccessEvent) => {
-      return {
-        createdAt: new Date(podAccessEvent.createdAt),
-        document: podAccessEvent.document as DocumentId,
-        accessor: podAccessEvent.accessor as IdentityId,
-      };
-    });
+    const results = podPage.results.map((podAccessEvent) => ({
+      createdAt: new Date(podAccessEvent.createdAt),
+      document: podAccessEvent.document as DocumentId,
+      accessor: podAccessEvent.accessor as IdentityId,
+    }));
     return {
       results,
       nextPageToken: podPage.nextPageToken,
@@ -211,39 +205,6 @@ export type DocumentSearchParams = {
   accessibleInContext?: AccessContext;
 };
 
-/**
- * The context in which a document will be accessed.
- * Grants condition on the values of this context.
- */
-type AccessContext = {
-  /**
-   * The identity that will be accessing the document.
-   * Leaving this field unset will search for documents
-   * accessible to anybody (likely only in the context of a job).
-   */
-  accessor?: IdentityId;
-
-  /**
-   * The job that will be accessing the data.
-   * Leaving this field unset will search for documents
-   * accessible directly by identities. If `identity` is
-   * also unset, the search will return public documents.
-   */
-  job?: JobSpec;
-
-  /**
-   * The time at which the data will be accessed.
-   * Generally, you don't need to set this unless you're differentiating
-   * among multple documents that all require a certain access time.
-   */
-  accessTime?: Date;
-
-  // /**
-  //  * The kind of worker that you must use to run the job.
-  //  */
-  // worker: WorkerSpec; // TODO
-};
-
 export type AccessEvent = {
   createdAt: Date;
   document: DocumentId;
@@ -318,6 +279,7 @@ export class Upload extends EventEmitter {
       .then((podDocument) => {
         this.emit('finish', new Document(client, podDocument));
       })
+      // eslint-disable-next-line promise/prefer-await-to-then
       .catch((error: any) => {
         this.emit('error', error);
       });

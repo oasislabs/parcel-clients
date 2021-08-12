@@ -1,6 +1,8 @@
 import { ChildProcess, spawn, execSync } from 'child_process';
 import { dirname, join } from 'path';
+
 import { CustomConsole, LogType, LogMessage } from '@jest/console';
+
 import Parcel, {
   App,
   AppCreateParams,
@@ -19,9 +21,7 @@ import Parcel, {
 const spawnerConsole = new CustomConsole(
   process.stdout,
   process.stderr,
-  (_: LogType, message: LogMessage): string => {
-    return `[SPAWNER] ${message}`;
-  },
+  (_: LogType, message: LogMessage) => `[SPAWNER] ${message}`,
 );
 
 const npmPath = join(dirname(process.execPath), 'npm');
@@ -321,6 +321,14 @@ it(
     await runExamplePromisified('compute-advanced');
   },
   300 * 1000,
+);
+
+it(
+  'tokenization-basic',
+  async () => {
+    await runExamplePromisified('tokenization-basic');
+  },
+  20 * 1000,
 );
 
 async function runCypressTest(exampleName: string): Promise<void> {

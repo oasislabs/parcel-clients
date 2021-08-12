@@ -1,5 +1,4 @@
 import express from 'express';
-import path from 'path';
 
 const app = express();
 const port = 4050;
@@ -28,7 +27,7 @@ const oidcConfig = {
 app.use(express.static('public'));
 
 app.get('/index.html', (req: express.Request, res: express.Response) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
+  res.sendFile('index.html');
 });
 
 app.get('/getOidcConfig', (req: express.Request, res: express.Response) => {

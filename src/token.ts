@@ -1,13 +1,13 @@
-import { appendAsLastBeforeRequest, dontCloneForAfterResponses } from './http.js';
 import jsrsasign from 'jsrsasign';
 import type { NormalizedOptions, ResponsePromise } from 'ky';
-import ky from 'ky';
+import ky, { HTTPError } from 'ky';
 import type { JsonObject, Merge } from 'type-fest';
 
+import { appendAsLastBeforeRequest, dontCloneForAfterResponses } from './http.js';
 import type { IdentityId } from './identity.js';
 import './polyfill.js'; // eslint-disable-line import/no-unassigned-import
 
-export class TokenError extends ky.HTTPError {
+export class TokenError extends HTTPError {
   name = 'TokenError';
   message = this.responseJson.error_description ?? this.responseJson.error;
 
@@ -214,6 +214,7 @@ export class RefreshingTokenProvider extends ExpiringTokenProvider {
       .then(async (refreshResponse) => {
         this.refreshToken = (await refreshResponse.clone().json()).refresh_token;
       })
+      // eslint-disable-next-line promise/prefer-await-to-then
       .catch(() => {
         // Do nothing. The promise lives on.
       });

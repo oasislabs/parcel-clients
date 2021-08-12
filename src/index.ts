@@ -6,6 +6,8 @@
  */
 import type { App, AppCreateParams, AppId, AppUpdateParams, ListAppsFilter } from './app.js';
 import { AppImpl } from './app.js';
+import type { AssetId, EscrowedAsset, EscrowedAssetSearchParams, AccessContext } from './asset.js';
+import { AssetImpl } from './asset.js';
 import type {
   BackendClientCreateParams,
   BackendClientUpdateParams,
@@ -80,14 +82,32 @@ import type {
   TokenSource,
 } from './token.js';
 import { TokenProvider, PARCEL_RUNTIME_AUD } from './token.js';
+import type {
+  EthAddr,
+  EthBridge,
+  EthBridgeGasParams,
+  EthBridgeType,
+  Token,
+  TokenBalance,
+  TokenCreateParams,
+  TokenGrantSpec,
+  TokenId,
+  TokenSearchParams,
+  TokenizationReceipt,
+  TransferReceipt,
+  TransferReceiptId,
+} from './tokenization.js';
+import { TokenImpl } from './tokenization.js';
 
 export {
+  AccessContext,
   AccessEvent,
   ApiError,
   App,
   AppCreateParams,
   AppId,
   AppUpdateParams,
+  AssetId,
   BackendClient,
   BackendClientCreateParams,
   BackendClientUpdateParams,
@@ -107,6 +127,12 @@ export {
   DocumentUpdateParams,
   DocumentUploadParams,
   Download,
+  EscrowedAsset,
+  EscrowedAssetSearchParams,
+  EthAddr,
+  EthBridge,
+  EthBridgeGasParams,
+  EthBridgeType,
   FrontendClient,
   FrontendClientCreateParams,
   FrontendClientUpdateParams,
@@ -147,7 +173,16 @@ export {
   ServiceClientCreateParams,
   ServiceClientUpdateParams,
   Storable,
+  Token,
+  TokenBalance,
+  TokenCreateParams,
+  TokenGrantSpec,
+  TokenId,
+  TokenSearchParams,
   TokenSource,
+  TokenizationReceipt,
+  TransferReceipt,
+  TransferReceiptId,
 };
 
 /**
@@ -387,6 +422,51 @@ export class Parcel {
    */
   public async setQuota(params: QuotaUpdateParams): Promise<MeteringQuota> {
     return MeterImpl.setQuota(this.client, params);
+  }
+
+  // Tokenization
+
+  /** Returns the amount of the token held by the identity. */
+  public async getTokenBalance(identityId: IdentityId, tokenId: TokenId): Promise<TokenBalance> {
+    return IdentityImpl.getTokenBalance(this.client, identityId, tokenId);
+  }
+
+  /** Mints a new token. */
+  public async mintToken(params: TokenCreateParams): Promise<Token> {
+    return TokenImpl.mint(this.client, params);
+  }
+
+  /** Returns information about a token. */
+  public async getToken(tokenId: TokenId): Promise<Token> {
+    return TokenImpl.get(this.client, tokenId);
+  }
+
+  public async searchTokens(filter?: TokenSearchParams & PageParams): Promise<Page<Token>> {
+    return TokenImpl.search(this.client, filter);
+  }
+
+  /** Returns information about an asset held by the escrow identity. */
+  public async searchEscrowedAssets(
+    filter?: EscrowedAssetSearchParams & PageParams,
+  ): Promise<Page<EscrowedAsset>> {
+    return AssetImpl.search(this.client, filter);
+  }
+
+  /** Returns information about an asset held by the escrow identity. */
+  public async getEscrowedAsset(assetId: AssetId): Promise<EscrowedAsset> {
+    return AssetImpl.get(this.client, assetId);
+  }
+
+  public async transferToken(
+    tokenId: TokenId,
+    amount: number,
+    recipient: IdentityId,
+  ): Promise<TransferReceipt> {
+    return TokenImpl.transfer(this.client, tokenId, amount, recipient);
+  }
+
+  public async getTransferReceipt(recieptId: TransferReceiptId): Promise<TransferReceipt> {
+    return TokenImpl.getTransferReceipt(this.client, recieptId);
   }
 }
 

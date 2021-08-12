@@ -1,7 +1,6 @@
 import type { Except, Opaque } from 'type-fest';
 
 import type { HttpClient } from './http.js';
-import { setExpectedStatus } from './http.js';
 import type { IdentityId } from './identity.js';
 import type { JsonSerializable, Model, Page, PageParams, PODModel, ResourceId } from './model.js';
 import { makePage } from './model.js';
@@ -67,9 +66,7 @@ export namespace DatabaseImpl {
   }
 
   export async function query(client: HttpClient, id: DatabaseId, params: Query): Promise<Row[]> {
-    return client.post<Row[]>(endpointForId(id), params, {
-      hooks: { beforeRequest: [setExpectedStatus(200)] },
-    });
+    return client.post<Row[]>(endpointForId(id), params);
   }
 
   export async function update(
