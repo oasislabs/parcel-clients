@@ -2,7 +2,7 @@ import type { Primitive } from 'type-fest';
 
 import type {
   InputDocumentSpec as $InputDocumentSpec,
-  OutputDocumentSpec as $OutputDatsetSpec,
+  OutputDocumentSpec as $OutputDocumentSpec,
 } from './compute.js';
 import type { DatabaseId as $DatabaseId } from './database.js';
 import type { DocumentId as $DocumentId } from './document.js';
@@ -60,7 +60,7 @@ export namespace Selectors {
     'job.spec.inputs': RelationalOp<$InputDocumentSpec>;
   };
   export type JobOutputs = {
-    'job.spec.outputs': RelationalOp<$OutputDatsetSpec>;
+    'job.spec.outputs': RelationalOp<$OutputDocumentSpec>;
   };
   export type Job = JobImage | JobInputs | JobOutputs;
 

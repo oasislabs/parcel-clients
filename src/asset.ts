@@ -62,7 +62,7 @@ export type AccessContext = {
   /**
    * The time at which the data will be accessed.
    * Generally, you don't need to set this unless you're differentiating
-   * among multple documents that all require a certain access time.
+   * among multiple documents that all require a certain access time.
    */
   accessTime?: Date;
 

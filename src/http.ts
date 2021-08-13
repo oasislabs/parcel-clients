@@ -348,7 +348,7 @@ export class Download implements AsyncIterable<Uint8Array> {
    * Lazily make the request. Helps avoid unhandled promise rejections when the request
    * fails before a pipe or iterator handler is attached.
    */
-  // This funciton returns double promise to make both xo and TS happy. V8 doesn't care.
+  // This function returns double promise to make both xo and TS happy. V8 doesn't care.
   private async makeRequest(): Promise<Response> {
     if (!this.res) {
       this.res = this.client.get(this.endpoint, {

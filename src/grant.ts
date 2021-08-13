@@ -114,7 +114,7 @@ export type ListGrantsFilter = {
 
 /**
  * `Capabilities` is a collection of bit flags.
- * To test if a cability is set, you can do something like
+ * To test if a capability is set, you can do something like
  * ```
  * const requiredCaps = (Capabilities.Read | Capabilities.Extend);
  * caps & requiredCaps === requiredCaps;
