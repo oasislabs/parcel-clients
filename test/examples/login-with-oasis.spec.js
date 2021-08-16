@@ -5,7 +5,7 @@
 // This test assumes the login-with-oasis example is already configured and listening on the baseUrl
 // configured above.
 
-it('login-with-oasis-frontend', () => {
+it('login-with-oasis', () => {
   // Visit the base URL of the login-with-oasis-frontend example.
   cy.visit('/');
   cy.contains('Get started with Oasis').click();
@@ -22,8 +22,11 @@ it('login-with-oasis-frontend', () => {
   cy.contains("I have read and understood the Oasis Labs' Terms and Conditions").click();
   cy.contains('Share and continue').click();
 
-  // If token authorization succeeds, a div "Your user id is <button with user identity>" is shown.
+  // If token authorization succeeds, a div "Your Parcel identity  is <button with user identity>" is shown.
   cy.get('#parcel-id')
     .invoke('text')
     .should('match', /^I[A-Za-z\d]{10,}$/);
+
+  // Also "You have X documents!" is shown, where X should be zero in our case.
+  cy.get('#document-count').invoke('text').should('eq', '0');
 });

@@ -189,9 +189,9 @@ export type Storable = Uint8Array | Readable | ReadStream | Blob | string;
 export type DocumentSearchParams = {
   /**
    * Searches for documents that would be selected if a grant with the
-   * specfified condition were created. Use this field for simulating a grant.
+   * specified condition were created. Use this field for simulating a grant.
    *
-   * If `accessibleInContext` is also specfified, this field selects documents
+   * If `accessibleInContext` is also specified, this field selects documents
    * both accessible in the context and selected by the condition (i.e. existing
    * conditions apply).
    */

@@ -1,4 +1,5 @@
-import { ChildProcess, spawn, execSync } from 'child_process';
+import * as fs from 'fs';
+import { ChildProcess, execSync, spawn } from 'child_process';
 import { dirname, join } from 'path';
 
 import { CustomConsole, LogType, LogMessage } from '@jest/console';
@@ -293,7 +294,21 @@ it(
 it(
   'login-with-oasis-frontend',
   async () => {
-    await runCypressTest('login-with-oasis-frontend');
+    await runCypressTest('login-with-oasis-frontend', () => {
+      // A hack to inject PARCEL_API_URL and PARCEL_STORAGE_URL into frontend
+      // javascript code since we don't want to spoil examples with testing env
+      // variables.
+      const env = {
+        PARCEL_API_URL: process.env.PARCEL_API_URL,
+        PARCEL_STORAGE_URL: process.env.PARCEL_STORAGE_URL,
+      };
+      const envSnippet = `globalThis.process = { env: ${JSON.stringify(env)} };\n`;
+      const parceljs = fs.readFileSync('examples/login-with-oasis-frontend/public/parcel.js');
+      fs.writeFileSync(
+        'examples/login-with-oasis-frontend/public/parcel.js',
+        envSnippet + String(parceljs),
+      );
+    });
   },
   100 * 1000,
 );
@@ -331,7 +346,7 @@ it(
   20 * 1000,
 );
 
-async function runCypressTest(exampleName: string): Promise<void> {
+async function runCypressTest(exampleName: string, preCypressHook?: () => void): Promise<void> {
   return new Promise<void>((resolve, reject) => {
     const example = runExample(exampleName, async (data) => {
       // Forward example's output to stdout.
@@ -340,6 +355,9 @@ async function runCypressTest(exampleName: string): Promise<void> {
       // Wait for Express used in the example to start listening.
       if (data.includes('listening at http://localhost:4050')) {
         try {
+          // Some examples may hack some assets, configs etc. after the example starts listening.
+          preCypressHook?.();
+
           // Launch a frontend test.
           const cypressCmd = `${npxPath} cypress run --config '{"baseUrl":"http://localhost:4050","integrationFolder":"test/examples","testFiles":["login-with-oasis.spec.js"],"chromeWebSecurity":false,"video":true,"videosFolder":"cypress/videos/${exampleName}"}'`;
           execSync(cypressCmd, { stdio: 'inherit' });

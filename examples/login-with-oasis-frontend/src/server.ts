@@ -12,7 +12,7 @@ const oidcConfig = {
   client_id: process.env.ACME_FRONTEND_CLIENT_ID!,
   redirect_uri: `http://localhost:${port}/callback`,
   response_type: 'code',
-  scope: 'openid profile email',
+  scope: 'openid profile email parcel.public',
   filterProtocolClaims: false,
   loadUserInfo: false,
   extraQueryParams: {
