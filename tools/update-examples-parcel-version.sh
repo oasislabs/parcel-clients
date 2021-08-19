@@ -100,6 +100,8 @@ if $parcel_npmpacked; then
 fi
 
 if $has_errors; then
-  echo "error: Inconsistent @oasislabs/parcel version in examples. Try running ${BASH_SOURCE[0]} without --check flag to sync the versions. Aborting."
+  script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")"; git rev-parse --show-prefix)"  # relative to git repo root
+  script_name="$(echo "${BASH_SOURCE[0]}" | rev | cut -d'/' -f1 | rev)"
+  echo "error: Inconsistent @oasislabs/parcel version in examples. Try running ${script_dir}${script_name} without --check flag to sync the versions. Aborting."
   exit 1
 fi
