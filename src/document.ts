@@ -40,9 +40,9 @@ export class Document implements Model {
   public readonly creator: IdentityId;
   public readonly size: number;
   public readonly owner: IdentityId;
+  public readonly details: DocumentDetails;
 
   /** Additional, optional information about the document. */
-  public readonly details: DocumentDetails;
   public readonly originatingJob?: JobId;
 
   #client: HttpClient;
