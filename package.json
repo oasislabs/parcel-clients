@@ -26,7 +26,8 @@
     "test:cy": "start-test 'parcel serve test/cypress/fixtures/index.html -p 4444' 4444 'cypress run'",
     "coverage": "yarn test:unit --coverage && yarn test:cy",
     "doc": "typedoc --options docs/typedoc.json",
-    "prepublishOnly": "yarn build"
+    "prepublishOnly": "yarn build",
+    "prepack": "echo 'Normalize permissions for packing...'; find README.md package.json lib src -type f -exec chmod 664 {} \\;"
   },
   "jest": {
     "coverageDirectory": "coverage/jest",
