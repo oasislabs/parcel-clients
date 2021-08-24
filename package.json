@@ -27,7 +27,8 @@
     "coverage": "yarn test:unit --coverage && yarn test:cy",
     "doc": "typedoc --options docs/typedoc.json",
     "prepublishOnly": "yarn build",
-    "prepack": "echo 'Normalize permissions for packing...'; find README.md package.json lib src -type f -exec chmod 664 {} \\;"
+    "prepack": "echo 'Normalize permissions for packing...'; find README.md package.json lib src -type f -exec chmod 664 {} \\;",
+    "consistent-pack": "docker run -v \"${PWD}:${PWD}\" --workdir \"${PWD}\" --user \"${UID}:${GID}\" -it node:14-alpine npm pack"
   },
   "jest": {
     "coverageDirectory": "coverage/jest",
