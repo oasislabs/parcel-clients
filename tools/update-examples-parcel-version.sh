@@ -12,8 +12,8 @@ If --check parameter is provided, it only checks whether the versions and
 lock files match and returns a non-zero code, if they do not.
 
 NOTE: Make sure node_modules folder in your TypeScript client is clean (rm -r
-node_modules; yarn). Otherwise leftover dependencies will blow up newly
-generated package-lock.json files.
+node_modules; yarn; yarn build). Otherwise leftover dependencies will blow up
+newly generated package-lock.json files.
 EOM
   exit 1
 }
