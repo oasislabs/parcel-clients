@@ -34,4 +34,8 @@ describe('Large file (100MiB)', () => {
     await download.pipeTo(writeStream);
     expect(writeStream.bytesWritten).toBe(SIZE_100MB);
   }, 30_000);
+
+  it('delete', async () => {
+    await doc.delete();
+  });
 });

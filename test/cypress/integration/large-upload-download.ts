@@ -37,4 +37,8 @@ describe('Large file (100MiB)', () => {
     );
     expect(progress).to.eq(SIZE_100MB);
   });
+
+  it('delete', async () => {
+    await doc.delete();
+  });
 });
