@@ -49,6 +49,7 @@ const jobSpec: JobSpec = {
   inputDocuments: [{ mountPath: 'skin.jpg', id: skinDocument.id }],
   outputDocuments: [{ mountPath: 'prediction.txt', owner: bobId }],
   cmd: ['python', 'predict.py', '/parcel/data/in/skin.jpg', '/parcel/data/out/prediction.txt'],
+  memory: '2G',
 };
 // #endregion snippet-submit-job
 
