@@ -93,6 +93,7 @@
     "xo": "^0.43.0"
   },
   "dependencies": {
+    "@mattiasbuelens/web-streams-adapter": "^0.1.0",
     "@types/readable-stream": "^2.3.9",
     "abort-controller": "^3.0.0",
     "eventemitter3": "^4.0.4",

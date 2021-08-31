@@ -10,7 +10,7 @@ import { paramCase } from 'param-case';
 import type { PODDocument } from './document';
 import type { JsonSerializable, Page } from './model.js';
 import type { TokenProvider } from './token.js';
-import { ReadableStreamPF } from './polyfill.js';
+import { pipeToPolyfill } from './polyfill.js';
 
 const DEFAULT_API_URL =
   globalThis?.process?.env?.PARCEL_API_URL ?? 'https://api.oasislabs.com/parcel/v1';
@@ -329,8 +329,7 @@ export class Download implements AsyncIterable<Uint8Array> {
       }
 
       // Firefox's native ReadableStream is missing pipeTo.
-      (body as any)._readableStreamController = null; // https://github.com/MattiasBuelens/web-streams-polyfill/blob/36c08de/src/lib/readable-stream.ts#L407
-      return ReadableStreamPF.prototype.pipeTo.call(body, sink);
+      return pipeToPolyfill(body, sink);
     }
 
     // eslint-disable-next-line node/no-unsupported-features/es-syntax
