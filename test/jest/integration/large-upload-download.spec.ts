@@ -1,7 +1,7 @@
 import fs from 'fs';
 
 import crypto from 'crypto';
-import type { Document, Parcel } from '@oasislabs/parcel';
+import type { Document, Parcel } from '../../..'; // eslint-disable-line import/extensions
 import { bootstrapParcel } from './helpers';
 
 const SIZE_100MB = 100 * 1024 * 1024;

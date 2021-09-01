@@ -1,5 +1,6 @@
-import Parcel, { PrivateJWK, PublicJWK } from '@oasislabs/parcel';
 import { JWK } from 'node-jose';
+// Note: this file is used by jest/integration and cy/integration.
+import { ClientType, Parcel, PrivateJWK, PublicJWK } from '../../..'; // eslint-disable-line import/extensions
 
 const apiUrl = process.env.PARCEL_API_URL ?? 'http://localhost:4242/v1';
 
@@ -34,4 +35,38 @@ export async function bootstrapParcel() {
     ],
   });
   return new Parcel(credential, { apiUrl });
+}
+
+export async function createAppAndClient(parcel: Parcel) {
+  const app = await parcel.createApp({
+    admins: [],
+    allowUserUploads: false,
+    collaborators: [],
+    homepageUrl: 'https://oasislabs.com',
+    identity: {
+      tokenVerifiers: [],
+    },
+    inviteOnly: false,
+    invites: [],
+    logoUrl: 'https://oasislabs.com',
+    name: 'a',
+    organization: '',
+    privacyPolicy: 'https://oasislabs.com',
+    published: true,
+    shortDescription: '',
+    termsAndConditions: 'https://oasislabs.com',
+    acceptanceText: '',
+    brandingColor: '',
+    category: '',
+    extendedDescription: '',
+    invitationText: '',
+    rejectionText: '',
+  });
+  const client = await parcel.createClient(app.id, {
+    type: ClientType.Frontend,
+    name: 'a',
+    redirectUris: ['https://oasislabs.com'],
+    postLogoutRedirectUris: ['https://oasislabs.com'],
+  });
+  return { app, client };
 }

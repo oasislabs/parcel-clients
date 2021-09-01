@@ -1,6 +1,6 @@
 /// <reference types="../fixtures/types" />
 import type { App, Client, Parcel } from '../../..'; // eslint-disable-line import/extensions
-import { bootstrapParcel } from './helpers';
+import { bootstrapParcel, createAppAndClient } from '../../jest/integration/helpers';
 
 describe('Client', () => {
   let parcel: Parcel;
@@ -12,36 +12,9 @@ describe('Client', () => {
   });
 
   it('create', async () => {
-    app = await parcel.createApp({
-      admins: [],
-      allowUserUploads: false,
-      collaborators: [],
-      homepageUrl: 'https://oasislabs.com',
-      identity: {
-        tokenVerifiers: [],
-      },
-      inviteOnly: false,
-      invites: [],
-      logoUrl: 'https://oasislabs.com',
-      name: 'a',
-      organization: '',
-      privacyPolicy: 'https://oasislabs.com',
-      published: true,
-      shortDescription: '',
-      termsAndConditions: 'https://oasislabs.com',
-      acceptanceText: '',
-      brandingColor: '',
-      category: '',
-      extendedDescription: '',
-      invitationText: '',
-      rejectionText: '',
-    });
-    client = await parcel.createClient(app.id, {
-      type: ClientType.Frontend,
-      name: 'a',
-      redirectUris: ['https://oasislabs.com'],
-      postLogoutRedirectUris: ['https://oasislabs.com'],
-    });
+    const created = await createAppAndClient(parcel);
+    app = created.app;
+    client = created.client;
   });
 
   it('delete', async () => {
