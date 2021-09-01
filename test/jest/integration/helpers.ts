@@ -3,6 +3,7 @@ import { JWK } from 'node-jose';
 import { ClientType, Parcel, PrivateJWK, PublicJWK } from '../../..'; // eslint-disable-line import/extensions
 
 const apiUrl = process.env.PARCEL_API_URL ?? 'http://localhost:4242/v1';
+const authUrl = process.env.PARCEL_AUTH_URL ?? 'http://localhost:4040';
 
 export async function generateJWKPair() {
   const keyPair = await JWK.createKey('EC', 'P-256', {
@@ -37,6 +38,27 @@ export async function bootstrapParcel() {
   return new Parcel(credential, { apiUrl });
 }
 
+/**
+ * Retrieve public keys from Auth and return the first one.
+ * Auth returns the latest key first, and prefers using this key over existing ones.
+ * Expects PARCEL_AUTH_URL env variable to be set.
+ */
+async function getAuthPublicKey(): Promise<PublicJWK> {
+  const response = await fetch(`${authUrl}/.well-known/jwks.json`);
+  if (!response.ok) {
+    const hint = await response.text();
+    throw new Error(`${response.statusText}${hint ? `: ${hint}` : ''}`);
+  }
+
+  const { keys }: { keys: PublicJWK[] } = await response.json();
+
+  if (!keys?.[0]) {
+    throw new Error(`Oasis Auth public key is not available from ${authUrl}`);
+  }
+
+  return keys[0];
+}
+
 export async function createAppAndClient(parcel: Parcel) {
   const app = await parcel.createApp({
     admins: [],
@@ -44,7 +66,12 @@ export async function createAppAndClient(parcel: Parcel) {
     collaborators: [],
     homepageUrl: 'https://oasislabs.com',
     identity: {
-      tokenVerifiers: [],
+      tokenVerifiers: [
+        {
+          publicKey: await getAuthPublicKey(),
+          iss: authUrl,
+        },
+      ],
     },
     inviteOnly: false,
     invites: [],
