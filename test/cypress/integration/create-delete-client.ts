@@ -1,6 +1,5 @@
 /// <reference types="../fixtures/types" />
-// eslint-disable-next-line import/extensions
-import { App, Client, ClientType, Parcel } from '../../..';
+import type { App, Client, Parcel } from '../../..'; // eslint-disable-line import/extensions
 import { bootstrapParcel } from './helpers';
 
 describe('Client', () => {

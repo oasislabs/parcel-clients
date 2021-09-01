@@ -1,6 +1,5 @@
 /// <reference types="../fixtures/types" />
-// eslint-disable-next-line import/extensions
-import type { Parcel, Document } from '../../..';
+import type { Parcel, Document } from '../../..'; // eslint-disable-line import/extensions
 import { bootstrapParcel } from './helpers';
 
 const SIZE_100MB = 100 * 1024 * 1024;
