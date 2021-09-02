@@ -19,7 +19,6 @@
     "build": "rm -rf ./lib && esbuild src/index.ts --platform=node --target=node14 --bundle --outfile=lib/bundle.cjs && tsc -b",
     "fmt": "xo --fix && prettier --write {tsconfig,package}.json",
     "lint": "xo && prettier --check {tsconfig,package}.json && tools/update-examples-parcel-version.sh --check",
-    "test": "jest",
     "test:unit": "jest test/jest/unit/",
     "test:examples": "jest test/examples/",
     "test:integration:nodejs": "node test/pure-nodejs.js",
