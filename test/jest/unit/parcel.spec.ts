@@ -407,6 +407,7 @@ describe('Parcel', () => {
         phase: JobPhase.PENDING,
         message: 'foo',
         host: 'http://myworker/',
+        accessedDocuments: [createDocumentId()],
         outputDocuments: [
           {
             mountPath: 'example.txt',
