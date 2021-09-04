@@ -5,6 +5,10 @@ const config = {
   ...commonConfig,
   rootDir: '../../..',
   roots: ['<rootDir>/test/jest/integration'],
+  moduleNameMapper: {
+    // Override moduleNameMapper to remove `@oasislabs/parcel => src/index`
+    // mappings, otherwise importing '../../..' imports `lib/index.d.ts` and
+    // causes duplicate conflicting ky Response declaration.
 };
 
 export default config;
