@@ -2,8 +2,17 @@ import { JWK } from 'node-jose';
 // Note: this file is used by jest/integration and cy/integration.
 import { ClientType, Parcel, PrivateJWK, PublicJWK } from '../../..'; // eslint-disable-line import/extensions
 
-const apiUrl = process.env.PARCEL_API_URL ?? 'http://localhost:4242/v1';
-const authUrl = process.env.PARCEL_AUTH_URL ?? 'http://localhost:4040';
+declare global {
+  var Cypress: undefined | any; // eslint-disable-line no-var
+}
+const apiUrl =
+  process.env.PARCEL_API_URL ??
+  globalThis.Cypress?.env('PARCEL_API_URL') ?? // CYPRESS_PARCEL_API_URL
+  'http://localhost:4242/v1';
+const authUrl =
+  process.env.PARCEL_AUTH_URL ??
+  globalThis.Cypress?.env('PARCEL_AUTH_URL') ?? // CYPRESS_PARCEL_AUTH_URL
+  'http://localhost:4040';
 
 export async function generateJWKPair() {
   const keyPair = await JWK.createKey('EC', 'P-256', {
