@@ -243,7 +243,7 @@ export class Parcel {
     return DatabaseImpl.query(this.client, id, params);
   }
 
-  public async listDatabase(params: ListDatabasesFilter & PageParams): Promise<Page<Database>> {
+  public async listDatabases(params: ListDatabasesFilter & PageParams): Promise<Page<Database>> {
     return DatabaseImpl.list(this.client, params);
   }
 

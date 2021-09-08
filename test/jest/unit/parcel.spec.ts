@@ -775,7 +775,7 @@ describe('Parcel', () => {
           )
           .reply(200, fixtureResultsPage);
 
-        const { results, nextPageToken } = await parcel.listDatabase(filterWithPagination);
+        const { results, nextPageToken } = await parcel.listDatabases(filterWithPagination);
         expect(results).toHaveLength(numberResults);
         for (const [i, r] of results.entries()) expect(r).toMatchPOD(fixtureResultsPage.results[i]);
         expect(nextPageToken).toEqual(fixtureResultsPage.nextPageToken);
@@ -798,7 +798,7 @@ describe('Parcel', () => {
           )
           .reply(200, fixtureResultsPage);
 
-        const { results, nextPageToken } = await parcel.listDatabase(filterWithPagination);
+        const { results, nextPageToken } = await parcel.listDatabases(filterWithPagination);
         expect(results).toHaveLength(0);
         expect(nextPageToken).toEqual(fixtureResultsPage.nextPageToken);
       });
