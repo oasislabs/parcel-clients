@@ -19,12 +19,12 @@ describe('Large file (100MiB)', () => {
     parcel = await bootstrapParcel();
   });
 
-  it('upload', { defaultCommandTimeout: 30_000 }, async () => {
+  it('upload', { defaultCommandTimeout: 60_000 }, async () => {
     doc = await parcel.uploadDocument(createLargeFile(), null).finished;
     expect(doc.size).to.eq(SIZE_100MB);
   });
 
-  it('download', { defaultCommandTimeout: 30_000 }, async () => {
+  it('download', { defaultCommandTimeout: 60_000 }, async () => {
     const download = doc.download();
     let progress = 0;
     await download.pipeTo(

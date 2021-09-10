@@ -26,14 +26,14 @@ describe('Large file (100MiB)', () => {
     const readStream = fs.createReadStream('/tmp/large_input');
     doc = await parcel.uploadDocument(readStream, null).finished;
     expect(doc.size).toBe(SIZE_100MB);
-  }, 30_000);
+  }, 60_000);
 
   it('download', async () => {
     const writeStream = fs.createWriteStream('/tmp/large_output');
     const download = doc.download();
     await download.pipeTo(writeStream);
     expect(writeStream.bytesWritten).toBe(SIZE_100MB);
-  }, 30_000);
+  }, 60_000);
 
   it('delete', async () => {
     await doc.delete();
