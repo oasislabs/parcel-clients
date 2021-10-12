@@ -91,7 +91,6 @@ app.get('/callback', async (req: express.Request, res: express.Response) => {
   );
   // #endregion snippet-login-callback
 
-  /* eslint-disable @typescript-eslint/no-unnecessary-type-assertion */
   // #region snippet-create-parcel-instance
   const idToken = tokenSet.claims();
 
@@ -110,7 +109,6 @@ app.get('/callback', async (req: express.Request, res: express.Response) => {
     documentCount: results.length,
   });
   // #endregion snippet-create-parcel-instance
-  /* eslint-enable @typescript-eslint/no-unnecessary-type-assertion */
 });
 
 app.listen(port, () => {
