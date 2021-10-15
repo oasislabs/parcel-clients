@@ -485,14 +485,7 @@ describe('Parcel', () => {
       test: (scope: nock.Scope) => Promise<void>,
     ): void {
       nockIt(testName, async (scope) =>
-        test(
-          scope
-            .get('/identities/me')
-            // The `/parcel` below would be added by an ingress rewrite URL.
-            .reply(307, {}, { location: `/parcel/v1/identities/${fixtureIdentity.id}` })
-            .get(`/identities/${fixtureIdentity.id}`)
-            .reply(200, fixtureIdentity),
-        ),
+        test(scope.get('/identities/me').reply(200, fixtureIdentity)),
       );
     }
 
