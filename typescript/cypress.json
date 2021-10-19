@@ -1,0 +1,11 @@
+{
+    "baseUrl": "http://localhost:4444",
+    "defaultCommandTimeout": 10000,
+    "fileServerFolder": "./test/cypress",
+    "fixturesFolder": "./test/cypress/fixtures",
+    "integrationFolder": "./test/cypress/integration",
+    "pluginsFile": false,
+    "screenshotOnRunFailure": false,
+    "supportFile": "./test/cypress/support.js",
+    "video": false
+}

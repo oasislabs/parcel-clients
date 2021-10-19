@@ -1,0 +1,5 @@
+# Compiled javascript.
+bin/
+# Example-specific files.
+bob_data_by_acme
+output_document

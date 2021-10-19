@@ -1,0 +1,10 @@
+.cache/
+.nyc_output/
+coverage/
+cypress/screenshots
+cypress/videos
+dist/
+docs/typedoc
+lib/
+node_modules/
+*.log

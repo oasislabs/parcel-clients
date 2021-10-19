@@ -1,0 +1,21 @@
+{
+  "include": ["src"],
+  "compilerOptions": {
+    "baseUrl": ".",
+    "declaration": true,
+    "declarationMap": true,
+    "esModuleInterop": true,
+    "importsNotUsedAsValues": "error",
+    "lib": ["esnext", "dom"],
+    "moduleResolution": "node",
+    "module": "es2020",
+    "outDir": "lib/",
+    "paths": {
+      "@oasislabs/parcel": ["src/index"],
+      "@oasislabs/parcel/*": ["src/*"]
+    },
+    "sourceMap": true,
+    "strict": true,
+    "target": "es2018"
+  }
+}

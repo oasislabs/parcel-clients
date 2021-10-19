@@ -1,0 +1,6 @@
+{
+    "entryPoints": ["../src"],
+    "out": "typedoc",
+    "readme": "README.md",
+    "includeVersion": true
+}
