@@ -21,8 +21,6 @@ if (!globalThis.fetch) {
 //@ts-ignore
 if (!globalThis.Headers) import('node-fetch').then(module => globalThis.Headers = module.Headers)
 //@ts-ignore
-if (!globalThis.Headers) import('node-fetch').then(module => globalThis.Headers = module.Headers)
-//@ts-ignore
 if (!globalThis.Request) import('node-fetch').then(module => globalThis.Request = module.Request)
 //@ts-ignore
 if (!globalThis.Response) import('node-fetch').then(module => globalThis.Response = module.Response)
