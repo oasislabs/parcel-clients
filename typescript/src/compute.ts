@@ -15,7 +15,7 @@ export type ListJobsFilter = {
   /** Selects jobs that were submitted by this identity. */
   submitter?: IdentityId;
 
-  /** Selects jobs that used documents owned by this identity. */
+  /** Selects jobs that accessed documents owned by this identity. */
   inputOwner?: IdentityId;
 };
 
@@ -45,6 +45,20 @@ export declare type OutputDocumentSpec = {
 export declare type OutputDocument = {
   mountPath: string;
   id: DocumentId;
+};
+
+/**
+ * Network entities defined by CIDR-style masks.
+ */
+export declare type NetworkPolicyPeer = {
+  cidr: string;
+};
+
+/**
+ * The set of rules that define how a job is allowed to communicate with various network entities.
+ */
+export declare type NetworkPolicy = {
+  egress?: NetworkPolicyPeer[];
 };
 
 /**
@@ -83,6 +97,11 @@ export type JobSpec = {
   env?: Record<string, string>;
 
   /**
+   * IP addresses (or CIDR-style masks) to which a job can open a connection during execution, e.g. `192.168.1.1/24`, or `2001:db9::/64`.
+   */
+  networkPolicy?: NetworkPolicy;
+
+  /**
    * Documents to download and mount into the job's container before `cmd` runs.
    * If any of these documents do not exist or you do not have permission to access them, the job will fail.
    */
@@ -108,15 +127,7 @@ export type JobSpec = {
   memory?: string;
 };
 
-export type JobStatus = {
-  phase: JobPhase;
-
-  /**
-   * A human readable message indicating details about why the pod is in this
-   * condition.
-   */
-  message?: string;
-
+export type JobIo = {
   /**
    * Documents that were accessed by the job. Includes both the prespecified
    * `JobSpec.input_documents` as well as any dynamically accessed documents.
@@ -128,6 +139,16 @@ export type JobStatus = {
    * Worker.
    */
   outputDocuments: OutputDocument[];
+};
+
+export type JobStatus = {
+  phase: JobPhase;
+
+  /**
+   * A human readable message indicating details about why the pod is in this
+   * condition.
+   */
+  message?: string;
 
   /**
    * A reference to the worker hosting (running) this job, if any. This field
@@ -148,6 +169,7 @@ export type PODJob = Readonly<
   PODModel & {
     id: JobId;
     spec: JobSpec;
+    io: JobIo;
 
     /**
      * Most recently observed status of the pod. May be missing if the job is no
@@ -174,6 +196,7 @@ export class Job {
   public readonly id: JobId;
   public readonly createdAt: Date;
   public readonly spec: JobSpec;
+  public readonly io: JobIo;
   public readonly status?: JobStatus;
 
   #client: HttpClient;
@@ -183,6 +206,7 @@ export class Job {
     this.id = pod.id;
     this.createdAt = new Date(pod.createdAt);
     this.spec = pod.spec;
+    this.io = pod.io;
     this.status = pod.status;
   }
 }

@@ -18,6 +18,8 @@ describe('Client', () => {
 
   it('delete', async () => {
     await client.delete();
+    await expect(parcel.getClient(app.id, client.id)).rejects.toThrow('not found');
     await app.delete();
+    await expect(parcel.getApp(app.id)).rejects.toThrow('not found');
   });
 });

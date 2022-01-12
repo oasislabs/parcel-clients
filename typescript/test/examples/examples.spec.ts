@@ -265,7 +265,7 @@ it(
   async () => {
     await runExamplePromisified('data-upload');
   },
-  10 * 1000,
+  20 * 1000,
 );
 // Uploading and downloading larger files takes some time.
 it(
@@ -284,11 +284,19 @@ it(
   20 * 1000,
 );
 it(
+  'database-query',
+  async () => {
+    // Start the example:
+    await runExamplePromisified('database-query');
+  },
+  20 * 1000,
+);
+it(
   'grants-advanced',
   async () => {
     await runExamplePromisified('grants-advanced');
   },
-  20 * 1000,
+  30 * 1000,
 );
 
 it(

@@ -37,5 +37,6 @@ describe('Large file (100MiB)', () => {
 
   it('delete', async () => {
     await doc.delete();
+    await expect(parcel.getDocument(doc.id)).rejects.toThrow('not found');
   });
 });

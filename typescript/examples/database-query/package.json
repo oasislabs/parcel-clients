@@ -1,9 +1,9 @@
 {
   "private": true,
-  "name": "@oasislabs/parcel-examples-compute-basic",
+  "name": "@oasislabs/parcel-examples-database-query",
   "version": "1.0.0",
   "main": "./src/main.ts",
-  "description": "Oasis Parcel Compute basic example",
+  "description": "Oasis Parcel Database example",
   "license": "MIT",
   "author": "Oasis Labs <feedback@oasislabs.com>",
   "type": "module",

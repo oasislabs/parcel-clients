@@ -32,8 +32,7 @@ const endpointForLinkedEthAddr = (id: IdentityId, ethAddr: string) =>
   `${endpointForLinkedEthAddrs(id)}/links/ethereum/${ethAddr}`;
 
 const endpointForTokens = (id: IdentityId) => `${endpointForId(id)}/tokens`;
-const endpointForToken = (id: IdentityId, token: TokenId) =>
-  `${endpointForTokens(id)}/tokens/${token}`;
+const endpointForToken = (id: IdentityId, token: TokenId) => `${endpointForTokens(id)}/${token}`;
 
 export class Identity implements Model {
   public readonly id: IdentityId;

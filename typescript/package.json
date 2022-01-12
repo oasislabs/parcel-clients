@@ -1,6 +1,6 @@
 {
   "name": "@oasislabs/parcel",
-  "version": "1.0.0-beta.13",
+  "version": "1.0.0-beta.16",
   "license": "Apache-2.0",
   "author": "Oasis Labs <feedback@oasislabs.com>",
   "main": "lib/bundle.cjs",
@@ -31,8 +31,10 @@
     "coverage": "yarn test:unit --coverage",
     "doc": "typedoc --options docs/typedoc.json",
     "prepublishOnly": "yarn build",
-    "prepack": "echo 'Normalize permissions for packing...'; find README.md package.json lib src -type f -exec chmod 664 {} \\;",
-    "consistent-pack": "docker run -v \"${PWD}:${PWD}\" --workdir \"${PWD}\" --user \"${UID}:${GID}\" -it node:14-alpine npm pack"
+    "normalize-permissions-for-packing": "find README.md package.json lib src -type f -exec chmod 664 {} \\;",
+    "prepack": "npm run normalize-permissions-for-packing",
+    "consistent-pack": "tools/consistent-pack.sh",
+    "pack-and-print-integrity-sha": "npm pack --unsafe-perm --silent --json | jq -r '.[].integrity'"
   },
   "nyc": {
     "report-dir": "./coverage/cypress"

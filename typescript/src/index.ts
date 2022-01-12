@@ -37,6 +37,7 @@ import type {
   DatabaseCreateParams,
   DatabaseId,
   DatabaseUpdateParams,
+  InsertParams,
   ListDatabasesFilter,
   Query,
   Row,
@@ -84,15 +85,14 @@ import type {
 import { TokenProvider, PARCEL_RUNTIME_AUD } from './token.js';
 import type {
   EthAddr,
-  EthBridge,
-  EthBridgeGasParams,
-  EthBridgeType,
+  RemoteToken,
   Token,
   TokenBalance,
   TokenCreateParams,
   TokenGrantSpec,
   TokenId,
   TokenSearchParams,
+  TokenTransferability,
   TokenizationReceipt,
   TransferReceipt,
   TransferReceiptId,
@@ -130,9 +130,6 @@ export {
   EscrowedAsset,
   EscrowedAssetSearchParams,
   EthAddr,
-  EthBridge,
-  EthBridgeGasParams,
-  EthBridgeType,
   FrontendClient,
   FrontendClientCreateParams,
   FrontendClientUpdateParams,
@@ -166,6 +163,7 @@ export {
   PublicJWK,
   QuotaUpdateParams,
   RefreshingTokenProviderParams,
+  RemoteToken,
   RenewingTokenProviderParams,
   Scope,
   SelfIssuedTokenProviderParams,
@@ -180,6 +178,7 @@ export {
   TokenId,
   TokenSearchParams,
   TokenSource,
+  TokenTransferability,
   TokenizationReceipt,
   TransferReceipt,
   TransferReceiptId,
@@ -241,6 +240,10 @@ export class Parcel {
 
   public async queryDatabase(id: DatabaseId, params: Query): Promise<Row[]> {
     return DatabaseImpl.query(this.client, id, params);
+  }
+
+  public async insertRows(id: DatabaseId, params: InsertParams): Promise<Row[]> {
+    return DatabaseImpl.insert(this.client, id, params);
   }
 
   public async listDatabases(params: ListDatabasesFilter & PageParams): Promise<Page<Database>> {

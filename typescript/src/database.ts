@@ -69,6 +69,14 @@ export namespace DatabaseImpl {
     return client.post<Row[]>(endpointForId(id), params);
   }
 
+  export async function insert(
+    client: HttpClient,
+    id: DatabaseId,
+    params: InsertParams,
+  ): Promise<Row[]> {
+    return client.post<Row[]>(endpointForId(id) + '/insert', params);
+  }
+
   export async function update(
     client: HttpClient,
     id: DatabaseId,
@@ -94,6 +102,11 @@ export type ListDatabasesFilter = Partial<{
 export type Query = {
   sql: string;
   params: Record<string, JsonSerializable>;
+};
+
+export type InsertParams = {
+  tableName: string;
+  rows: Array<Record<string, JsonSerializable>>;
 };
 
 export type Row = JsonSerializable;

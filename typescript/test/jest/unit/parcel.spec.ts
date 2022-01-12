@@ -20,11 +20,12 @@ import type {
   PODClient,
 } from '@oasislabs/parcel/client';
 import type { PermissionId, PODPermission } from '@oasislabs/parcel/permission';
-import type { JobId, JobSpec, PODJob } from '@oasislabs/parcel/compute';
+import type { JobId, JobIo, JobSpec, PODJob } from '@oasislabs/parcel/compute';
 import { JobPhase } from '@oasislabs/parcel/compute';
 import type {
   DatabaseId,
   DatabaseUpdateParams,
+  InsertParams,
   PODDatabase,
   Query,
   Row,
@@ -398,22 +399,30 @@ describe('Parcel', () => {
     return jobSpec;
   }
 
+  function createJobIo(): JobIo {
+    const jobIO = {
+      accessedDocuments: [createDocumentId()],
+      outputDocuments: [
+        {
+          mountPath: 'example.txt',
+          id: createDocumentId(),
+        },
+      ],
+    };
+    expect(jobIO).toMatchSchema('JobIo');
+    return jobIO;
+  }
+
   function createPodJob(): PODJob {
     const podJob: PODJob = {
       ...createPodModel(),
       id: createJobId(),
       spec: createJobSpec(),
+      io: createJobIo(),
       status: {
         phase: JobPhase.PENDING,
         message: 'foo',
         host: 'http://myworker/',
-        accessedDocuments: [createDocumentId()],
-        outputDocuments: [
-          {
-            mountPath: 'example.txt',
-            id: createDocumentId(),
-          },
-        ],
       },
     };
     expect(podJob).toMatchSchema('Job');
@@ -814,6 +823,71 @@ describe('Parcel', () => {
         const data = await parcel.queryDatabase(fixtureDatabase.id as DatabaseId, query);
         expect(data).toHaveLength(1);
         expect(data).toEqual(rows);
+      });
+    });
+
+    describe('insert', () => {
+      let insert: InsertParams;
+      let create: Query;
+      let rows: Row[];
+
+      beforeEach(() => {
+        create = {
+          sql: 'CREATE TABLE threat_intels (wallet TEXT, inner TEXT, level INTEGER, data JSON)',
+          params: {},
+        };
+        insert = {
+          tableName: 'threat_intels',
+          rows: [
+            {
+              wallet: '0x1234',
+              inner: 'safe',
+              level: 3,
+              data: {
+                extra: null,
+              },
+            },
+            {
+              wallet: '0x4567',
+              inner: 'unsafe',
+              level: 8,
+              data: {
+                extra: {
+                  origin: 'apple',
+                },
+              },
+            },
+          ],
+        };
+        rows = [{}];
+      });
+
+      nockIt('create', async (scope) => {
+        scope.post(`/databases/${fixtureDatabase.id}`, create as JsonObject).reply(200, rows);
+        await parcel.queryDatabase(fixtureDatabase.id as DatabaseId, create);
+        scope.post(`/databases/${fixtureDatabase.id}/insert`, insert as JsonObject).reply(200, [
+          {
+            wallet: '0x1234',
+            inner: 'safe',
+            level: 3,
+            data: {
+              extra: null,
+            },
+          },
+          {
+            wallet: '0x4567',
+            inner: 'unsafe',
+            level: 8,
+            data: {
+              extra: {
+                origin: 'apple',
+              },
+            },
+          },
+        ]);
+        const insertedRows = await parcel.insertRows(fixtureDatabase.id as DatabaseId, insert);
+        expect(insertedRows).toHaveLength(2);
+        expect(insertedRows).toEqual(insert.rows);
       });
     });
 

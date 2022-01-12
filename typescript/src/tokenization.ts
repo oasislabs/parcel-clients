@@ -17,9 +17,8 @@ export type PODToken = Readonly<
     creator: string;
     name?: string;
     grant: TokenGrantSpec;
-    supply: number;
     consumesAssets: boolean;
-    ethBridge: EthBridge;
+    transferability: TokenTransferability;
   }
 >;
 
@@ -38,9 +37,8 @@ export class Token implements Model {
   public readonly createdAt: Date;
   public readonly name?: string;
   public readonly grant: TokenGrantSpec;
-  public readonly supply: number;
   public readonly consumesAssets: boolean;
-  public readonly ethBridge: EthBridge;
+  public readonly transferability: TokenTransferability;
 
   #client: HttpClient;
 
@@ -50,9 +48,8 @@ export class Token implements Model {
     this.creator = pod.creator as IdentityId;
     this.createdAt = new Date(pod.createdAt);
     this.grant = pod.grant;
-    this.supply = pod.supply;
     this.consumesAssets = pod.consumesAssets;
-    this.ethBridge = pod.ethBridge;
+    this.transferability = pod.transferability;
   }
 
   public async delete(): Promise<void> {
@@ -189,13 +186,12 @@ export namespace TokenImpl {
 export type TokenCreateParams = {
   name?: string;
   grant: TokenGrantSpec;
-  supply: number;
   consumesAssets?: boolean;
-  ethBridge?: EthBridge;
+  transferability: TokenTransferability;
 };
 
 export type TokenGrantSpec = {
-  condition?: Condition | null;
+  condition: Condition | null;
   capabilities?: Capabilities;
 };
 
@@ -206,42 +202,34 @@ export type TokenBalance = {
 
 export type EthAddr = string;
 
-export namespace EthBridge {
-  export type Managed = {
-    type: 'managed';
+export namespace TokenTransferability {
+  export type Parcel = {
+    parcel: {
+      supply: number;
+    };
   };
-
-  export type ERC20 = {
-    type: 'erc20';
-    address: EthAddr;
-    gas: EthBridgeGasParams;
-  };
-
-  export type ERC721 = {
-    type: 'erc721';
-    address: EthAddr;
-    gas: EthBridgeGasParams;
-    /** Hex-encoded U256. */
-    optionId: string;
-  };
-
-  export type ERC1155 = {
-    type: 'erc1155';
-    address: EthAddr;
-    gas: EthBridgeGasParams;
-    /** Hex-encoded U256. */
-    optionId: string;
+  export type Remote = {
+    remote: RemoteToken;
   };
 }
 // eslint-disable-next-line @typescript-eslint/no-redeclare
-export type EthBridge = EthBridge.Managed | EthBridge.ERC20 | EthBridge.ERC721 | EthBridge.ERC1155;
+export type TokenTransferability = TokenTransferability.Parcel | TokenTransferability.Remote;
 
-export type EthBridgeType = 'managed' | 'erc20' | 'erc721' | 'erc1155';
+export namespace RemoteToken {
+  export type EthLike = {
+    network: EthNetwork;
+    address: EthAddr;
+    /**
+     * The option ID. Required when `abi` is `erc721` or `erc1155`.
+     * Only values less than 2^63 - 1 are currently supported.
+     */
+    optionId?: number;
+  };
+}
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export type RemoteToken = RemoteToken.EthLike;
 
-export type EthBridgeGasParams = {
-  limit: number;
-  price: 'slow' | 'standard' | 'fast';
-};
+export type EthNetwork = 'emerald';
 
 export type TokenSearchParams = {
   /** Search for tokens held by this identity. */
