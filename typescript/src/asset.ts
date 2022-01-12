@@ -25,7 +25,7 @@ export namespace AssetImpl {
     client: HttpClient,
     params?: EscrowedAssetSearchParams & PageParams,
   ): Promise<Page<EscrowedAsset>> {
-    return client.search<EscrowedAsset>(`${ASSETS_EP}/search`, params);
+    return client.search<EscrowedAsset>(`${ASSETS_EP}`, params);
   }
 
   export async function get(client: HttpClient, assetId: AssetId): Promise<EscrowedAsset> {
