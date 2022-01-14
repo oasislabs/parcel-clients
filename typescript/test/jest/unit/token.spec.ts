@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
 import { KEYUTIL } from 'jsrsasign';
 import nock from 'nock';
+import ky from 'ky-universal';
 
 import {
   PARCEL_RUNTIME_AUD,
