@@ -1,5 +1,6 @@
 import type { ReadStream } from 'fs';
 
+import AbortController from 'abort-controller';
 import EventEmitter from 'eventemitter3';
 import FormData from 'form-data';
 import type { Readable } from 'readable-stream';
