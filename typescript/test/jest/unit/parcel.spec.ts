@@ -943,16 +943,21 @@ describe('Parcel', () => {
 
     // Matches the metadata part of a (multipart) document upload request
     const MULTIPART_METADATA_RE =
-      /content-disposition: form-data; name="metadata"\r\ncontent-type: application\/json\r\n\r\n{"details":{"tags":\["\[\\"mock\\"]","document","to-app-\w+"],"key":{"value":42}}}\r\n/gi;
+      /name="metadata"\r\ncontent-type: application\/json\r\n\r\n{"details":{"tags":\["\[\\"mock\\"]","document","to-app-\w+"],"key":{"value":42}}}\r\n/gi;
+    const MULTIPART_EMPTY_METADATA_RE = /name="metadata"\r\ncontent-type: text\/plain(?:\r\n){3}/gi;
     // Matches the data part of a (multipart) document upload request
     const MULTIPART_DATA_RE =
-      /content-disposition: form-data; name="data"\r\ncontent-type: application\/octet-stream\r\n\r\nfixture data\r\n/gi;
+      /name="data"\r\ncontent-type: application\/octet-stream\r\n\r\nfixture data\r\n/gi;
 
     describe('upload', () => {
       it('no params', async () => {
-        expect(fixtureDocument).toMatchSchema(getResponseSchema('POST', '/documents', 201));
+        expect(fixtureDocument).toMatchSchema(getResponseSchema('POST', '/documents/upload', 201));
         const scope = parcelNock(STORAGE_URL)
-          .post('', MULTIPART_DATA_RE)
+          .post(
+            '',
+            (body: string) =>
+              MULTIPART_EMPTY_METADATA_RE.test(body) && MULTIPART_DATA_RE.test(body),
+          )
           .matchHeader('content-type', /^multipart\/form-data; boundary=/)
           .reply(201, fixtureDocument);
         const document = await parcel.uploadDocument(fixtureData, null /* params */).finished;
@@ -960,7 +965,7 @@ describe('Parcel', () => {
         scope.done();
       });
 
-      nockIt('with params', async () => {
+      it('with params', async () => {
         const scope = parcelNock(STORAGE_URL)
           .post(
             '',
@@ -987,45 +992,55 @@ describe('Parcel', () => {
     });
 
     describe('download', () => {
-      nockIt('by id', async (scope) => {
-        scope.get(`/documents/${fixtureDocument.id}/download`).reply(200, fixtureData);
+      it('by id', async () => {
+        const scope = parcelNock(STORAGE_URL)
+          .get(`/${fixtureDocument.id}/download`)
+          .reply(200, fixtureData);
         const download = parcel.downloadDocument(fixtureDocument.id as DocumentId);
         const downloadCollector = new DownloadCollector();
         await download.pipeTo(downloadCollector);
         expect(downloadCollector.collectedDownload).toEqual(fixtureData);
+        scope.done();
       });
 
-      nockIt('retrieved', async (scope) => {
-        scope.get(`/documents/${fixtureDocument.id}`).reply(200, fixtureDocument);
-        scope.get(`/documents/${fixtureDocument.id}/download`).reply(200, fixtureData);
-
+      nockIt('retrieved', async (parcelScope) => {
+        parcelScope.get(`/documents/${fixtureDocument.id}`).reply(200, fixtureDocument);
+        const storageScope = parcelNock(STORAGE_URL)
+          .get(`/${fixtureDocument.id}/download`)
+          .reply(200, fixtureData);
         const document = await parcel.getDocument(fixtureDocument.id as DocumentId);
-
         const download = document.download();
         const downloadCollector = new DownloadCollector();
         await download.pipeTo(downloadCollector);
         expect(downloadCollector.collectedDownload).toEqual(fixtureData);
+        storageScope.done();
       });
 
-      nockIt('not found', async (scope) => {
-        scope.get(`/documents/${fixtureDocument.id}/download`).reply(404, { error: 'not found' });
+      it('not found', async () => {
+        const scope = parcelNock(STORAGE_URL)
+          .get(`/${fixtureDocument.id}/download`)
+          .reply(404, { error: 'not found' });
         const download = parcel.downloadDocument(fixtureDocument.id as DocumentId);
         const downloadCollector = new DownloadCollector();
         await expect(download.pipeTo(downloadCollector)).rejects.toThrow(
           /error.*download.*: not found/,
         );
+        scope.done();
       });
 
-      nockIt('write error', async (scope) => {
-        scope.get(`/documents/${fixtureDocument.id}/download`).reply(200, fixtureData);
+      it('write error', async () => {
+        const scope = parcelNock(STORAGE_URL)
+          .get(`/${fixtureDocument.id}/download`)
+          .reply(200, fixtureData);
         const download = parcel.downloadDocument(fixtureDocument.id as DocumentId);
         const downloadCollector = new DownloadCollector({ error: new Error('whoops') });
         await expect(download.pipeTo(downloadCollector)).rejects.toThrow('whoops');
+        scope.done();
       });
 
-      nockIt('aborted', async (scope) => {
-        scope
-          .get(`/documents/${fixtureDocument.id}/download`)
+      it('aborted', async () => {
+        const scope = parcelNock(STORAGE_URL)
+          .get(`/${fixtureDocument.id}/download`)
           .delayBody(30)
           .reply(200, fixtureData);
         const download = parcel.downloadDocument(fixtureDocument.id as DocumentId);
@@ -1037,6 +1052,7 @@ describe('Parcel', () => {
         await expect(downloadComplete).rejects.toThrow('The operation was aborted');
         expect(download.aborted).toBe(true);
         expect(downloadCollector.collectedDownload).toHaveLength(0);
+        scope.done();
       });
     });
 

@@ -60,6 +60,7 @@ import { Capabilities, GrantImpl, ListGrantsFilter } from './grant.js';
 import type { Config as ClientConfig, Download } from './http.js';
 import { ApiError, HttpClient } from './http.js';
 import type {
+  EthAddrProver,
   GrantedPermission,
   Identity,
   IdentityCreateParams,
@@ -130,6 +131,7 @@ export {
   EscrowedAsset,
   EscrowedAssetSearchParams,
   EthAddr,
+  EthAddrProver,
   FrontendClient,
   FrontendClientCreateParams,
   FrontendClientUpdateParams,

@@ -9,6 +9,10 @@ const apiUrl =
   process.env.PARCEL_API_URL ??
   globalThis.Cypress?.env('PARCEL_API_URL') ?? // CYPRESS_PARCEL_API_URL
   'http://localhost:4242/v1';
+const storageUrl =
+  process.env.PARCEL_STORAGE_URL ??
+  globalThis.Cypress?.env('PARCEL_STORAGE_URL') ?? // CYPRESS_PARCEL_STORAGE_URL
+  'http://localhost:4244';
 const authUrl =
   process.env.PARCEL_AUTH_URL ??
   globalThis.Cypress?.env('PARCEL_AUTH_URL') ?? // CYPRESS_PARCEL_AUTH_URL
@@ -28,6 +32,7 @@ export async function generateJWKPair() {
 export async function bootstrapParcel() {
   const parcel = new Parcel('not required in dev mode when identity creation is unauthenticated', {
     apiUrl,
+    storageUrl,
   });
 
   const { privateKey, publicKey } = await generateJWKPair();
@@ -44,7 +49,7 @@ export async function bootstrapParcel() {
       },
     ],
   });
-  return new Parcel(credential, { apiUrl });
+  return new Parcel(credential, { apiUrl, storageUrl });
 }
 
 /**

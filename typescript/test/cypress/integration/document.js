@@ -3,7 +3,9 @@
 
 // @ts-check
 const API_MOUNT_POINT = `/parcel/v1`;
+const STORAGE_MOUNT_POINT = `/v1/parcel`;
 const API_URL = `https://api.oasislabs.example.com${API_MOUNT_POINT}`;
+const STORAGE_URL = `https://storage.oasislabs.example.com${STORAGE_MOUNT_POINT}`;
 
 const CORS_HEADERS = {
   'access-control-allow-origin': '*',
@@ -25,7 +27,7 @@ context('Download', () => {
       ('DLPfSu1yGKGpxbD9RAnKEtk');
     const mockData = Buffer.alloc(1024 * 1024 * 2).fill(34);
 
-    const downloadUrl = `${API_URL}/documents/${mockDocumentId}/download`;
+    const downloadUrl = `${STORAGE_URL}/${mockDocumentId}/download`;
     cy.intercept('GET', downloadUrl, (req) => {
       req.reply(mockData.toString('base64'), CORS_HEADERS);
     });
@@ -34,7 +36,10 @@ context('Download', () => {
     });
     cy.window()
       .then(async (window) => {
-        const parcel = new window.Parcel('fake api token', { apiUrl: API_URL });
+        const parcel = new window.Parcel('fake api token', {
+          apiUrl: API_URL,
+          storageUrl: STORAGE_URL,
+        });
         const download = parcel.downloadDocument(mockDocumentId);
         return (async () => {
           const bufs = [];
@@ -50,7 +55,7 @@ context('Download', () => {
 
   it('not found', () => {
     const bogusDocumentId = 'totally-bogus-document-id';
-    const downloadUrl = `${API_URL}/documents/${bogusDocumentId}/download`;
+    const downloadUrl = `${STORAGE_URL}/${bogusDocumentId}/download`;
     cy.intercept('GET', downloadUrl, (req) => {
       req.reply(404, { error: 'not found' }, CORS_HEADERS);
     });

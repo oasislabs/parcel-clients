@@ -220,16 +220,16 @@ export namespace RemoteToken {
     network: EthNetwork;
     address: EthAddr;
     /**
-     * The option ID. Required when `abi` is `erc721` or `erc1155`.
-     * Only values less than 2^63 - 1 are currently supported.
+     * The ID of the particular NFT within the collection. Required when the token is
+     * ERC721 or ERC1155. Only values less than 2^63 - 1 are currently supported.
      */
-    optionId?: number;
+    tokenId?: number;
   };
 }
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export type RemoteToken = RemoteToken.EthLike;
 
-export type EthNetwork = 'emerald';
+export type EthNetwork = 'emerald-mainnet' | 'emerald-testnet';
 
 export type TokenSearchParams = {
   /** Search for tokens held by this identity. */

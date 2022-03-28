@@ -104,7 +104,7 @@ export namespace DocumentImpl {
   }
 
   export function download(client: HttpClient, id: DocumentId): Download {
-    return client.download(endpointForId(id) + '/download');
+    return client.download(id);
   }
 
   export async function history(
@@ -265,6 +265,8 @@ export class Upload extends EventEmitter {
 
       const paramsString = JSON.stringify(parcelParams);
       appendPart('metadata', paramsString, 'application/json', paramsString.length);
+    } else {
+      appendPart('metadata', '', 'text/plain', 0); // The metadata part is required.
     }
 
     appendPart('data', data, 'application/octet-stream', (data as any).length);

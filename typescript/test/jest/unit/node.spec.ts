@@ -5,7 +5,7 @@ import tempy from 'tempy';
 
 import type { default as Parcel, DocumentId } from '@oasislabs/parcel';
 
-import { makeParcel, nockIt, parcelNock, STORAGE_URL } from './helpers';
+import { makeParcel, parcelNock, STORAGE_URL } from './helpers';
 
 describe('node-specific', () => {
   let parcel: Parcel;
@@ -34,14 +34,15 @@ describe('node-specific', () => {
     scope.done();
   });
 
-  nockIt('pipeTo WriteStream', async (scope) => {
+  it('pipeTo WriteStream', async () => {
     const documentId = 'Dblahblahblah' as DocumentId;
-    scope.get(`/documents/${documentId}/download`).reply(200, fixtureData);
+    const scope = parcelNock(STORAGE_URL).get(`/${documentId}/download`).reply(200, fixtureData);
     const download = parcel.downloadDocument(documentId);
     await tempy.file.task(async (dataPath) => {
       const writeStream = fs.createWriteStream(dataPath);
       await download.pipeTo(writeStream);
       expect((await fs.promises.readFile(dataPath)).toString()).toEqual(fixtureData);
     });
+    scope.done();
   });
 });

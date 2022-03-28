@@ -59,6 +59,7 @@ export declare type NetworkPolicyPeer = {
  */
 export declare type NetworkPolicy = {
   egress?: NetworkPolicyPeer[];
+  parcelApiAccess?: boolean;
 };
 
 /**
@@ -231,6 +232,7 @@ const COMPUTE_EP = 'compute';
 const JOBS_EP = `${COMPUTE_EP}/jobs`;
 const endpointForId = (id: JobId) => `${JOBS_EP}/${id}`;
 const statusEndpointForId = (id: JobId) => `${JOBS_EP}/${id}/status`;
+const revokeApiEndpointForId = (id: JobId) => `${JOBS_EP}/${id}/revoke_gateway_access`;
 
 export namespace ComputeImpl {
   export async function submitJob(client: HttpClient, spec: JobSpec): Promise<Job> {
@@ -255,5 +257,9 @@ export namespace ComputeImpl {
 
   export async function terminateJob(client: HttpClient, jobId: JobId): Promise<void> {
     return client.delete(endpointForId(jobId));
+  }
+
+  export async function revokeGatewayAccess(client: HttpClient, jobId: JobId): Promise<void> {
+    return client.post(revokeApiEndpointForId(jobId), undefined);
   }
 }

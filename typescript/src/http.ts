@@ -7,7 +7,7 @@ import type { BeforeRequestHook, NormalizedOptions, Options as KyOptions } from 
 import ky, { HTTPError } from 'ky';
 import { paramCase } from 'param-case';
 
-import type { PODDocument } from './document';
+import type { DocumentId, PODDocument } from './document';
 import type { JsonSerializable, Page } from './model.js';
 import type { TokenProvider } from './token.js';
 import { pipeToPolyfill } from './polyfill.js';
@@ -38,19 +38,7 @@ export class HttpClient {
 
   public constructor(private readonly tokenProvider: TokenProvider, config?: Config) {
     this.apiUrl = config?.apiUrl?.replace(/\/$/, '') ?? DEFAULT_API_URL;
-    if (config?.storageUrl) {
-      this.storageUrl = config.storageUrl;
-    } else if (config?.apiUrl) {
-      const apiUrl = new URL(this.apiUrl);
-      if (/local/g.test(apiUrl.host) || /^parcel-(run|gate)way/g.test(apiUrl.host)) {
-        this.storageUrl = `${this.apiUrl}/documents`; // Intranet can use the endpoint directly.
-      } else {
-        const storageHost = apiUrl.host.replace(/^\w+\./, 'storage.');
-        this.storageUrl = `${apiUrl.protocol}//${storageHost}/v1/parcel`;
-      }
-    } else {
-      this.storageUrl = DEFAULT_STORAGE_URL;
-    }
+    this.storageUrl = config?.storageUrl?.replace(/\/$/, '') ?? DEFAULT_STORAGE_URL;
 
     this.apiKy = ky.create({
       ...config?.httpClientConfig,
@@ -197,8 +185,8 @@ export class HttpClient {
     await this.apiKy.delete(endpoint);
   }
 
-  public download(endpoint: string): Download {
-    return new Download(this.apiKy, endpoint);
+  public download(documentId: DocumentId): Download {
+    return new Download(this.apiKy, `${this.storageUrl}/${documentId}/download`);
   }
 }
 
@@ -355,6 +343,7 @@ export class Download implements AsyncIterable<Uint8Array> {
         hooks: {
           beforeRequest: [attachContext('document download')],
         },
+        prefixUrl: '',
       });
     }
 

@@ -1,6 +1,6 @@
 {
   "name": "@oasislabs/parcel",
-  "version": "1.0.0-beta.16",
+  "version": "1.0.0-beta.20",
   "license": "Apache-2.0",
   "author": "Oasis Labs <feedback@oasislabs.com>",
   "main": "lib/bundle.cjs",
@@ -16,7 +16,7 @@
     "src"
   ],
   "scripts": {
-    "build": "rm -rf ./lib && esbuild src/index.ts --platform=node --target=node14 --bundle --outfile=lib/bundle.cjs && tsc -b",
+    "build": "rm -rf ./lib && esbuild src/index.ts --platform=node --target=node14 --bundle --outfile=lib/bundle.cjs --minify && tsc -b",
     "fmt": "xo --fix && prettier --write {tsconfig,package}.json",
     "lint": "yarn lint:tsclient && yarn lint:examples",
     "lint:tsclient": "xo --ignores ./examples && prettier --check {tsconfig,package}.json",

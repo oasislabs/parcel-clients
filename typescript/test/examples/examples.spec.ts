@@ -1,6 +1,7 @@
 import * as fs from 'fs';
-import { ChildProcess, execSync, spawn } from 'child_process';
+import { ChildProcess, exec, execSync, spawn } from 'child_process';
 import { dirname, join } from 'path';
+import { promisify } from 'util';
 
 import { CustomConsole, LogType, LogMessage } from '@jest/console';
 
@@ -28,8 +29,12 @@ const spawnerConsole = new CustomConsole(
 const npmPath = join(dirname(process.execPath), 'npm');
 const npxPath = join(dirname(process.execPath), 'npx');
 
-if (!process.env.PARCEL_API_URL || !process.env.PARCEL_AUTH_URL) {
-  throw new Error('PARCEL_API_URL and PARCEL_AUTH_URL env variables must be defined. Aborting.');
+if (
+  !process.env.PARCEL_API_URL ||
+  !process.env.PARCEL_STORAGE_URL ||
+  !process.env.PARCEL_AUTH_URL
+) {
+  throw new Error('PARCEL_(API|STORAGE|AUTH)_URL env variables must be defined. Aborting.');
 }
 
 if (!process.env.PARCEL_STORAGE_URL) {
@@ -347,11 +352,31 @@ it(
 );
 
 it(
-  'tokenization-basic',
+  'tokenization',
   async () => {
-    await runExamplePromisified('tokenization-basic');
+    process.env.EMERALD_BRIDGE_ADAPTER_V1_ADDRESS = '0xe78A0F7E598Cc8b0Bb87894B0F60dD2a88d6a8Ab';
+    const execp = promisify(exec);
+    const { stdout: nftAddr } = await execp(
+      'yarn --cwd $(git rev-parse --show-toplevel)/bridge/e2e-test/eth run hardhat run --network ganache scripts/deploy-test-erc721.ts | tail -n 1',
+    );
+    process.env.EMERALD_NFT_CONTRACT_ADDR = nftAddr.trim();
+    // `ganache-cli --deterministic` wallet #0
+    process.env.ACME_EMERALD_PRIVATE_KEY =
+      '0x4f3edf983ac636a65a842ce7c78d9aa706d3b113bce9c46f30d7d21715b23b1d';
+    process.env.WEB3_URL = process.env.GANACHE_URL ?? 'http://localhost:8545';
+
+    const apiUrl = new URL(process.env.PARCEL_API_URL ?? 'http://localhost:4242/v1');
+    try {
+      await execp(
+        `curl -sSL http://${apiUrl.hostname}:4243/debug/query-db --data "delete from linked_eth_addrs"`,
+      );
+    } catch (error: any) {
+      console.warn('could not clear existing linked eth addrs', error);
+    }
+
+    await runExamplePromisified('tokenization');
   },
-  20 * 1000,
+  100 * 1000,
 );
 
 async function runCypressTest(exampleName: string, preCypressHook?: () => void): Promise<void> {

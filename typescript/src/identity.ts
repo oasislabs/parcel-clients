@@ -57,22 +57,16 @@ export class Identity implements Model {
     return IdentityImpl.delete_(this.#client, this.id);
   }
 
-  /** Links an Ethereum address to this Parcel identity.
-   * `ethAddr` - the '0x' prefixed, hex-encoded Eth address (e.g., `web3.eth.accounts[0]`).
-   * `proof` - (optional) the signature produced by web3's `personal_sign` over the string
-   *           `parcel identity = <your identity id>`. If left unspecified, this library will
-   *           attempt to make the signature using the global web3 provider.
-   */
-  public async linkEthereumAddress(ethAddr: EthAddr, proof?: string): Promise<LinkedEthAddr> {
-    return IdentityImpl.linkEthereumAddress(this.#client, this.id, ethAddr, proof);
+  public async linkEthAddr(prover: EthAddrProver): Promise<LinkedEthAddr> {
+    return IdentityImpl.linkEthAddr(this.#client, this.id, prover);
   }
 
-  public async unlinkEthereumAddress(ethAddr: EthAddr): Promise<void> {
-    return IdentityImpl.unlinkEthereumAddress(this.#client, this.id, ethAddr);
+  public async unlinkEthAddr(ethAddr: EthAddr): Promise<void> {
+    return IdentityImpl.unlinkEthAddr(this.#client, this.id, ethAddr);
   }
 
-  public async listLinkedEthereumAddresses(filter?: PageParams): Promise<Page<LinkedEthAddr>> {
-    return IdentityImpl.listLinkedEthereumAddresses(this.#client, this.id, filter);
+  public async listLinkedEthAddrs(filter?: PageParams): Promise<Page<LinkedEthAddr>> {
+    return IdentityImpl.listLinkedEthAddrs(this.#client, this.id, filter);
   }
 
   /** Fetches permissions to which this identity has agreed.  */
@@ -138,41 +132,53 @@ export namespace IdentityImpl {
     return client.delete(endpointForId(id));
   }
 
-  export async function linkEthereumAddress(
+  export async function linkEthAddr(
     client: HttpClient,
     identity: IdentityId,
-    ethAddr: string,
-    proof?: string,
+    prover: EthAddrProver,
   ): Promise<LinkedEthAddr> {
-    if (!proof) {
-      const { web3 } = globalThis as any;
-      if (!web3) {
-        throw new Error(
-          '`linkEthereumAddress` must be provided a `proof` when a web3 provider is not present',
-        );
+    const assertion = `parcel identity = ${identity}`;
+    let proof;
+
+    if ('accountIndex' in prover && typeof prover.accountIndex === 'number') {
+      const { accountIndex } = prover;
+      const { web3, ethereum } = globalThis as any;
+      const ethProvider = web3?.currentProvider ?? ethereum;
+      if (!ethProvider) {
+        throw new Error('no Ethereum provider available');
       }
 
-      proof = await new Promise((resolve, reject) => {
-        const req = {
-          method: 'personal_sign',
-          params: [`parcel identity = ${identity}`, ethAddr],
-          from: ethAddr,
-        };
-        web3.currentProvider.sendAsync(req, (err: any, { result }: { result: string }) => {
-          if (err) {
-            reject(err);
-            return;
-          }
-
-          resolve(result);
+      const web3Req = async <T>(req: any): Promise<T> =>
+        new Promise((resolve, reject) => {
+          ethProvider.sendAsync(req, (err: any, { result }: { result: T }) => {
+            if (err) reject(err);
+            else resolve(result);
+          });
         });
+
+      const accounts: string[] = await web3Req({ method: 'eth_accounts' });
+      const ethAddr = accounts[accountIndex];
+      if (!ethAddr) {
+        throw new Error(`no connected Ethereum with index ${accountIndex}`);
+      }
+
+      proof = await web3Req<string>({
+        method: 'personal_sign',
+        params: [assertion, ethAddr],
+        from: ethAddr,
       });
+    } else if ('proof' in prover && typeof prover.proof === 'string') {
+      proof = prover.proof;
+    } else if ('signMessage' in prover && typeof prover.signMessage === 'function') {
+      proof = await prover.signMessage(assertion);
+    } else {
+      throw new TypeError('invalid prover provided to `linkEthAddr`');
     }
 
     return client.create(endpointForLinkedEthAddrs(identity), { proof });
   }
 
-  export async function listLinkedEthereumAddresses(
+  export async function listLinkedEthAddrs(
     client: HttpClient,
     identityId: IdentityId,
     filter?: PageParams,
@@ -191,7 +197,7 @@ export namespace IdentityImpl {
     };
   }
 
-  export async function unlinkEthereumAddress(
+  export async function unlinkEthAddr(
     client: HttpClient,
     identity: IdentityId,
     ethAddr: string,
@@ -301,3 +307,30 @@ export type LinkedEthAddr = {
   address: EthAddr;
   linkedAt: Date;
 };
+
+export namespace EthAddrProver {
+  /** Uses a wallet (like `ethers.Signer`) to link an Ethereum address to this identity. */
+  export type Signer = {
+    signMessage: (msg: string) => Promise<string>;
+  };
+
+  /** Uses the global web3 provider (e.g. MetaMask) to link an Ethereum address to this identity. */
+  export type GlobalEthProvider = {
+    /** `accountIdx` - (optional) The index of the connected account to use. */
+    accountIndex: number;
+  };
+
+  /** Uses a proof to link an Ethereum address to this identity. */
+  export type Proof = {
+    /**
+     * `proof` - the signature produced by web3's `personal_sign` over the string
+     *           `parcel identity = <your identity id>`.
+     */
+    proof: string;
+  };
+}
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export type EthAddrProver =
+  | EthAddrProver.Signer
+  | EthAddrProver.GlobalEthProvider
+  | EthAddrProver.Proof;
