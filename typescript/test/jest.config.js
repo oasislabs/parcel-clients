@@ -17,7 +17,17 @@ const config = {
     '\\.ts$': 'ts-jest',
     '\\.js$': 'babel-jest',
   },
-  transformIgnorePatterns: ['<rootDir>/node_modules/?!(ky|node-fetch)'],
+  transformIgnorePatterns: ['<rootDir>/node_modules/?!(node-fetch)'],
+
+  // cf. https://kulshekhar.github.io/ts-jest/docs/guides/esm-support/
+  extensionsToTreatAsEsm: ['.ts'],
+  globals: {
+    'ts-jest': {
+      useESM: true,
+    },
+  },
+  // cf. https://github.com/sindresorhus/ky-universal/issues/35
+  setupFiles: ["./test/jest.setup.js"],
 };
 
 export default config;

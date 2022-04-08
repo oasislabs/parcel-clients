@@ -10,7 +10,6 @@ import { paramCase } from 'param-case';
 import type { DocumentId, PODDocument } from './document';
 import type { JsonSerializable, Page } from './model.js';
 import type { TokenProvider } from './token.js';
-import { pipeToPolyfill } from './polyfill.js';
 
 const DEFAULT_API_URL =
   globalThis?.process?.env?.PARCEL_API_URL ?? 'https://api.oasislabs.com/parcel/v1';
@@ -317,6 +316,7 @@ export class Download implements AsyncIterable<Uint8Array> {
       }
 
       // Firefox's native ReadableStream is missing pipeTo.
+      const pipeToPolyfill = (await import('./polyfill.js')).pipeToPolyfill;
       return pipeToPolyfill(body, sink);
     }
 

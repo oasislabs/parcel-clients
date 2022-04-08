@@ -7,21 +7,8 @@ import {
   createReadableStreamWrapper,
   createWritableStreamWrapper,
 } from '@mattiasbuelens/web-streams-adapter';
-import AbortController from 'abort-controller';
-import FormData from 'form-data';
-import fetch, { Headers, Request as RequestPF, Response as ResponsePF } from 'node-fetch';
 import * as webStreams from 'web-streams-polyfill/dist/ponyfill.es2018.js';
 
-globalThis.fetch =
-  globalThis.fetch ??
-  (async (url: any, options) => fetch(url, { highWaterMark: 1e7 /* 10 MB */, ...options } as any));
-globalThis.Headers = globalThis.Headers ?? Headers;
-globalThis.Request = globalThis.Request ?? RequestPF;
-globalThis.Response = globalThis.Response ?? ResponsePF;
-globalThis.AbortController = globalThis.AbortController ?? AbortController;
-globalThis.FormData = globalThis.FormData ?? FormData;
-globalThis.ReadableStream = globalThis.ReadableStream ?? webStreams.ReadableStream;
-globalThis.WritableStream = globalThis.WritableStream ?? webStreams.WritableStream;
 const toReadableStreamPF = createReadableStreamWrapper(webStreams.ReadableStream) as unknown as (
   r: globalThis.ReadableStream,
 ) => webStreams.ReadableStream;

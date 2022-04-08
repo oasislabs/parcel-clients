@@ -5,7 +5,8 @@ import type { JsonObject, Merge } from 'type-fest';
 
 import { appendAsLastBeforeRequest, dontCloneForAfterResponses } from './http.js';
 import type { IdentityId } from './identity.js';
-import './polyfill.js'; // eslint-disable-line import/no-unassigned-import
+// @ts-ignore
+if (!globalThis.fetch) import('./polyfill.js'); // eslint-disable-line import/no-unassigned-import
 
 export class TokenError extends HTTPError {
   name = 'TokenError';

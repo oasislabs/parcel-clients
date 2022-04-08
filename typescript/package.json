@@ -21,7 +21,7 @@
     "lint": "yarn lint:tsclient && yarn lint:examples",
     "lint:tsclient": "xo --ignores ./examples && prettier --check {tsconfig,package}.json",
     "lint:examples": "xo ./examples && tools/update-examples-parcel-version.sh --check",
-    "test:unit": "jest --projects test/jest/unit/",
+    "test:unit": "node --experimental-vm-modules node_modules/.bin/jest --projects test/jest/unit/",
     "test:examples": "jest --projects test/examples/",
     "test:integration:nodejs": "node test/pure-nodejs.js",
     "test:integration:jest": "jest --projects test/jest/integration/",
@@ -78,7 +78,7 @@
     "form-data": "^4.0.0",
     "jsrsasign": "^10.3.0",
     "ky": "^0.28.5",
-    "node-fetch": "3.0.0-beta.9",
+    "ky-universal": "^0.9.1",
     "param-case": "^3.0.3",
     "type-fest": "^1.3.0",
     "web-streams-polyfill": "^3.1.0"
